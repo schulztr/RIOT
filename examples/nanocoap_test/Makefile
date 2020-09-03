@@ -30,6 +30,9 @@ USEMODULE += hashes
 USEMODULE += shell
 USEMODULE += shell_commands
 
+#Web of Things
+USEMODULE += wot
+
 # Comment this out to enable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:

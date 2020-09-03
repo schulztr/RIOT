@@ -1,14 +1,7 @@
+#include "wot.h"
 #include <stddef.h>
 #include <string.h>
-#include <errno.h>
-
-#include "msg.h"
-#include "net/wot/wot.h"
-
-/**
- * @brief   pid definitions, to be able to iterate over them
- */
-kernel_pid_t wot_coap_pid = KERNEL_PID_UNDEF;
+#include "error.h"
 
 #define WOT_TD_ADD_CONTENT(entity, prop, var, type) ({          \
     if(entity == NULL || var == NULL){                          \
@@ -407,3 +400,4 @@ wot_td_data_enums_t * wot_td_data_schema_enum_find_nth(wot_td_data_schema_t *sch
 wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *schema, char *value){
     WOT_TD_FIND_x(schema, enumeration, wot_td_data_enums_t, value);
 }
+

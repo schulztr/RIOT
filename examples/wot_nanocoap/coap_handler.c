@@ -71,6 +71,7 @@ static ssize_t _riot_block2_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, v
     bufpos += coap_blockwise_put_char(&slicer, bufpos, 'U');
     bufpos += coap_blockwise_put_char(&slicer, bufpos, '.');
 
+
     unsigned payload_len = bufpos - payload;
     return coap_block2_build_reply(pkt, COAP_CODE_205,
                                    buf, len, payload_len, &slicer);
@@ -95,16 +96,13 @@ static ssize_t _riot_value_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, vo
         break;
     case COAP_PUT:
     case COAP_POST:
-        if (pkt->payload_len < 16) {
-            /* convert the payload to an integer and update the internal value */
-            char payload[16] = { 0 };
-            memcpy(payload, (char*)pkt->payload, pkt->payload_len);
-            internal_value = strtol(payload, NULL, 10);
-            code = COAP_CODE_CHANGED;
-        }
-        else {
-            code = COAP_CODE_REQUEST_ENTITY_TOO_LARGE;
-        }
+    {
+        /* convert the payload to an integer and update the internal value */
+        char payload[16] = { 0 };
+        memcpy(payload, (char*)pkt->payload, pkt->payload_len);
+        internal_value = strtol(payload, NULL, 10);
+        code = COAP_CODE_CHANGED;
+    }
     }
 
     return coap_reply_simple(pkt, code, buf, len,

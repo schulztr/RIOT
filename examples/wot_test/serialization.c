@@ -1,5 +1,6 @@
-#include "net/wot/wot.h"
-#include "net/wot/serialization.h"
+#include "wot.h"
+#include "serialization.h"
+#include "wot_internal.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -120,6 +121,7 @@ char * _serialize_context(char *buffer, uint32_t max_length, json_ld_context_t *
 }
 
 char * _serialize_context_array(char *buffer, uint32_t max_length, json_ld_context_t *context){
+    buffer = _wot_td_fill_json_buffer(buffer, "[", 1);
     json_ld_context_t *tmp_ctx = context;
     max_length = max_length-2;
 
@@ -130,7 +132,7 @@ char * _serialize_context_array(char *buffer, uint32_t max_length, json_ld_conte
         }
         tmp_ctx = tmp_ctx->next;
     }
-    return buffer;
+    return _wot_td_fill_json_buffer(buffer, "]", 1);
 }
 
 char * _serialize_type_array(char *buffer, uint32_t max_length, wot_td_type_t *type){
@@ -151,8 +153,10 @@ char * _serialize_type_array(char *buffer, uint32_t max_length, wot_td_type_t *t
 
 char * _serialize_lang(char *buffer, uint32_t max_length, wot_td_multi_lang_t *lang){
     (void)max_length;
+    buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
     buffer = _wot_td_fill_json_obj_key(buffer, lang->tag, strlen(lang->tag));
-    return _wot_td_fill_json_string(buffer, lang->value, strlen(lang->value));
+    buffer = _wot_td_fill_json_string(buffer, lang->value, strlen(lang->value));
+    return _wot_td_fill_json_buffer(buffer, "}", 1);
 }
 
 char * _serialize_title_array(char *buffer, uint32_t max_length, wot_td_multi_lang_t *titles, char *lang){
@@ -160,8 +164,7 @@ char * _serialize_title_array(char *buffer, uint32_t max_length, wot_td_multi_la
     wot_td_multi_lang_t *default_title = NULL;
     char title_obj_key[] = "titles";
     buffer = _wot_td_fill_json_obj_key(buffer, title_obj_key, sizeof(title_obj_key)-1);
-
-    buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
+    buffer = _wot_td_fill_json_buffer(buffer, "[", 1);
     while(tmp != NULL){
         if(lang == NULL || strcmp(tmp->tag, lang) != 0){
             buffer = _serialize_lang(buffer, max_length, tmp);
@@ -174,7 +177,7 @@ char * _serialize_title_array(char *buffer, uint32_t max_length, wot_td_multi_la
         }
         tmp = tmp->next;
     }
-    buffer = _wot_td_fill_json_buffer(buffer, "}", 1);
+    buffer = _wot_td_fill_json_buffer(buffer, "]", 1);
 
     if(default_title != NULL){
         buffer = _wot_td_fill_json_buffer(buffer, ",", 1);
@@ -191,7 +194,7 @@ char * _serialize_description_array(char *buffer, uint32_t max_length, wot_td_mu
     wot_td_multi_lang_t *default_description = NULL;
     char description_obj_key[] = "descriptions";
     buffer = _wot_td_fill_json_obj_key(buffer, description_obj_key, sizeof(description_obj_key)-1);
-    buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
+    buffer = _wot_td_fill_json_buffer(buffer, "[", 1);
     while(tmp != NULL){
         if(lang == NULL || strcmp(tmp->tag, lang) != 0){
             buffer = _serialize_lang(buffer, max_length, tmp);
@@ -204,7 +207,7 @@ char * _serialize_description_array(char *buffer, uint32_t max_length, wot_td_mu
         }
         tmp = tmp->next;
     }
-    buffer = _wot_td_fill_json_buffer(buffer, "}", 1);
+    buffer = _wot_td_fill_json_buffer(buffer, "]", 1);
 
     if(default_description != NULL){
         buffer = _wot_td_fill_json_buffer(buffer, ",", 1);
@@ -914,19 +917,13 @@ int _wot_td_serialize_thing_json(char *buffer, uint32_t max_length, wot_td_thing
     bool has_previous_prop = false;
     buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
 
-    has_previous_prop = true;
-    char thing_context_key[] = "@context";
-    buffer = _wot_td_fill_json_obj_key(buffer, thing_context_key, sizeof(thing_context_key)-1);
-    char thing_context_value[] = "https://www.w3.org/2019/wot/td/v1";
-
     if(thing->context != NULL){
-        buffer = _wot_td_fill_json_buffer(buffer, "[", 1);
-        buffer = _wot_td_fill_json_string(buffer, thing_context_value, sizeof(thing_context_value)-1);
-        buffer = _wot_td_fill_json_buffer(buffer, ",", 1);
+        has_previous_prop = true;
+        char thing_context_key[] = "@context";
+        buffer = _wot_td_fill_json_obj_key(buffer, thing_context_key, sizeof(thing_context_key)-1);
         buffer = _serialize_context_array(buffer, max_length-2, thing->context);
-        buffer = _wot_td_fill_json_buffer(buffer, "]", 1);
     }else{
-        buffer = _wot_td_fill_json_string(buffer, thing_context_value, sizeof(thing_context_value)-1);
+        return 1;
     }
 
     if(thing->security != NULL){
