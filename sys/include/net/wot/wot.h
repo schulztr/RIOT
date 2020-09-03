@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 typedef struct json_ld_context {
-    char *key; /**< namespace of TD Context Extensions, max length 32**/
-    char *value; /**< max length 64**/
+    const char *key; /**< namespace of TD Context Extensions, max length 32**/
+    const char *value; /**< max length 64**/
     struct json_ld_context *next;
 } json_ld_context_t;
 
@@ -29,7 +29,7 @@ typedef enum {
 
 typedef struct {
     wot_td_sec_scheme_in_t in;
-    char *name;
+    const char *name;
 } wot_td_basic_sec_scheme_t;
 
 typedef enum {
@@ -40,33 +40,33 @@ typedef enum {
 typedef struct {
     wot_td_digest_qop_t qop;
     wot_td_sec_scheme_in_t in;
-    char *name;
+    const char *name;
 } wot_td_digest_sec_scheme_t;
 
 typedef struct {
     wot_td_sec_scheme_in_t in;
-    char *name;
+    const char *name;
 } wot_td_api_key_sec_scheme_t;
 
 typedef struct {
-    char *schema;
+    const char *schema;
     char *value;
 } wot_td_uri_t;
 
 typedef struct {
     wot_td_uri_t *authorization;
-    char *alg;
-    char *format;
+    const char *alg;
+    const char *format;
     wot_td_sec_scheme_in_t in;
-    char *name;
+    const char *name;
 } wot_td_bearer_sec_scheme_t;
 
 typedef struct {
-    char *identity;
+    const char *identity;
 } wot_td_psk_sec_scheme_t;
 
 typedef struct wot_td_auth_scope {
-    char *value;
+    const char *value;
     struct wot_td_auth_scope *next;
 } wot_td_auth_scopes_t;
 
@@ -75,26 +75,25 @@ typedef struct {
     wot_td_uri_t *token;
     wot_td_uri_t *refresh;
     wot_td_auth_scopes_t *scopes;
-    char *flow;
+    const char *flow;
 } wot_td_oauth2_sec_scheme_t;
 
 typedef struct wot_td_multi_language {
-    char *tag;
-    char *value;
+    const char *tag;
+    const char *value;
     struct wot_td_multi_language *next;
 } wot_td_multi_lang_t;
 
 typedef struct {
-    char *type;
-    char *description;
+    const char *type;
     wot_td_multi_lang_t *descriptions;
-    char *proxy;
+    const char *proxy;
     wot_td_sec_scheme_type_t scheme_type;
     void *scheme;
 } wot_td_sec_scheme_t;
 
 typedef struct wot_td_sec {
-    char *key;
+    const char *key;
     wot_td_sec_scheme_t *value;
     struct wot_td_sec *next;
 } wot_td_security_t;
@@ -135,7 +134,7 @@ typedef struct wot_td_form {
     wot_td_uri_t *href;
     wot_td_content_type_t *content_type;
     wot_td_content_encoding_type_t *content_encoding;
-    char *sub_protocol;
+    const char *sub_protocol;
     wot_td_security_t *security;
     wot_td_auth_scopes_t *scopes;
     wot_td_expected_res_t *expected_response;
@@ -153,22 +152,22 @@ typedef enum {
 } wot_td_data_schema_type_t;
 
 typedef struct {
-    double *minimum;
-    double *maximum;
+    const double *minimum;
+    const double *maximum;
 } wot_td_number_schema_t;
 
 typedef struct {
-    int32_t *minimum;
-    int32_t *maximum;
+    const int32_t *minimum;
+    const int32_t *maximum;
 } wot_td_integer_schema_t;
 
 typedef struct wot_td_object_required {
-    char *value;
+    const char *value;
     struct wot_td_object_required *next;
 } wot_td_object_required_t;
 
 typedef struct wot_td_data_enum {
-    char *value;
+    const char *value;
     struct wot_td_data_enum *next;
 } wot_td_data_enums_t;
 
@@ -183,24 +182,22 @@ typedef enum {
 } wot_td_json_type_t;
 
 typedef struct wot_td_type {
-    char *value;
+    const char *value;
     struct wot_td_type *next;
 } wot_td_type_t;
 
 typedef struct {
     wot_td_type_t *type; /** (@)type in specs **/
-    char *title;
     wot_td_multi_lang_t *titles;
-    char *description;
     wot_td_multi_lang_t *descriptions;
     wot_td_json_type_t *json_type;
-    char *constant;
-    char *unit;
+    const char *constant;
+    const char *unit;
     struct wot_td_data_schemas *one_of; /** check validity of data **/
     wot_td_data_enums_t *enumeration;
     bool read_only;
     bool write_only;
-    char *format;
+    const char *format;
     void *schema; /** Type determined by type **/
 } wot_td_data_schema_t;
 
@@ -211,12 +208,12 @@ typedef struct wot_td_data_schemas {
 
 typedef struct {
     wot_td_data_schemas_t *items;
-    uint32_t *min_items;
-    uint32_t *max_items;
+    const uint32_t *min_items;
+    const uint32_t *max_items;
 } wot_td_array_schema_t;
 
 typedef struct wot_td_data_schema_map {
-    char *key;
+    const char *key;
     wot_td_data_schema_t *value;
     struct wot_td_data_schema_map *next;
 } wot_td_data_schema_map_t;
@@ -227,17 +224,15 @@ typedef struct {
 } wot_td_object_schema_t;
 
 typedef struct {
-    char *type;
-    char *title;
+    const char *type;
     wot_td_multi_lang_t *titles;
-    char *description;
     wot_td_multi_lang_t *descriptions;
     wot_td_form_t *forms;
     wot_td_data_schema_t *uri_variables;
 } wot_td_int_affordance_t;
 
 typedef struct wot_td_prop_affordance {
-    char *key;
+    const char *key;
     bool observable;
     wot_td_data_schema_t *data_schema;
     wot_td_int_affordance_t *int_affordance;
@@ -245,7 +240,7 @@ typedef struct wot_td_prop_affordance {
 } wot_td_prop_affordance_t;
 
 typedef struct wot_td_action_affordance {
-    char *key;
+    const char *key;
     wot_td_data_schema_t *input;
     wot_td_data_schema_t *output;
     bool safe;
@@ -255,7 +250,7 @@ typedef struct wot_td_action_affordance {
 } wot_td_action_affordance_t;
 
 typedef struct wot_td_event_affordance {
-    char *key;
+    const char *key;
     wot_td_data_schema_t *subscription;
     wot_td_data_schema_t *data;
     wot_td_data_schema_t *cancellation;
@@ -264,23 +259,23 @@ typedef struct wot_td_event_affordance {
 } wot_td_event_affordance_t;
 
 typedef struct {
-    char *instance;
+    const char *instance;
 } wot_td_version_info_t;
 
 typedef struct {
-    int32_t year;
-    uint8_t month;
-    uint8_t day;
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-    int16_t timezone_offset;
+    const int32_t year;
+    const uint8_t month;
+    const uint8_t day;
+    const uint8_t hour;
+    const uint8_t minute;
+    const uint8_t second;
+    const int16_t timezone_offset;
 } wot_td_date_time_t;
 
 typedef struct wot_td_link {
     wot_td_uri_t *href;
-    char *type;
-    char *rel;
+    const char *type;
+    const char *rel;
     wot_td_uri_t *anchor;
     struct wot_td_link *next;
 } wot_td_link_t;
@@ -289,9 +284,7 @@ typedef struct {
     json_ld_context_t *context; /*< The context elements. Linked list. */
     wot_td_type_t *type;
     wot_td_uri_t *id;
-    char *title;
     wot_td_multi_lang_t *titles;
-    char *description;
     wot_td_multi_lang_t *descriptions;
     wot_td_version_info_t *version;
     wot_td_date_time_t *created;
@@ -306,7 +299,6 @@ typedef struct {
     wot_td_security_t *security;
     char *default_language_tag;
 } wot_td_thing_t;
-
 
 int wot_td_thing_context_add(wot_td_thing_t *thing, json_ld_context_t *context);
 int wot_td_thing_context_rm(wot_td_thing_t *thing, json_ld_context_t *context);
