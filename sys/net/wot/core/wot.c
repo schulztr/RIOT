@@ -3,7 +3,7 @@
 #include <errno.h>
 
 #include "msg.h"
-#include "net/wot/wot.h"
+#include "net/wot.h"
 
 /**
  * @brief   pid definitions, to be able to iterate over them

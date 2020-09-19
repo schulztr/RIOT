@@ -1,11 +1,8 @@
 #ifndef WOT_SERIALIZATION_H
 #define WOT_SERIALIZATION_H
 
-typedef enum {
-    WOT_TD_SERIALIZE_JSON,
-    WOT_TD_SERIALIZE_CBOR
-} wot_td_serialize_type_t;
+typedef void (*wot_td_serialize_receiver_t)(const char *, uint32_t);
 
-int wot_td_serialize_thing(const char *buffer, uint32_t max_length, wot_td_thing_t *thing, wot_td_serialize_type_t type);
+int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t *thing);
 
 #endif //WOT_SERIALIZATION_H

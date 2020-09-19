@@ -1,3 +1,3 @@
-MODULE = coap_core
+MODULE = wot_core
 
 include $(RIOTBASE)/Makefile.base

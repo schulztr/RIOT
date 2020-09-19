@@ -4,6 +4,7 @@
 #include "net/wot/wot.h"
 #include "net/wot/serialization.h"
 
+
 #define COUNT_x(var, type) ({           \
     uint8_t counter = 0;                \
     type *tmp = var;                    \
@@ -62,20 +63,21 @@ uint8_t _count_descriptions(wot_td_multi_lang_t *descriptions){
     COUNT_x(descriptions, wot_td_multi_lang_t);
 }
 
-char output[1000];
+const char output[1000];
 
 int _thing_full_json(void){
     _test_util_given("Given: A thing description without descriptions");
-    _test_util_when("When adding one context items to it");
+    _test_util_when("When adding a first context items to it");
 
-    char first_context_key[] = "some_key1";
-    char first_context_value[] = "some_value1";
+    const char first_context_key[] = "some_key1";
+    const char first_context_value[] = "some_value1";
     json_ld_context_t first_test_context = {
             .key = first_context_key,
             .value = first_context_value,
     };
 
-    char second_context_value[] = "some_value2";
+    _test_util_when("When adding second context items to it");
+    const char second_context_value[] = "some_value2";
     json_ld_context_t second_test_context = {
             .value = second_context_value,
     };
@@ -86,15 +88,15 @@ int _thing_full_json(void){
 
     _test_util_when("When adding two title items to it");
 
-    char first_test_title_tag[] = "testtitletag1";
-    char first_test_title_value[] = "testtitlevalue1";
+    const char first_test_title_tag[] = "testtitletag1";
+    const char first_test_title_value[] = "testtitlevalue1";
     wot_td_multi_lang_t first_title = {
             .tag = first_test_title_tag,
             .value = first_test_title_value
     };
 
-    char second_test_title_tag[] = "testtitletag2";
-    char second_test_title_value[] = "testtitlevalue2";
+    const char second_test_title_tag[] = "testtitletag2";
+    const char second_test_title_value[] = "testtitlevalue2";
     wot_td_multi_lang_t second_title = {
             .tag = second_test_title_tag,
             .value = second_test_title_value
@@ -109,7 +111,7 @@ int _thing_full_json(void){
 
     _test_util_when("When adding one type to it");
 
-    char saref_type_s[] = "saref:LightSwitch";
+    const char saref_type_s[] = "saref:LightSwitch";
     wot_td_type_t saref_type = {
             .value = saref_type_s
     };
@@ -119,8 +121,8 @@ int _thing_full_json(void){
     );
 
     _test_util_when("When adding a description");
-    char test_description_tag[] = "DE";
-    char test_description_value[] = "dasisteintext";
+    const char test_description_tag[] = "DE";
+    const char test_description_value[] = "dasisteintext";
     wot_td_multi_lang_t test_description = {
             .tag = test_description_tag,
             .value = test_description_value
@@ -284,6 +286,7 @@ int _thing_full_json(void){
 }
 
 int main(void) {
+    xtimer_sleep(5);
     puts("------ Starting tests -----\n");
 
     _test_util_features("Feature: WoT TD serialization");

@@ -275,15 +275,16 @@ int _thing_full_json(void){
     _test_util_given("Given: A thing description without descriptions");
     _test_util_when("When adding one context items to it");
 
-    char first_context_key[] = "some_key1";
-    char first_context_value[] = "some_value1";
+
+    char first_context_value[] = "https://www.w3.org/2019/wot/td/v1";
     json_ld_context_t first_test_context = {
-            .key = first_context_key,
             .value = first_context_value,
     };
 
     char second_context_value[] = "some_value2";
+    char second_context_key[] = "some_key2";
     json_ld_context_t second_test_context = {
+            .key = second_context_key,
             .value = second_context_value,
     };
 
@@ -396,7 +397,7 @@ int _thing_full_json(void){
     _test_util_when("When adding an action affordance");
 
     wot_td_form_op_t action_form_op = {
-            .op_type = FORM_OP_SUBSCRIBE_EVENT
+            .op_type = FORM_OP_INVOKE_ACTION
     };
 
     wot_td_uri_t action_form_href = {
@@ -457,7 +458,7 @@ int _thing_full_json(void){
     );
 
     wot_td_form_op_t test_event_form_op = {
-            .op_type = FORM_OP_OBSERVE_PROPERTY
+            .op_type = FORM_OP_SUBSCRIBE_EVENT
     };
 
     wot_td_uri_t test_event_form_href = {
