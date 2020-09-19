@@ -32,25 +32,25 @@ void _itoa(int n, char s[])
     _reverse(s);
 }
 
-char * _wot_td_fill_json_buffer(char *buffer, char *string, uint32_t length){
-    memcpy(buffer, string, length);
+const char * _wot_td_fill_json_buffer(const char *buffer, const char *string, uint32_t length){
+    memcpy((char *) buffer, string, length);
     return &(buffer[length]);
 }
 
-char * _wot_td_fill_json_string(char *buffer, char *string, uint32_t length){
+const char * _wot_td_fill_json_string(const char *buffer, const char *string, uint32_t length){
     buffer = _wot_td_fill_json_buffer(buffer, "\"", 1);
     buffer = _wot_td_fill_json_buffer(buffer, string, length);
     return _wot_td_fill_json_buffer(buffer, "\"", 1);
 }
 
-char * _wot_td_fill_json_uri(char *buffer, wot_td_uri_t *uri){
+const char * _wot_td_fill_json_uri(const char *buffer, wot_td_uri_t *uri){
     buffer = _wot_td_fill_json_buffer(buffer, "\"", 1);
     buffer = _wot_td_fill_json_buffer(buffer, uri->schema, strlen(uri->schema));
     buffer = _wot_td_fill_json_buffer(buffer, uri->value, strlen(uri->value));
     return _wot_td_fill_json_buffer(buffer, "\"", 1);
 }
 
-char * _wot_td_fill_json_date(char *buffer, wot_td_date_time_t *date){
+const char * _wot_td_fill_json_date(const char *buffer, wot_td_date_time_t *date){
     buffer = _wot_td_fill_json_buffer(buffer, "\"", 1);
     char s[11];
     _itoa(date->year, s);
@@ -76,12 +76,12 @@ char * _wot_td_fill_json_date(char *buffer, wot_td_date_time_t *date){
     return _wot_td_fill_json_buffer(buffer, "\"", 1);
 }
 
-char * _wot_td_fill_json_obj_key(char *buffer, char *string, uint32_t length){
+const char * _wot_td_fill_json_obj_key(const char *buffer, const char *string, uint32_t length){
     buffer = _wot_td_fill_json_string(buffer, string, length);
     return _wot_td_fill_json_buffer(buffer, ":", 1);
 }
 
-char * _wot_td_fill_json_bool(char *buffer, bool value){
+const char * _wot_td_fill_json_bool(const char *buffer, bool value){
     if(value){
         char c[] = "true";
         buffer = _wot_td_fill_json_buffer(buffer, c, sizeof(c)-1);
@@ -93,7 +93,7 @@ char * _wot_td_fill_json_bool(char *buffer, bool value){
     return buffer;
 }
 
-char * _previous_prop_check(char *buffer, uint32_t max_length, bool has_previous_prop){
+const char * _previous_prop_check(const char *buffer, uint32_t max_length, bool has_previous_prop){
     (void)max_length;
     if(has_previous_prop){
         return _wot_td_fill_json_buffer(buffer, ",", 1);
@@ -102,7 +102,7 @@ char * _previous_prop_check(char *buffer, uint32_t max_length, bool has_previous
     }
 }
 
-char * _serialize_context(char *buffer, uint32_t max_length, json_ld_context_t *context){
+const char * _serialize_context(const char *buffer, uint32_t max_length, json_ld_context_t *context){
     (void)max_length;
 
     if(context->key != NULL){
@@ -119,7 +119,7 @@ char * _serialize_context(char *buffer, uint32_t max_length, json_ld_context_t *
     return buffer;
 }
 
-char * _serialize_context_array(char *buffer, uint32_t max_length, json_ld_context_t *context){
+const char * _serialize_context_array(const char *buffer, uint32_t max_length, json_ld_context_t *context){
     json_ld_context_t *tmp_ctx = context;
     max_length = max_length-2;
 
@@ -133,7 +133,7 @@ char * _serialize_context_array(char *buffer, uint32_t max_length, json_ld_conte
     return buffer;
 }
 
-char * _serialize_type_array(char *buffer, uint32_t max_length, wot_td_type_t *type){
+const char * _serialize_type_array(const char *buffer, uint32_t max_length, wot_td_type_t *type){
     (void)max_length;
     char type_obj_key[] = "@type";
     buffer = _wot_td_fill_json_obj_key(buffer, type_obj_key, sizeof(type_obj_key)-1);
@@ -149,13 +149,13 @@ char * _serialize_type_array(char *buffer, uint32_t max_length, wot_td_type_t *t
     return _wot_td_fill_json_buffer(buffer, "]", 1);
 }
 
-char * _serialize_lang(char *buffer, uint32_t max_length, wot_td_multi_lang_t *lang){
+const char * _serialize_lang(const char *buffer, uint32_t max_length, wot_td_multi_lang_t *lang){
     (void)max_length;
     buffer = _wot_td_fill_json_obj_key(buffer, lang->tag, strlen(lang->tag));
     return _wot_td_fill_json_string(buffer, lang->value, strlen(lang->value));
 }
 
-char * _serialize_title_array(char *buffer, uint32_t max_length, wot_td_multi_lang_t *titles, char *lang){
+const char * _serialize_title_array(const char *buffer, uint32_t max_length, wot_td_multi_lang_t *titles, char *lang){
     wot_td_multi_lang_t *tmp = titles;
     wot_td_multi_lang_t *default_title = NULL;
     char title_obj_key[] = "titles";
@@ -186,7 +186,7 @@ char * _serialize_title_array(char *buffer, uint32_t max_length, wot_td_multi_la
     return buffer;
 }
 
-char * _serialize_description_array(char *buffer, uint32_t max_length, wot_td_multi_lang_t *desc, char *lang){
+const char * _serialize_description_array(const char *buffer, uint32_t max_length, wot_td_multi_lang_t *desc, char *lang){
     wot_td_multi_lang_t *tmp = desc;
     wot_td_multi_lang_t *default_description = NULL;
     char description_obj_key[] = "descriptions";
@@ -216,55 +216,55 @@ char * _serialize_description_array(char *buffer, uint32_t max_length, wot_td_mu
     return buffer;
 }
 
-void _security_scheme_string(char *result, wot_td_sec_scheme_type_t scheme_type){
+void _security_scheme_string(const char *result, wot_td_sec_scheme_type_t scheme_type){
     switch (scheme_type) {
         case SECURITY_SCHEME_NONE:
-            strcpy(result, "nosec");
+            strcpy((char *) result, "nosec");
             break;
         case SECURITY_SCHEME_BASIC:
-            strcpy(result, "basic");
+            strcpy((char *) result, "basic");
             break;
         case SECURITY_SCHEME_DIGEST:
-            strcpy(result, "digest");
+            strcpy((char *) result, "digest");
             break;
         case SECURITY_SCHEME_API_KEY:
-            strcpy(result, "apikey");
+            strcpy((char *) result, "apikey");
             break;
         case SECURITY_SCHEME_BEARER:
-            strcpy(result, "bearer");
+            strcpy((char *) result, "bearer");
             break;
         case SECURITY_SCHEME_PSK:
-            strcpy(result, "psk");
+            strcpy((char *) result, "psk");
             break;
         case SECURITY_SCHEME_OAUTH2:
-            strcpy(result, "oauth2");
+            strcpy((char *) result, "oauth2");
             break;
         default:
-            strcpy(result, "nosec");
+            strcpy((char *) result, "nosec");
             break;
     }
 }
 
-void _security_schema_in_string(char *result, wot_td_sec_scheme_in_t in){
+void _security_schema_in_string(const char *result, wot_td_sec_scheme_in_t in){
     switch(in){
         case SECURITY_SCHEME_IN_HEADER:
-            strcpy(result, "header");
+            strcpy((char *) result, "header");
             break;
         case SECURITY_SCHEME_IN_QUERY:
-            strcpy(result, "query");
+            strcpy((char *) result, "query");
             break;
         case SECURITY_SCHEME_IN_BODY:
-            strcpy(result, "body");
+            strcpy((char *) result, "body");
             break;
         case SECURITY_SCHEME_IN_COOKIE:
-            strcpy(result, "cookie");
+            strcpy((char *) result, "cookie");
             break;
         default:
-            strcpy(result, "header");
+            strcpy((char *) result, "header");
     }
 }
 
-char * _serialize_sec_scheme_basic(char *buffer, uint32_t max_length, wot_td_basic_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_basic(const char *buffer, uint32_t max_length, wot_td_basic_sec_scheme_t *scheme){
     (void)max_length;
     char in_obj_key[] = "in";
     char name_obj_key[] = "name";
@@ -280,15 +280,15 @@ char * _serialize_sec_scheme_basic(char *buffer, uint32_t max_length, wot_td_bas
     return buffer;
 }
 
-void _security_digest_qop_string(char *result, wot_td_digest_qop_t qop){
+void _security_digest_qop_string(const char *result, wot_td_digest_qop_t qop){
     if(qop == SECURITY_DIGEST_QOP_AUTH_INT){
-        strcpy(result, "auth-int");
+        strcpy((char *) result, "auth-int");
     }else{
-        strcpy(result, "auth");
+        strcpy((char *) result, "auth");
     }
 }
 
-char * _serialize_sec_scheme_digest(char *buffer, uint32_t max_length, wot_td_digest_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_digest(const char *buffer, uint32_t max_length, wot_td_digest_sec_scheme_t *scheme){
     (void)max_length;
     char in_obj_key[] = "in";
     char name_obj_key[] = "name";
@@ -311,7 +311,7 @@ char * _serialize_sec_scheme_digest(char *buffer, uint32_t max_length, wot_td_di
 }
 
 //Todo: Implement
-char * _serialize_sec_scheme_api_key(char *buffer, uint32_t max_length, wot_td_api_key_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_api_key(const char *buffer, uint32_t max_length, wot_td_api_key_sec_scheme_t *scheme){
     (void)max_length;
     (void)buffer;
     (void)scheme;
@@ -319,7 +319,7 @@ char * _serialize_sec_scheme_api_key(char *buffer, uint32_t max_length, wot_td_a
 }
 
 //Todo: Implement
-char * _serialize_sec_scheme_bearer(char *buffer, uint32_t max_length, wot_td_bearer_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_bearer(const char *buffer, uint32_t max_length, wot_td_bearer_sec_scheme_t *scheme){
     (void)max_length;
     (void)buffer;
     (void)scheme;
@@ -327,7 +327,7 @@ char * _serialize_sec_scheme_bearer(char *buffer, uint32_t max_length, wot_td_be
 }
 
 //Todo: Implement
-char * _serialize_sec_scheme_psk(char *buffer, uint32_t max_length, wot_td_psk_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_psk(const char *buffer, uint32_t max_length, wot_td_psk_sec_scheme_t *scheme){
     (void)max_length;
     (void)buffer;
     (void)scheme;
@@ -335,14 +335,14 @@ char * _serialize_sec_scheme_psk(char *buffer, uint32_t max_length, wot_td_psk_s
 }
 
 //Todo: Implement
-char * _serialize_sec_scheme_oauth2(char *buffer, uint32_t max_length, wot_td_oauth2_sec_scheme_t *scheme){
+const char * _serialize_sec_scheme_oauth2(const char *buffer, uint32_t max_length, wot_td_oauth2_sec_scheme_t *scheme){
     (void)max_length;
     (void)buffer;
     (void)scheme;
     return buffer;
 }
 
-char * _serialize_security_schema(char *buffer, uint32_t max_length, wot_td_sec_scheme_t *security){
+const char * _serialize_security_schema(const char *buffer, uint32_t max_length, wot_td_sec_scheme_t *security){
     switch (security->scheme_type) {
         default:
             return buffer;
@@ -362,7 +362,7 @@ char * _serialize_security_schema(char *buffer, uint32_t max_length, wot_td_sec_
 }
 
 //Todo: Full implementation
-char * _serialize_security_array(char *buffer, uint32_t max_length, wot_td_security_t *security, char *lang){
+const char * _serialize_security_array(const char *buffer, uint32_t max_length, wot_td_security_t *security, char *lang){
     wot_td_security_t *tmp_sec = security;
     wot_td_sec_scheme_t *scheme = NULL;
     char security_name[10];
@@ -401,48 +401,48 @@ char * _serialize_security_array(char *buffer, uint32_t max_length, wot_td_secur
     return buffer;
 }
 
-void _form_op_type_string(char *result, wot_td_form_op_type_t op_type){
+void _form_op_type_string(const char *result, wot_td_form_op_type_t op_type){
     switch (op_type) {
         case FORM_OP_READ_PROPERTY:
-            strcpy(result, "readproperty");
+            strcpy((char *) result, "readproperty");
             break;
         case FORM_OP_WRITE_PROPERTY:
-            strcpy(result, "writeproperty");
+            strcpy((char *)result, "writeproperty");
             break;
         case FORM_OP_OBSERVE_PROPERTY:
-            strcpy(result, "observeproperty");
+            strcpy((char *) result, "observeproperty");
             break;
         case FORM_OP_UNOBSERVE_PROPERTY:
-            strcpy(result, "unobserveproperty");
+            strcpy((char *) result, "unobserveproperty");
             break;
         case FORM_OP_INVOKE_ACTION:
-            strcpy(result, "invokeaction");
+            strcpy((char *) result, "invokeaction");
             break;
         case FORM_OP_SUBSCRIBE_EVENT:
-            strcpy(result, "subscribeevent");
+            strcpy((char *) result, "subscribeevent");
             break;
         case FORM_OP_UNSUBSCRIBE_EVENT:
-            strcpy(result, "unsubscribeevent");
+            strcpy((char *) result, "unsubscribeevent");
             break;
         case FORM_OP_READ_ALL_PROPERTIES:
-            strcpy(result, "readallproperties");
+            strcpy((char *) result, "readallproperties");
             break;
         case FORM_OP_WRITE_ALL_PROPERTIES:
-            strcpy(result, "writeallproperties");
+            strcpy((char *) result, "writeallproperties");
             break;
         case FORM_OP_READ_MULTIPLE_PROPERTIES:
-            strcpy(result, "readmultipleproperties");
+            strcpy((char *) result, "readmultipleproperties");
             break;
         case FORM_OP_WRITE_MULTIPLE_PROPERTIES:
-            strcpy(result, "writemultipleproperties");
+            strcpy((char *) result, "writemultipleproperties");
             break;
         default:
-            strcpy(result, "");
+            strcpy((char *) result, "");
             break;
     }
 }
 
-char * _serialize_op_array(char *buffer, uint32_t max_length, wot_td_form_op_t *op){
+const char * _serialize_op_array(const char *buffer, uint32_t max_length, wot_td_form_op_t *op){
     (void)max_length;
     wot_td_form_op_t *tmp = op;
     char op_obj_name[25];
@@ -479,7 +479,7 @@ void _content_encoding_string(char *result, wot_td_content_encoding_type_t encod
     }
 }
 
-char * _serialize_form_array(char *buffer, uint32_t max_length, wot_td_form_t *form){
+const char * _serialize_form_array(const char *buffer, uint32_t max_length, wot_td_form_t *form){
     wot_td_form_t *tmp = form;
     char op_obj_key[] = "op";
     char href_obj_key[] = "href";
@@ -553,7 +553,7 @@ char * _serialize_form_array(char *buffer, uint32_t max_length, wot_td_form_t *f
 }
 
 //Todo: Implement other properties
-char * _serialize_int_aff(char *buffer, uint32_t max_length, wot_td_int_affordance_t *int_aff){
+const char * _serialize_int_aff(const char *buffer, uint32_t max_length, wot_td_int_affordance_t *int_aff){
     char forms_obj_key[] = "forms";
     buffer = _wot_td_fill_json_obj_key(buffer, forms_obj_key, sizeof(forms_obj_key)-1);
     buffer = _serialize_form_array(buffer, max_length, int_aff->forms);
@@ -561,7 +561,7 @@ char * _serialize_int_aff(char *buffer, uint32_t max_length, wot_td_int_affordan
     return buffer;
 }
 
-char * _serialize_prop_aff_array(char *buffer, uint32_t max_length, wot_td_prop_affordance_t *prop_aff){
+const char * _serialize_prop_aff_array(const char *buffer, uint32_t max_length, wot_td_prop_affordance_t *prop_aff){
     wot_td_prop_affordance_t *tmp = prop_aff;
     char prop_aff_obj_key[] = "properties";
     char observable_obj_key[] = "observable";
@@ -582,9 +582,9 @@ char * _serialize_prop_aff_array(char *buffer, uint32_t max_length, wot_td_prop_
     return _wot_td_fill_json_buffer(buffer, "}", 1);
 }
 
-char * _serialize_data_schema(char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang);
+const char * _serialize_data_schema(const char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang);
 
-char * _serialize_data_schema_object(char *buffer, uint32_t max_length, wot_td_object_schema_t *schema, char *lang){
+const char * _serialize_data_schema_object(const char *buffer, uint32_t max_length, wot_td_object_schema_t *schema, char *lang){
     char properties_obj_key[] = "properties";
     buffer = _wot_td_fill_json_obj_key(buffer, properties_obj_key, sizeof(properties_obj_key)-1);
     wot_td_data_schema_map_t *property = schema->properties;
@@ -608,7 +608,7 @@ char * _serialize_data_schema_object(char *buffer, uint32_t max_length, wot_td_o
     return buffer;
 }
 
-char * _serialize_data_schema_array(char *buffer, uint32_t max_length, wot_td_array_schema_t *schema, char *lang){
+const char * _serialize_data_schema_array(const char *buffer, uint32_t max_length, wot_td_array_schema_t *schema, char *lang){
     if(schema->items != NULL){
         char item_obj_key[] = "items";
         buffer = _wot_td_fill_json_obj_key(buffer, item_obj_key, sizeof(item_obj_key)-1);
@@ -645,7 +645,7 @@ char * _serialize_data_schema_array(char *buffer, uint32_t max_length, wot_td_ar
     return buffer;
 }
 
-char * _serialize_data_schema_number(char *buffer, uint32_t max_length, wot_td_number_schema_t *schema){
+const char * _serialize_data_schema_number(const char *buffer, uint32_t max_length, wot_td_number_schema_t *schema){
     (void)max_length;
     if(schema->minimum != NULL){
         char min_obj_key[] = "minimum";
@@ -656,7 +656,7 @@ char * _serialize_data_schema_number(char *buffer, uint32_t max_length, wot_td_n
     return buffer;
 }
 
-char * _serialize_data_schema_int(char *buffer, uint32_t max_length, wot_td_integer_schema_t *schema){
+const char * _serialize_data_schema_int(const char *buffer, uint32_t max_length, wot_td_integer_schema_t *schema){
     (void)max_length;
     if(schema->minimum != NULL){
         char min_obj_key[] = "minimum";
@@ -675,7 +675,7 @@ char * _serialize_data_schema_int(char *buffer, uint32_t max_length, wot_td_inte
     return buffer;
 }
 
-char * _serialize_data_schema_subclass(char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang){
+const char * _serialize_data_schema_subclass(const char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang){
     switch (*data_schema->json_type) {
         case JSON_TYPE_OBJECT:
             return _serialize_data_schema_object(buffer, max_length, (wot_td_object_schema_t *) data_schema->schema, lang);
@@ -691,7 +691,7 @@ char * _serialize_data_schema_subclass(char *buffer, uint32_t max_length, wot_td
 }
 
 //Todo: Implement
-char * _serialize_data_schema(char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang){
+const char * _serialize_data_schema(const char *buffer, uint32_t max_length, wot_td_data_schema_t *data_schema, char *lang){
     bool has_previous_prop = false;
     buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
 
@@ -794,7 +794,7 @@ char * _serialize_data_schema(char *buffer, uint32_t max_length, wot_td_data_sch
     return buffer;
 }
 
-char * _serialize_action_aff_array(char *buffer, uint32_t max_length, wot_td_action_affordance_t *action_aff, char *lang){
+const char * _serialize_action_aff_array(const char *buffer, uint32_t max_length, wot_td_action_affordance_t *action_aff, char *lang){
     wot_td_action_affordance_t *tmp = action_aff;
     char action_aff_obj_key[] = "actions";
     char input_obj_key[] = "input";
@@ -827,7 +827,7 @@ char * _serialize_action_aff_array(char *buffer, uint32_t max_length, wot_td_act
     return _wot_td_fill_json_buffer(buffer, "}", 1);
 }
 
-char * _serialize_event_aff_array(char *buffer, uint32_t max_length, wot_td_event_affordance_t *event_aff, char *lang){
+const char * _serialize_event_aff_array(const char *buffer, uint32_t max_length, wot_td_event_affordance_t *event_aff, char *lang){
     wot_td_event_affordance_t *tmp = event_aff;
     char events_obj_key[] = "events";
     char subscription_obj_key[] = "subscription";
@@ -868,7 +868,7 @@ char * _serialize_event_aff_array(char *buffer, uint32_t max_length, wot_td_even
     return _wot_td_fill_json_buffer(buffer, "}", 1);
 }
 
-char * _serialize_link_array(char *buffer, uint32_t max_length, wot_td_link_t *links){
+const char * _serialize_link_array(const char *buffer, uint32_t max_length, wot_td_link_t *links){
     (void)max_length;
     wot_td_link_t *tmp = links;
     char href_obj_key[] = "href";
@@ -910,7 +910,7 @@ char * _serialize_link_array(char *buffer, uint32_t max_length, wot_td_link_t *l
     return _wot_td_fill_json_buffer(buffer, "]", 1);
 }
 
-int _wot_td_serialize_thing_json(char *buffer, uint32_t max_length, wot_td_thing_t *thing){
+int _wot_td_serialize_thing_json(const char *buffer, uint32_t max_length, wot_td_thing_t *thing){
     bool has_previous_prop = false;
     buffer = _wot_td_fill_json_buffer(buffer, "{", 1);
 
@@ -1034,7 +1034,7 @@ int _wot_td_serialize_thing_json(char *buffer, uint32_t max_length, wot_td_thing
     return 0;
 }
 
-int wot_td_serialize_thing(char *buffer, uint32_t max_length, wot_td_thing_t *thing, wot_td_serialize_type_t type){
+int wot_td_serialize_thing(const char *buffer, uint32_t max_length, wot_td_thing_t *thing, wot_td_serialize_type_t type){
     if (type == WOT_TD_SERIALIZE_JSON){
         return _wot_td_serialize_thing_json(buffer, max_length, thing);
     }

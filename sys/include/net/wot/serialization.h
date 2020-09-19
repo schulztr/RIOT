@@ -6,6 +6,6 @@ typedef enum {
     WOT_TD_SERIALIZE_CBOR
 } wot_td_serialize_type_t;
 
-int wot_td_serialize_thing(char *buffer, uint32_t max_length, wot_td_thing_t *thing, wot_td_serialize_type_t type);
+int wot_td_serialize_thing(const char *buffer, uint32_t max_length, wot_td_thing_t *thing, wot_td_serialize_type_t type);
 
 #endif //WOT_SERIALIZATION_H
