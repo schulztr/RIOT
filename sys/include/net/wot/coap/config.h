@@ -1,8 +1,8 @@
-//
-// Created by citrullin on 19.09.20.
-//
+#ifndef WOT_COAP_CONFIG_H
+#define WOT_COAP_CONFIG_H
 
-#ifndef RIOT_CONFIG_H
-#define RIOT_CONFIG_H
+#include "net/wot/coap.h"
 
-#endif //RIOT_CONFIG_H
+int wot_td_coap_config_init(wot_td_thing_t *thing);
+
+#endif //WOT_COAP_CONFIG_H

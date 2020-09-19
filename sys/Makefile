@@ -154,9 +154,6 @@ endif
 ifneq (,$(filter cord_ep,$(USEMODULE)))
     DIRS += net/application_layer/cord/ep
 endif
-ifneq (,$(filter wot,$(USEMODULE)))
-    DIRS += net/application_layer/wot
-endif
 ifneq (,$(filter bluetil_%,$(USEMODULE)))
   DIRS += net/ble/bluetil
 endif
@@ -171,6 +168,9 @@ ifneq (,$(filter suit%,$(USEMODULE)))
 endif
 ifneq (,$(filter netif,$(USEMODULE)))
     DIRS += net/netif
+endif
+ifneq (,$(filter wot wot_%,$(USEMODULE)))
+    DIRS += net/wot
 endif
 ifneq (,$(filter ztimer_core,$(USEMODULE)))
     DIRS += ztimer
