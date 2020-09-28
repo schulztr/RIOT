@@ -41,9 +41,7 @@ endif
 ifneq (,$(filter wot_coap,$(USEMODULE)))
   USEMODULE += gnrc_netdev_default
   USEMODULE += gnrc_ipv6_router_default
-  USEMODULE += nanocoap_sock
-  USEMODULE += gnrc_udp
-  USEMODULE += gnrc_sock_udp
+  USEMODULE += gcoap
 endif
 
 ifneq (,$(filter shell_commands,$(USEMODULE)))

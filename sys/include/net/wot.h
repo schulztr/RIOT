@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 typedef struct json_ld_context {
-    const char *key; /**< namespace of TD Context Extensions, max length 32**/
-    const char *value; /**< max length 64**/
+    const char *key;
+    const char *value;
     struct json_ld_context *next;
 } json_ld_context_t;
 
@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct {
     const char *schema;
-    char *value;
+    const char *value;
 } wot_td_uri_t;
 
 typedef struct {
