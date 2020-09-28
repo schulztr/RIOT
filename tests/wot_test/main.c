@@ -60,10 +60,8 @@ wot_td_thing_t wot_thing = {
         .id = &wot_thing_id,
 };
 
-void _string_receiver(const char * string, uint32_t length){
-    for(int i = 0; i < (int)length; i++){
-        printf("%c", string[i]);
-    }
+void _string_receiver(const char * string){
+    printf("%c", string[i]);
 }
 
 int _thing_full_json(void){

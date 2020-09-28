@@ -5,12 +5,7 @@
 #include "msg.h"
 #include "net/wot.h"
 
-/**
- * @brief   pid definitions, to be able to iterate over them
- */
-kernel_pid_t wot_coap_pid = KERNEL_PID_UNDEF;
-
-#define WOT_TD_ADD_CONTENT(entity, prop, var, type) ({          \
+#define WOT_TD_ADD_CONTENT(entity, prop, var, type)             \
     if(entity == NULL || var == NULL){                          \
         return -EINVAL;                                         \
     }                                                           \
@@ -27,10 +22,9 @@ kernel_pid_t wot_coap_pid = KERNEL_PID_UNDEF;
         }                                                       \
         tmp->next = var;                                        \
     }                                                           \
-    return 0;                                                   \
-})
+    return 0;
 
-#define WOT_TD_RM_CONTENT(entity, prop, var, type) ({           \
+#define WOT_TD_RM_CONTENT(entity, prop, var, type)              \
     if(entity == NULL || var == NULL){                          \
         return -EINVAL;                                         \
     }                                                           \
@@ -54,27 +48,26 @@ kernel_pid_t wot_coap_pid = KERNEL_PID_UNDEF;
         return -EFAULT;                                         \
     }                                                           \
                                                                 \
-    return 1;                                                   \
-})
+    return 1;
 
-#define WOT_TD_NTH_CONTENT(entity, prop, type) ({               \
+
+#define WOT_TD_NTH_CONTENT(entity, prop, type)                  \
     type *tmp = entity->prop;                                   \
                                                                 \
     for (int i = 0; (i < pos) && tmp; i++) {                    \
         tmp = tmp->next;                                        \
     }                                                           \
-    return tmp;                                                 \
-})
+    return tmp;
 
-#define WOT_TD_FIND_x(entity, prop, type, x) ({                 \
+
+#define WOT_TD_FIND_x(entity, prop, type, x)                    \
     type *tmp = entity->prop;                                   \
                                                                 \
     while(tmp != NULL && strcmp(tmp->x, x) != 0){               \
         tmp = tmp->next;                                        \
     }                                                           \
                                                                 \
-    return tmp;                                                 \
-})
+    return tmp;
 
 int wot_td_thing_context_add(wot_td_thing_t *thing, json_ld_context_t *context){
     WOT_TD_ADD_CONTENT(thing, context, context, json_ld_context_t);
