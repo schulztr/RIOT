@@ -57,7 +57,10 @@ void _wot_td_fill_json_string(wot_td_serialize_receiver_t receiver, const char *
 
 void _wot_td_fill_json_uri(wot_td_serialize_receiver_t receiver, wot_td_uri_t *uri, wot_td_ser_slicer_t *slicer){
     _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
-    _wot_td_fill_json_receiver(receiver, uri->schema, strlen(uri->schema), slicer);
+    //Fixme: Not very clean to have it here. Find better solution.
+    if(uri->schema != NULL){
+        _wot_td_fill_json_receiver(receiver, uri->schema, strlen(uri->schema), slicer);
+    }
     _wot_td_fill_json_receiver(receiver, uri->value, strlen(uri->value), slicer);
     _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
 }
@@ -428,7 +431,7 @@ void _form_op_type_string(wot_td_serialize_receiver_t receiver, wot_td_form_op_t
             _wot_td_fill_json_string(receiver, "writemultipleproperties", sizeof("writemultipleproperties"), slicer);
             break;
         default:
-            _wot_td_fill_json_string(receiver, "", sizeof(""), slicer);
+            _wot_td_fill_json_string(receiver, " ", sizeof(" "), slicer);
             break;
     }
 }
@@ -478,10 +481,13 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
         if(tmp->op != NULL){
             _wot_td_fill_json_obj_key(receiver, op_obj_key, sizeof(op_obj_key)-1, slicer);
             _serialize_op_array(receiver, tmp->op, slicer);
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         }
-        _wot_td_fill_json_obj_key(receiver, href_obj_key, sizeof(href_obj_key)-1, slicer);
-        _wot_td_fill_json_uri(receiver, tmp->href, slicer);
+
+        if(tmp->href != NULL && tmp->href->value != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _wot_td_fill_json_obj_key(receiver, href_obj_key, sizeof(href_obj_key)-1, slicer);
+            _wot_td_fill_json_uri(receiver, tmp->href, slicer);
+        }
 
         if(tmp->content_type != NULL){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);

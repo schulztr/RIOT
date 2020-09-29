@@ -1,39 +1,47 @@
+#include <stddef.h>
 #include "net/wot/config.h"
 
 json_ld_context_t wot_td_saref_context = {
         .key = "saref",
         .value = "https://w3id.org/saref#",
+        .next = NULL,
 };
 
 wot_td_type_t wot_td_saref_type = {
-        .value = "saref:LightSwitch"
+        .value = "saref:LightSwitch",
+        .next = NULL,
 };
 
 wot_td_multi_lang_t wot_td_title_de = {
         .tag = "de",
-        .value = "Deutscher Titel"
+        .value = "Deutscher Titel",
+        .next = NULL,
 };
 
 wot_td_multi_lang_t wot_td_title_en = {
         .tag = "en",
-        .value = "English title"
+        .value = "English title",
+        .next = NULL,
 };
 
 wot_td_multi_lang_t wot_td_description_de = {
         .tag = "de",
-        .value = "Deutsche Beschreibung"
+        .value = "Deutsche Beschreibung",
+        .next = NULL,
 };
 
 wot_td_multi_lang_t wot_td_description_en = {
         .tag = "en",
-        .value = "English description"
+        .value = "English description",
+        .next = NULL,
 };
 
 char wot_td_default_lang_tag[] = "en";
 
 wot_td_multi_lang_t wot_td_sec_scheme_desc_en = {
         .tag = "en",
-        .value = "Basic sec schema"
+        .value = "Basic sec schema",
+        .next = NULL,
 };
 
 wot_td_basic_sec_scheme_t wot_td_basic_security_scheme = {
@@ -50,6 +58,7 @@ wot_td_sec_scheme_t wot_td_sec_scheme = {
 wot_td_security_t wot_td_security_schema = {
         .key = "basic_schema",
         .value = &wot_td_sec_scheme,
+        .next = NULL,
 };
 
 int wot_td_config_init(wot_td_thing_t *thing){
