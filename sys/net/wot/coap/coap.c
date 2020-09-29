@@ -10,11 +10,10 @@
 #include "msg.h"
 
 #define WOT_TD_COAP_AFF_ADD(ptr, func_name)                             \
-    gcoap_listener_t *listener = _find_last_gcoap_listener();           \
-    listener->next = ptr->coap_resource;                                \
     func_name(thing, ptr->affordance);                                  \
     _add_endpoint_to_int_affordance(                                    \
     ptr->affordance->int_affordance, ptr->coap_resource);               \
+    gcoap_register_listener(ptr->coap_resource);                        \
     return 0;
 
 
@@ -27,8 +26,10 @@ wot_td_thing_t wot_thing;
 
 static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
 
+const char wot_td_coap_schema[] = "coap://";
+
 wot_td_uri_t _wot_thing_id = {
-        .schema = "coap://",
+        .schema = wot_td_coap_schema,
         .value = wot_thing_addr,
 };
 
@@ -73,13 +74,13 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
 
 //Todo: Implement WoT-discovery.
 //https://w3c.github.io/wot-discovery/
-static const coap_resource_t _wot_td_resources[] = {
+static const coap_resource_t _wot_td_coap_resources[] = {
         { "/.well-known/wot-thing-description", COAP_GET, _wot_td_coap_handler, NULL },
 };
 
-static gcoap_listener_t _wot_td_gcoap_listener = {
-        &_wot_td_resources[0],
-        sizeof(_wot_td_resources) / sizeof(_wot_td_resources[0]),
+gcoap_listener_t _wot_td_gcoap_listener = {
+        &_wot_td_coap_resources[0],
+        sizeof(_wot_td_coap_resources) / sizeof(_wot_td_coap_resources[0]),
         NULL,
         NULL
 };
@@ -116,14 +117,15 @@ int wot_td_coap_event_add(wot_td_thing_t *thing, wot_td_coap_event_affordance_t 
 void wot_td_coap_server_init(void)
 {
     wot_td_thing_context_add(&wot_thing, &wot_td_coap_binding_context);
-    wot_td_config_init(&wot_thing);
-    wot_td_coap_config_init(&wot_thing);
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
     //Todo: Implement proper IP address resolve solution and add it to the TD
     ipv6_addr_t ip_addr = {0};
     memcpy(ip_addr.u8, wot_coap_sock.addr.ipv6, 16);
     ipv6_addr_to_str(wot_thing_addr, &ip_addr, IPV6_ADDR_MAX_STR_LEN);
+
+    wot_td_config_init(&wot_thing);
+    wot_td_coap_config_init(&wot_thing);
 
     gcoap_init();
     gcoap_register_listener(&_wot_td_gcoap_listener);
