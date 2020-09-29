@@ -61,8 +61,6 @@ wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
 
 int wot_td_coap_config_init(wot_td_thing_t *thing){
     wot_td_coap_prop_add(thing, &wot_coap_echo_affordance);
-    printf("echo value: %s\n", wot_coap_echo_affordance.affordance->int_affordance->forms->href->value);
-    printf("thing prop href value: %s\n", thing->properties->int_affordance->forms->href->value);
     return 0;
 }
 

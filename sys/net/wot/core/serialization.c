@@ -536,7 +536,7 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
             _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
         }
 
-        //Todo: Continue
+        //Todo: Continue, implement response
 
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         tmp = tmp->next;
