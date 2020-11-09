@@ -36,11 +36,13 @@ wot_td_form_op_t wot_td_echo_form_op = {
 };
 
 wot_td_uri_t wot_td_echo_aff_form_href = {0};
+wot_td_extension_t wot_td_echo_form_coap = {0};
 
 wot_td_form_t wot_td_echo_aff_form = {
         .op = &wot_td_echo_form_op,
         .content_type = &json_content_type,
         .href = &wot_td_echo_aff_form_href,
+        .extension = &wot_td_echo_form_coap,
         .next = NULL,
 };
 

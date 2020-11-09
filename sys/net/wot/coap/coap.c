@@ -12,7 +12,9 @@
 #define WOT_TD_COAP_AFF_ADD(ptr, func_name)                             \
     func_name(thing, ptr->affordance);                                  \
     _add_endpoint_to_int_affordance(                                    \
-    ptr->affordance->int_affordance, ptr->coap_resource);               \
+        ptr->affordance->int_affordance, ptr->coap_resource);           \
+    _add_method_to_int_affordance(                                      \
+        ptr->affordance->int_affordance, ptr->coap_resource);           \
     gcoap_register_listener(ptr->coap_resource);                        \
     return 0;
 
@@ -40,9 +42,62 @@ json_ld_context_t wot_td_coap_binding_context = {
         .value = "http://www.example.org/coap-binding#",
 };
 
+//static kernel_pid_t wot_td_coap_pid;
+//static char wot_td_coap_stack[THREAD_STACKSIZE_DEFAULT + THREAD_EXTRA_STACKSIZE_PRINTF];
+
+const char coap_get_method_name[] = "GET";
+const char coap_post_method_name[] = "POST";
+const char coap_put_method_name[] = "PUT";
+
+const char wot_td_coap_method_name[] = "methodName";
+
 coap_block_slicer_t _wot_td_coap_slicer;
 ssize_t _wot_td_coap_plen;
 uint8_t *_wot_td_coap_buf;
+
+void _wot_td_coap_write_string(
+        wot_td_serialize_receiver_t receiver, const char * string, size_t length){
+    for(size_t i = 0; i < length; i++){
+        receiver(&string[i]);
+    }
+}
+
+void _wot_td_coap_write_cov_method_json_key(wot_td_serialize_receiver_t receiver){
+    receiver("\"");
+    _wot_td_coap_write_string(
+            receiver, wot_td_coap_binding_context.key,
+            sizeof(wot_td_coap_binding_context.key));
+    receiver(":");
+    _wot_td_coap_write_string(
+            receiver, wot_td_coap_method_name, sizeof(wot_td_coap_method_name));
+    receiver("\"");
+    receiver(":");
+}
+
+void _wot_td_coap_method_ser(
+        wot_td_serialize_receiver_t receiver, const char * name, void * data){
+    if(name == wot_td_coap_binding_context.key){
+        coap_method_flags_t *methods = (coap_method_flags_t*)data;
+
+        _wot_td_coap_write_cov_method_json_key(receiver);
+
+        receiver("\"");
+        if(*methods & COAP_GET){
+            _wot_td_coap_write_string(
+                    receiver, coap_get_method_name,
+                    sizeof(coap_get_method_name));
+        }else if(*methods & COAP_POST){
+            _wot_td_coap_write_string(
+                    receiver, coap_post_method_name,
+                    sizeof(coap_post_method_name));
+        }else if(*methods & COAP_PUT){
+            _wot_td_coap_write_string(
+                    receiver, coap_put_method_name,
+                    sizeof(coap_put_method_name));
+        }
+        receiver("\"");
+    }
+}
 
 void _wot_td_coap_ser_receiver(const char *c){
     _wot_td_coap_plen += coap_blockwise_put_char(&_wot_td_coap_slicer, _wot_td_coap_buf+_wot_td_coap_plen, (char) *c);
@@ -91,6 +146,19 @@ gcoap_listener_t * _find_last_gcoap_listener(void){
         listener = listener->next;
     }
     return listener;
+}
+
+//Todo: Add COAP_MATCH_SUBTREE to href. 
+void _add_method_to_int_affordance(wot_td_int_affordance_t * affordance, gcoap_listener_t * listener){
+    wot_td_form_t *form = affordance->forms;
+    wot_td_extension_t *extension;
+    while(form != NULL){
+        extension = form->extension;
+        extension->name = wot_td_coap_binding_context.key;
+        extension->data = &(listener->resources->methods);
+        extension->parser = (wot_td_ser_parser_t) &_wot_td_coap_method_ser;
+        form = form->next;
+    }
 }
 
 void _add_endpoint_to_int_affordance(wot_td_int_affordance_t * affordance, gcoap_listener_t * listener){
