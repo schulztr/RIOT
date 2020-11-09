@@ -31,7 +31,7 @@ void _itoa(int n, char s[])
     _reverse(s);
 }
 
-//Todo: Use const vars for [ ], {, } etc. for whole module
+//Todo: Use const vars for [ ], { } etc. for whole module
 //Todo: Validate Thing struct. Separate functions?
 
 //Fixme: circuit breaker pattern? IPC message passing? Make it more elegant.
@@ -534,6 +534,17 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
                 scope = scope->next;
             }
             _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
+        }
+
+        if(tmp->expected_response != NULL){
+
+        }
+
+        if(tmp->extension != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            wot_td_extension_t *extension = tmp->extension;
+            wot_td_ser_parser_t parser = extension->parser;
+            parser(receiver, extension->name, extension->data);
         }
 
         //Todo: Continue, implement response

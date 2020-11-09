@@ -129,6 +129,15 @@ typedef struct {
     wot_td_content_type_t content_type;
 } wot_td_expected_res_t;
 
+typedef void (*wot_td_serialize_receiver_t)(const char *c);
+typedef void (*wot_td_ser_parser_t)(wot_td_serialize_receiver_t receiver, const char * name, const void * data);
+
+typedef struct wot_td_extension {
+    const char *name;
+    const void *data;
+    wot_td_ser_parser_t parser;
+} wot_td_extension_t;
+
 typedef struct wot_td_form {
     wot_td_form_op_t *op;
     wot_td_uri_t *href;
@@ -138,6 +147,7 @@ typedef struct wot_td_form {
     wot_td_security_t *security;
     wot_td_auth_scopes_t *scopes;
     wot_td_expected_res_t *expected_response;
+    wot_td_extension_t *extension;
     struct wot_td_form *next;
 } wot_td_form_t;
 
