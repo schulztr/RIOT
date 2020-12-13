@@ -28,8 +28,6 @@ static gcoap_listener_t _coap_listener = {
         NULL
 };
 
-wot_td_content_type_t json_content_type = CONTENT_TYPE_JSON;
-
 wot_td_form_op_t wot_td_echo_form_op = {
         .op_type = FORM_OP_READ_PROPERTY,
         .next = NULL,
@@ -38,9 +36,14 @@ wot_td_form_op_t wot_td_echo_form_op = {
 wot_td_uri_t wot_td_echo_aff_form_href = {0};
 wot_td_extension_t wot_td_echo_form_coap = {0};
 
+wot_td_content_type_t wot_td_echo_content_type = {
+        .media_type = CONTENT_TYPE_TEXT_PLAIN,
+        .media_type_paramter = NULL
+};
+
 wot_td_form_t wot_td_echo_aff_form = {
         .op = &wot_td_echo_form_op,
-        .content_type = &json_content_type,
+        .content_type = &wot_td_echo_content_type,
         .href = &wot_td_echo_aff_form_href,
         .extension = &wot_td_echo_form_coap,
         .next = NULL,

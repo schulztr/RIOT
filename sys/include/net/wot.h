@@ -118,15 +118,34 @@ typedef struct wot_td_form_op {
 } wot_td_form_op_t;
 
 typedef enum {
-    CONTENT_TYPE_JSON
+    CONTENT_TYPE_JSON,
+    CONTENT_TYPE_TEXT_PLAIN,
+    CONTENT_TYPE_JSON_LD,
+    CONTENT_TYPE_CSV
+} wot_td_media_type_t;
+
+typedef struct wot_td_media_type_parameter {
+    const char *key;
+    const char *value;
+    struct wot_td_media_type_parameter *next;
+} wot_td_media_type_parameter_t;
+
+typedef struct {
+    wot_td_media_type_t media_type;
+    wot_td_media_type_parameter_t *media_type_paramter;
 } wot_td_content_type_t;
 
 typedef enum {
-    CONTENT_ENCODING_GZIP
+    CONTENT_ENCODING_NONE,
+    CONTENT_ENCODING_GZIP,
+    CONTENT_ENCODING_COMPRESS,
+    CONTENT_ENCODING_DEFLATE,
+    CONTENT_ENCODING_IDENTITY,
+    CONTENT_ENCODING_BROTLI
 } wot_td_content_encoding_type_t;
 
 typedef struct {
-    wot_td_content_type_t content_type;
+    wot_td_content_type_t *content_type;
 } wot_td_expected_res_t;
 
 typedef void (*wot_td_serialize_receiver_t)(const char *c);
@@ -142,7 +161,7 @@ typedef struct wot_td_form {
     wot_td_form_op_t *op;
     wot_td_uri_t *href;
     wot_td_content_type_t *content_type;
-    wot_td_content_encoding_type_t *content_encoding;
+    wot_td_content_encoding_type_t content_encoding;
     const char *sub_protocol;
     wot_td_security_t *security;
     wot_td_auth_scopes_t *scopes;
