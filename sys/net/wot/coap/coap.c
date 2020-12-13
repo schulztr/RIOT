@@ -188,9 +188,6 @@ void wot_td_coap_server_init(void)
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
     //Todo: Implement proper IP address resolve solution and add it to the TD
-    ipv6_addr_t ip_addr = {0};
-    memcpy(ip_addr.u8, wot_coap_sock.addr.ipv6, 16);
-    ipv6_addr_to_str(wot_thing_addr, &ip_addr, IPV6_ADDR_MAX_STR_LEN);
 
     wot_td_config_init(&wot_thing);
     wot_td_coap_config_init(&wot_thing);

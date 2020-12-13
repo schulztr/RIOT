@@ -167,10 +167,10 @@ void _serialize_title_array(wot_td_serialize_receiver_t receiver, wot_td_multi_l
 
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
     while(tmp != NULL){
-        if(lang == NULL || strcmp(tmp->tag, lang) != 0){
-            has_previous_prop = true;
-            _serialize_lang(receiver, tmp, slicer);
-        }else{
+        has_previous_prop = true;
+        _serialize_lang(receiver, tmp, slicer);
+        
+        if(lang != NULL && strcmp(tmp->tag, lang) == 0){
             default_title = tmp;
         }
 
@@ -197,10 +197,11 @@ void _serialize_description_array(wot_td_serialize_receiver_t receiver, wot_td_m
     _wot_td_fill_json_obj_key(receiver, description_obj_key, sizeof(description_obj_key)-1, slicer);
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
     while(tmp != NULL){
-        if(lang == NULL || strcmp(tmp->tag, lang) != 0){
-            has_previous_prop = true;
-            _serialize_lang(receiver, tmp, slicer);
-        }else{
+
+        has_previous_prop = true;
+        _serialize_lang(receiver, tmp, slicer);
+
+        if(lang != NULL && strcmp(tmp->tag, lang) == 0){
             default_description = tmp;
         }
 
@@ -446,22 +447,54 @@ void _serialize_op_array(wot_td_serialize_receiver_t receiver, wot_td_form_op_t 
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
 
-//Todo: Implement for other content-types
-void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_type_t content_type, wot_td_ser_slicer_t *slicer){
-    switch (content_type) {
+void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_type_t *content_type, wot_td_ser_slicer_t *slicer){
+    _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
+    switch (content_type->media_type) {
         case CONTENT_TYPE_JSON:
-            _wot_td_fill_json_string(receiver, "application/json", sizeof("application/json"), slicer);
+            _wot_td_fill_json_receiver(receiver, "application/json", sizeof("application/json"), slicer);
             break;
+        case CONTENT_TYPE_TEXT_PLAIN:
+            _wot_td_fill_json_receiver(receiver, "text/plain", sizeof("text/plain"), slicer);
+            break;
+        case CONTENT_TYPE_JSON_LD:
+            _wot_td_fill_json_receiver(receiver, "application/ld+json", sizeof("application/ld+json"), slicer);
+            break;
+        case CONTENT_TYPE_CSV:
+            _wot_td_fill_json_receiver(receiver, "text/csv", sizeof("text/csv"), slicer);
+            break; 
         default:
             _wot_td_fill_json_string(receiver, "", sizeof(""), slicer);
             break;
     }
+    if(content_type->media_type_paramter != NULL){
+        _wot_td_fill_json_receiver(receiver, ";", 1, slicer);
+        wot_td_media_type_parameter_t *tmp = content_type->media_type_paramter;
+        while(tmp != NULL){
+            _wot_td_fill_json_receiver(receiver, tmp->key, strlen(tmp->key), slicer);
+            _wot_td_fill_json_receiver(receiver, "=", sizeof("="), slicer);
+            _wot_td_fill_json_receiver(receiver, tmp->value, strlen(tmp->value), slicer);
+            tmp = tmp->next;
+        }
+    }
+    _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
 }
 
 void _content_encoding_string(wot_td_serialize_receiver_t receiver, wot_td_content_encoding_type_t encoding, wot_td_ser_slicer_t *slicer){
     switch (encoding) {
         case CONTENT_ENCODING_GZIP:
             _wot_td_fill_json_string(receiver, "gzip", sizeof("gzip"), slicer);
+            break;
+        case CONTENT_ENCODING_COMPRESS:
+            _wot_td_fill_json_string(receiver, "compress", sizeof("compress"), slicer);
+            break;
+        case CONTENT_ENCODING_DEFLATE:
+            _wot_td_fill_json_string(receiver, "deflate", sizeof("deflate"), slicer);
+            break;
+        case CONTENT_ENCODING_IDENTITY:
+            _wot_td_fill_json_string(receiver, "identity", sizeof("identity"), slicer);
+            break;
+        case CONTENT_ENCODING_BROTLI:
+            _wot_td_fill_json_string(receiver, "br", sizeof("br"), slicer);
             break;
         default:
             _wot_td_fill_json_string(receiver, "", sizeof(""), slicer);
@@ -493,14 +526,14 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             char content_type_obj_key[] = "contentType";
             _wot_td_fill_json_obj_key(receiver, content_type_obj_key, sizeof(content_type_obj_key)-1, slicer);
-            _content_type_string(receiver, *tmp->content_type, slicer);
+            _content_type_string(receiver, tmp->content_type, slicer);
         }
 
-        if(tmp->content_encoding != NULL){
+        if(tmp->content_encoding != CONTENT_ENCODING_NONE){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             char content_encoding_obj_key[] = "contentCoding";
             _wot_td_fill_json_obj_key(receiver, content_encoding_obj_key, sizeof(content_encoding_obj_key)-1, slicer);
-            _content_encoding_string(receiver, *tmp->content_encoding, slicer);
+            _content_encoding_string(receiver, tmp->content_encoding, slicer);
         }
 
         if(tmp->sub_protocol != NULL){
