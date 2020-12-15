@@ -170,16 +170,6 @@ typedef struct wot_td_form {
     struct wot_td_form *next;
 } wot_td_form_t;
 
-typedef enum {
-    DATA_SCHEMA_ARRAY,
-    DATA_SCHEMA_BOOLEAN,
-    DATA_SCHEMA_NUMBER,
-    DATA_SCHEMA_INTEGER,
-    DATA_SCHEMA_OBJECT,
-    DATA_SCHEMA_STRING,
-    DATA_SCHEMA_NULL
-} wot_td_data_schema_type_t;
-
 typedef struct {
     const double *minimum;
     const double *maximum;
@@ -207,7 +197,8 @@ typedef enum {
     JSON_TYPE_NUMBER,
     JSON_TYPE_INTEGER,
     JSON_TYPE_BOOLEAN,
-    JSON_TYPE_NULL
+    JSON_TYPE_NULL,
+    JSON_TYPE_NONE
 } wot_td_json_type_t;
 
 typedef struct wot_td_type {
@@ -219,7 +210,7 @@ typedef struct {
     wot_td_type_t *type; /** (@)type in specs **/
     wot_td_multi_lang_t *titles;
     wot_td_multi_lang_t *descriptions;
-    wot_td_json_type_t *json_type;
+    wot_td_json_type_t json_type;
     const char *constant;
     const char *unit;
     struct wot_td_data_schemas *one_of; /** check validity of data **/
