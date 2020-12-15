@@ -44,19 +44,20 @@ wot_td_multi_lang_t wot_td_sec_scheme_desc_en = {
         .next = NULL,
 };
 
-wot_td_basic_sec_scheme_t wot_td_basic_security_scheme = {
+/*wot_td_basic_sec_scheme_t wot_td_basic_security_scheme = {
         .name = "querykey",
         .in = SECURITY_SCHEME_IN_QUERY
 };
+*/
 
 wot_td_sec_scheme_t wot_td_sec_scheme = {
         .scheme_type = SECURITY_SCHEME_NONE,
         .descriptions = &wot_td_sec_scheme_desc_en,
-        .scheme = &wot_td_basic_security_scheme
+        .scheme = NULL
 };
 
 wot_td_security_t wot_td_security_schema = {
-        .key = "basic_schema",
+        .key = "noschema",
         .value = &wot_td_sec_scheme,
         .next = NULL,
 };
