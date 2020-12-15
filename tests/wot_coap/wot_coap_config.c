@@ -37,7 +37,7 @@ wot_td_uri_t wot_td_echo_aff_form_href = {0};
 wot_td_extension_t wot_td_echo_form_coap = {0};
 
 wot_td_content_type_t wot_td_echo_content_type = {
-        .media_type = CONTENT_TYPE_JSON,
+        .media_type = CONTENT_TYPE_TEXT_PLAIN,
         .media_type_paramter = NULL
 };
 

@@ -237,28 +237,28 @@ void _serialize_description_array(wot_td_serialize_receiver_t receiver, wot_td_m
 void _security_scheme_string(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme_type_t scheme_type, wot_td_ser_slicer_t *slicer){
     switch (scheme_type) {
         case SECURITY_SCHEME_NONE:
-            _wot_td_fill_json_string(receiver, "nosec", sizeof("nosec"), slicer);
+            _wot_td_fill_json_string(receiver, "nosec", sizeof("nosec")-1, slicer);
             break;
         case SECURITY_SCHEME_BASIC:
-            _wot_td_fill_json_string(receiver, "basic", sizeof("basic"), slicer);
+            _wot_td_fill_json_string(receiver, "basic", sizeof("basic")-1, slicer);
             break;
         case SECURITY_SCHEME_DIGEST:
-            _wot_td_fill_json_string(receiver, "digest", sizeof("digest"), slicer);
+            _wot_td_fill_json_string(receiver, "digest", sizeof("digest")-1, slicer);
             break;
         case SECURITY_SCHEME_API_KEY:
-            _wot_td_fill_json_string(receiver, "apikey", sizeof("apikey"), slicer);
+            _wot_td_fill_json_string(receiver, "apikey", sizeof("apikey")-1, slicer);
             break;
         case SECURITY_SCHEME_BEARER:
-            _wot_td_fill_json_string(receiver, "bearer", sizeof("bearer"), slicer);
+            _wot_td_fill_json_string(receiver, "bearer", sizeof("bearer")-1, slicer);
             break;
         case SECURITY_SCHEME_PSK:
-            _wot_td_fill_json_string(receiver, "psk", sizeof("psk"), slicer);
+            _wot_td_fill_json_string(receiver, "psk", sizeof("psk")-1, slicer);
             break;
         case SECURITY_SCHEME_OAUTH2:
-            _wot_td_fill_json_string(receiver, "oauth2", sizeof("oauth2"), slicer);
+            _wot_td_fill_json_string(receiver, "oauth2", sizeof("oauth2")-1, slicer);
             break;
         default:
-            _wot_td_fill_json_string(receiver, "nosec", sizeof("nosec"), slicer);
+            _wot_td_fill_json_string(receiver, "nosec", sizeof("nosec")-1, slicer);
             break;
     }
 }
@@ -266,19 +266,19 @@ void _security_scheme_string(wot_td_serialize_receiver_t receiver, wot_td_sec_sc
 void _security_schema_in_string(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme_in_t in, wot_td_ser_slicer_t *slicer){
     switch(in){
         case SECURITY_SCHEME_IN_HEADER:
-            _wot_td_fill_json_string(receiver, "header", sizeof("header"), slicer);
+            _wot_td_fill_json_string(receiver, "header", sizeof("header")-1, slicer);
             break;
         case SECURITY_SCHEME_IN_QUERY:
-            _wot_td_fill_json_string(receiver, "query", sizeof("query"), slicer);
+            _wot_td_fill_json_string(receiver, "query", sizeof("query")-1, slicer);
             break;
         case SECURITY_SCHEME_IN_BODY:
-            _wot_td_fill_json_string(receiver, "body", sizeof("body"), slicer);
+            _wot_td_fill_json_string(receiver, "body", sizeof("body")-1, slicer);
             break;
         case SECURITY_SCHEME_IN_COOKIE:
-            _wot_td_fill_json_string(receiver, "cookie", sizeof("cookie"), slicer);
+            _wot_td_fill_json_string(receiver, "cookie", sizeof("cookie")-1, slicer);
             break;
         default:
-            _wot_td_fill_json_string(receiver, "header", sizeof("header"), slicer);
+            _wot_td_fill_json_string(receiver, "header", sizeof("header")-1, slicer);
     }
 }
 
@@ -293,9 +293,9 @@ void _serialize_sec_scheme_basic(wot_td_serialize_receiver_t receiver, wot_td_ba
 
 void _security_digest_qop_string(wot_td_serialize_receiver_t receiver, wot_td_digest_qop_t qop, wot_td_ser_slicer_t *slicer){
     if(qop == SECURITY_DIGEST_QOP_AUTH_INT){
-        _wot_td_fill_json_string(receiver, "auth-int", sizeof("auth-int"), slicer);
+        _wot_td_fill_json_string(receiver, "auth-int", sizeof("auth-int")-1, slicer);
     }else{
-        _wot_td_fill_json_string(receiver, "auth", sizeof("auth"), slicer);
+        _wot_td_fill_json_string(receiver, "auth", sizeof("auth")-1, slicer);
     }
 }
 
@@ -378,7 +378,9 @@ void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_secu
         _security_scheme_string(receiver, scheme->scheme_type, slicer);
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        if(scheme->scheme_type != SECURITY_SCHEME_NONE){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         _serialize_security_schema(receiver, scheme, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         tmp_sec = tmp_sec->next;
@@ -401,37 +403,37 @@ void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_secu
 void _form_op_type_string(wot_td_serialize_receiver_t receiver, wot_td_form_op_type_t op_type, wot_td_ser_slicer_t *slicer){
     switch (op_type) {
         case FORM_OP_READ_PROPERTY:
-            _wot_td_fill_json_string(receiver, "readproperty", sizeof("readproperty"), slicer);
+            _wot_td_fill_json_string(receiver, "readproperty", sizeof("readproperty")-1, slicer);
             break;
         case FORM_OP_WRITE_PROPERTY:
-            _wot_td_fill_json_string(receiver, "writeproperty", sizeof("writeproperty"), slicer);
+            _wot_td_fill_json_string(receiver, "writeproperty", sizeof("writeproperty")-1, slicer);
             break;
         case FORM_OP_OBSERVE_PROPERTY:
-            _wot_td_fill_json_string(receiver, "writeproperty", sizeof("writeproperty"), slicer);
+            _wot_td_fill_json_string(receiver, "writeproperty", sizeof("writeproperty")-1, slicer);
             break;
         case FORM_OP_UNOBSERVE_PROPERTY:
-            _wot_td_fill_json_string(receiver, "unobserveproperty", sizeof("unobserveproperty"), slicer);
+            _wot_td_fill_json_string(receiver, "unobserveproperty", sizeof("unobserveproperty")-1, slicer);
             break;
         case FORM_OP_INVOKE_ACTION:
-            _wot_td_fill_json_string(receiver, "invokeaction", sizeof("invokeaction"), slicer);
+            _wot_td_fill_json_string(receiver, "invokeaction", sizeof("invokeaction")-1, slicer);
             break;
         case FORM_OP_SUBSCRIBE_EVENT:
-            _wot_td_fill_json_string(receiver, "subscribeevent", sizeof("subscribeevent"), slicer);
+            _wot_td_fill_json_string(receiver, "subscribeevent", sizeof("subscribeevent")-1, slicer);
             break;
         case FORM_OP_UNSUBSCRIBE_EVENT:
-            _wot_td_fill_json_string(receiver, "unsubscribeevent", sizeof("unsubscribeevent"), slicer);
+            _wot_td_fill_json_string(receiver, "unsubscribeevent", sizeof("unsubscribeevent")-1, slicer);
             break;
         case FORM_OP_READ_ALL_PROPERTIES:
-            _wot_td_fill_json_string(receiver, "readallproperties", sizeof("readallproperties"), slicer);
+            _wot_td_fill_json_string(receiver, "readallproperties", sizeof("readallproperties")-1, slicer);
             break;
         case FORM_OP_WRITE_ALL_PROPERTIES:
-            _wot_td_fill_json_string(receiver, "writeallproperties", sizeof("writeallproperties"), slicer);
+            _wot_td_fill_json_string(receiver, "writeallproperties", sizeof("writeallproperties")-1, slicer);
             break;
         case FORM_OP_READ_MULTIPLE_PROPERTIES:
-            _wot_td_fill_json_string(receiver, "readmultipleproperties", sizeof("readmultipleproperties"), slicer);
+            _wot_td_fill_json_string(receiver, "readmultipleproperties", sizeof("readmultipleproperties")-1, slicer);
             break;
         case FORM_OP_WRITE_MULTIPLE_PROPERTIES:
-            _wot_td_fill_json_string(receiver, "writemultipleproperties", sizeof("writemultipleproperties"), slicer);
+            _wot_td_fill_json_string(receiver, "writemultipleproperties", sizeof("writemultipleproperties")-1, slicer);
             break;
         default:
             _wot_td_fill_json_string(receiver, " ", sizeof(" "), slicer);
@@ -453,19 +455,19 @@ void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_t
     _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
     switch (content_type->media_type) {
         case CONTENT_TYPE_JSON:
-            _wot_td_fill_json_receiver(receiver, "application/json", sizeof("application/json"), slicer);
+            _wot_td_fill_json_receiver(receiver, "application/json", sizeof("application/json")-1, slicer);
             break;
         case CONTENT_TYPE_TEXT_PLAIN:
-            _wot_td_fill_json_receiver(receiver, "text/plain", sizeof("text/plain"), slicer);
+            _wot_td_fill_json_receiver(receiver, "text/plain", sizeof("text/plain")-1, slicer);
             break;
         case CONTENT_TYPE_JSON_LD:
-            _wot_td_fill_json_receiver(receiver, "application/ld+json", sizeof("application/ld+json"), slicer);
+            _wot_td_fill_json_receiver(receiver, "application/ld+json", sizeof("application/ld+json")-1, slicer);
             break;
         case CONTENT_TYPE_CSV:
-            _wot_td_fill_json_receiver(receiver, "text/csv", sizeof("text/csv"), slicer);
+            _wot_td_fill_json_receiver(receiver, "text/csv", sizeof("text/csv")-1, slicer);
             break; 
         default:
-            _wot_td_fill_json_string(receiver, "", sizeof(""), slicer);
+            _wot_td_fill_json_string(receiver, "", sizeof("")-1, slicer);
             break;
     }
     if(content_type->media_type_paramter != NULL){
@@ -484,22 +486,22 @@ void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_t
 void _content_encoding_string(wot_td_serialize_receiver_t receiver, wot_td_content_encoding_type_t encoding, wot_td_ser_slicer_t *slicer){
     switch (encoding) {
         case CONTENT_ENCODING_GZIP:
-            _wot_td_fill_json_string(receiver, "gzip", sizeof("gzip"), slicer);
+            _wot_td_fill_json_string(receiver, "gzip", sizeof("gzip")-1, slicer);
             break;
         case CONTENT_ENCODING_COMPRESS:
-            _wot_td_fill_json_string(receiver, "compress", sizeof("compress"), slicer);
+            _wot_td_fill_json_string(receiver, "compress", sizeof("compress")-1, slicer);
             break;
         case CONTENT_ENCODING_DEFLATE:
-            _wot_td_fill_json_string(receiver, "deflate", sizeof("deflate"), slicer);
+            _wot_td_fill_json_string(receiver, "deflate", sizeof("deflate")-1, slicer);
             break;
         case CONTENT_ENCODING_IDENTITY:
-            _wot_td_fill_json_string(receiver, "identity", sizeof("identity"), slicer);
+            _wot_td_fill_json_string(receiver, "identity", sizeof("identity")-1, slicer);
             break;
         case CONTENT_ENCODING_BROTLI:
-            _wot_td_fill_json_string(receiver, "br", sizeof("br"), slicer);
+            _wot_td_fill_json_string(receiver, "br", sizeof("br")-1, slicer);
             break;
         default:
-            _wot_td_fill_json_string(receiver, "", sizeof(""), slicer);
+            _wot_td_fill_json_string(receiver, "", sizeof("")-1, slicer);
             break;
     }
 }

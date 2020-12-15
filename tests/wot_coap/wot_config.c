@@ -50,7 +50,7 @@ wot_td_basic_sec_scheme_t wot_td_basic_security_scheme = {
 };
 
 wot_td_sec_scheme_t wot_td_sec_scheme = {
-        .scheme_type = SECURITY_SCHEME_BASIC,
+        .scheme_type = SECURITY_SCHEME_NONE,
         .descriptions = &wot_td_sec_scheme_desc_en,
         .scheme = &wot_td_basic_security_scheme
 };
