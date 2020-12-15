@@ -723,7 +723,7 @@ void _serialize_data_schema_int(wot_td_serialize_receiver_t receiver, wot_td_int
 }
 
 void _serialize_data_schema_subclass(wot_td_serialize_receiver_t receiver, wot_td_data_schema_t *data_schema, char *lang, wot_td_ser_slicer_t *slicer){
-    switch (*data_schema->json_type) {
+    switch (data_schema->json_type) {
         case JSON_TYPE_OBJECT:
             _serialize_data_schema_object(receiver, (wot_td_object_schema_t *) data_schema->schema, lang, slicer);
             break;
@@ -735,6 +735,35 @@ void _serialize_data_schema_subclass(wot_td_serialize_receiver_t receiver, wot_t
             break;
         case JSON_TYPE_INTEGER:
             _serialize_data_schema_int(receiver, (wot_td_integer_schema_t *) data_schema->schema, slicer);
+            break;
+        default:
+            return;
+    }
+}
+
+void _serialize_json_type(wot_td_serialize_receiver_t receiver, wot_td_json_type_t json_type, wot_td_ser_slicer_t *slicer) {
+    _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key+1, sizeof(wot_td_type_obj_key)-1, slicer);
+    switch(json_type){
+        case JSON_TYPE_ARRAY:
+            _wot_td_fill_json_string(receiver, "array", sizeof("array")-1, slicer);
+            break;
+        case JSON_TYPE_OBJECT:
+            _wot_td_fill_json_string(receiver, "object", sizeof("object")-1, slicer);
+            break;
+        case JSON_TYPE_NUMBER:
+            _wot_td_fill_json_string(receiver, "number", sizeof("number")-1, slicer);
+            break;  
+        case JSON_TYPE_INTEGER:
+            _wot_td_fill_json_string(receiver, "integer", sizeof("integer")-1, slicer);
+            break;
+        case JSON_TYPE_NULL:
+            _wot_td_fill_json_string(receiver, "null", sizeof("null")-1, slicer);
+            break;
+        case JSON_TYPE_BOOLEAN:
+            _wot_td_fill_json_string(receiver, "boolean", sizeof("boolean")-1, slicer);
+            break;
+        case JSON_TYPE_STRING:
+            _wot_td_fill_json_string(receiver, "string", sizeof("string")-1, slicer);
             break;
         default:
             return;
@@ -772,9 +801,10 @@ void _serialize_data_schema(wot_td_serialize_receiver_t receiver, wot_td_data_sc
         _serialize_description_array(receiver, data_schema->descriptions, lang, slicer);
     }
 
-    if(data_schema->json_type != NULL){
+    if(data_schema->json_type != JSON_TYPE_NONE){
         _previous_prop_check(receiver, has_previous_prop, slicer);
         has_previous_prop = true;
+        _serialize_json_type(receiver, data_schema->json_type, slicer);
         _serialize_data_schema_subclass(receiver, data_schema, lang, slicer);
     }
 
