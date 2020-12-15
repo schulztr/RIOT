@@ -66,10 +66,10 @@ void _wot_td_coap_write_cov_method_json_key(wot_td_serialize_receiver_t receiver
     receiver("\"");
     _wot_td_coap_write_string(
             receiver, wot_td_coap_binding_context.key,
-            sizeof(wot_td_coap_binding_context.key));
+            sizeof(wot_td_coap_binding_context.key)-1);
     receiver(":");
     _wot_td_coap_write_string(
-            receiver, wot_td_coap_method_name, sizeof(wot_td_coap_method_name));
+            receiver, wot_td_coap_method_name, sizeof(wot_td_coap_method_name)-1);
     receiver("\"");
     receiver(":");
 }
@@ -85,15 +85,15 @@ void _wot_td_coap_method_ser(
         if(*methods & COAP_GET){
             _wot_td_coap_write_string(
                     receiver, coap_get_method_name,
-                    sizeof(coap_get_method_name));
+                    sizeof(coap_get_method_name)-1);
         }else if(*methods & COAP_POST){
             _wot_td_coap_write_string(
                     receiver, coap_post_method_name,
-                    sizeof(coap_post_method_name));
+                    sizeof(coap_post_method_name)-1);
         }else if(*methods & COAP_PUT){
             _wot_td_coap_write_string(
                     receiver, coap_put_method_name,
-                    sizeof(coap_put_method_name));
+                    sizeof(coap_put_method_name)-1);
         }
         receiver("\"");
     }
@@ -111,7 +111,7 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
     coap_block2_init(pdu, &_wot_td_coap_slicer);
 
     gcoap_resp_init(pdu, _wot_td_coap_buf, len, COAP_CODE_CONTENT);
-    coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
+    coap_opt_add_format(pdu, COAP_FORMAT_JSON);
     coap_opt_add_block2(pdu, &_wot_td_coap_slicer, 1);
     _wot_td_coap_plen = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
 
