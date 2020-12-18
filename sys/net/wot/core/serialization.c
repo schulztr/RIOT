@@ -539,6 +539,13 @@ void _content_encoding_string(wot_td_serialize_receiver_t receiver, wot_td_conte
     }
 }
 
+void _serialize_expected_response(wot_td_serialize_receiver_t receiver, wot_td_expected_res_t *res, wot_td_ser_slicer_t *slicer){
+    _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+    _wot_td_fill_json_obj_key(receiver, "contentType", sizeof("contentType")-1, slicer);
+    _content_type_string(receiver, res->content_type, slicer);
+    _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+}
+
 void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *form, wot_td_ser_slicer_t *slicer){
     wot_td_form_t *tmp = form;
 
@@ -600,6 +607,8 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
         }
 
         if(tmp->expected_response != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _wot_td_fill_json_obj_key(receiver, "response", sizeof("response")-1, slicer);
 
         }
 
