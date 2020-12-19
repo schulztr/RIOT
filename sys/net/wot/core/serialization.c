@@ -344,32 +344,89 @@ void _serialize_sec_scheme_digest(wot_td_serialize_receiver_t receiver, wot_td_d
     _wot_td_fill_json_string(receiver, scheme->name, strlen(scheme->name), slicer);
 }
 
-//Todo: Implement api key security. As separated module?
 void _serialize_sec_scheme_api_key(wot_td_serialize_receiver_t receiver, wot_td_api_key_sec_scheme_t *scheme, wot_td_ser_slicer_t *slicer){
-    (void)receiver;
-    (void)scheme;
-    (void)slicer;
+    _wot_td_fill_json_obj_key(receiver, wot_td_in_obj_key, sizeof(wot_td_in_obj_key)-1, slicer);
+    _security_schema_in_string(receiver, scheme->in, slicer);
+    if(scheme->name != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, wot_td_name_obj_key, sizeof(wot_td_name_obj_key)-1, slicer);
+        _wot_td_fill_json_string(receiver, scheme->name, strlen(scheme->name), slicer);
+    }
 }
 
-//Todo: Implement bearer scheme. As separated module?
 void _serialize_sec_scheme_bearer(wot_td_serialize_receiver_t receiver, wot_td_bearer_sec_scheme_t *scheme, wot_td_ser_slicer_t *slicer){
-    (void)receiver;
-    (void)scheme;
-    (void)slicer;
+    bool has_prev_prop = false;
+    if(scheme->authorization != NULL){
+        has_prev_prop = true;
+        _wot_td_fill_json_obj_key(receiver, "authorization", sizeof("authorization")-1, slicer);
+        _wot_td_fill_json_uri(receiver, scheme->authorization, slicer);
+    }
+
+    //Todo: Use enum instead
+    if(scheme->alg != NULL){
+        _previous_prop_check(receiver, has_prev_prop, slicer);
+        has_prev_prop = true;
+        _wot_td_fill_json_obj_key(receiver, "alg", sizeof("alg")-1, slicer);
+        _wot_td_fill_json_string(receiver, scheme->alg, strlen(scheme->alg), slicer);
+    }
+
+    if(scheme->format != NULL){
+        _previous_prop_check(receiver, has_prev_prop, slicer);
+        has_prev_prop = true;
+        _wot_td_fill_json_obj_key(receiver, "format", sizeof("format")-1, slicer);
+        _wot_td_fill_json_string(receiver, scheme->format, strlen(scheme->format), slicer);
+    }
+
+    if(scheme->in != NULL){
+        _previous_prop_check(receiver, has_prev_prop, slicer);
+        has_prev_prop = true;
+        _wot_td_fill_json_obj_key(receiver, wot_td_in_obj_key, sizeof(wot_td_in_obj_key)-1, slicer);
+        _security_schema_in_string(receiver, scheme->in, slicer);
+    }
+
+    if(scheme->name != NULL){
+        _previous_prop_check(receiver, has_prev_prop, slicer);
+        has_prev_prop = true;
+        _wot_td_fill_json_obj_key(receiver, wot_td_name_obj_key, sizeof(wot_td_name_obj_key)-1, slicer);
+        _wot_td_fill_json_string(receiver, scheme->name, strlen(scheme->name), slicer);
+    }
 }
 
-//Todo: Implement psk scheme. As separated module?
 void _serialize_sec_scheme_psk(wot_td_serialize_receiver_t receiver, wot_td_psk_sec_scheme_t *scheme, wot_td_ser_slicer_t *slicer){
-    (void)receiver;
-    (void)scheme;
-    (void)slicer;
+    if(scheme->identity != NULL){
+        _wot_td_fill_json_obj_key(receiver, "identity", sizeof("identity")-1, slicer);
+        _wot_td_fill_json_string(receiver, scheme->identity, strlen(scheme->identity), slicer);
+    }
 }
 
-//Todo: Implement oauth2 scheme. As separated module?
 void _serialize_sec_scheme_oauth2(wot_td_serialize_receiver_t receiver, wot_td_oauth2_sec_scheme_t *scheme, wot_td_ser_slicer_t *slicer){
-    (void)receiver;
-    (void)scheme;
-    (void)slicer;
+    _wot_td_fill_json_obj_key(receiver, "flow", sizeof("flow")-1, slicer);
+    _wot_td_fill_json_uri(receiver, scheme->flow, slicer);
+
+    if(scheme->authorization != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "authorization", sizeof("authorization")-1, slicer);
+        _wot_td_fill_json_uri(receiver, scheme->authorization, slicer);
+    }
+
+    //Todo: Use macro to generate it.
+    if(scheme->token != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "token", sizeof("token")-1, slicer);
+        _wot_td_fill_json_uri(receiver, scheme->token, slicer);
+    }
+
+    if(scheme->refresh != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "refresh", sizeof("refresh")-1, slicer);
+        _wot_td_fill_json_uri(receiver, scheme->refresh, slicer);
+    }
+
+    if(scheme->scopes != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "scopes", sizeof("scopes")-1, slicer);
+        _wot_td_fill_json_uri(receiver, scheme->refresh, slicer);
+    }
 }
 
 void _serialize_security_schema(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme_t *security, wot_td_ser_slicer_t *slicer){
@@ -426,7 +483,6 @@ void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_secu
     tmp_sec = security;
     while (tmp_sec != NULL){
         _wot_td_fill_json_string(receiver, tmp_sec->key, strlen(tmp_sec->key), slicer);
-        //_security_scheme_string(receiver, scheme->scheme_type, slicer);
         tmp_sec = tmp_sec->next;
     }
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
@@ -619,21 +675,35 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
             parser(receiver, extension->name, extension->data);
         }
 
-        //Todo: Continue, implement response
-
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         tmp = tmp->next;
     }
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
 
-//Todo: Implement other properties
-void _serialize_int_aff(wot_td_serialize_receiver_t receiver, wot_td_int_affordance_t *int_aff, wot_td_ser_slicer_t *slicer){
+void _serialize_int_aff(wot_td_serialize_receiver_t receiver, wot_td_int_affordance_t *int_aff, char *lang, wot_td_ser_slicer_t *slicer){
+
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_form_obj_key, sizeof(wot_td_ser_form_obj_key)-1, slicer);
     _serialize_form_array(receiver, int_aff->forms, slicer);
+    if(int_aff->titles != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _serialize_title_array(receiver, int_aff->titles, lang, slicer);
+    }
+
+    if(int_aff->descriptions != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _serialize_description_array(receiver, int_aff->descriptions, lang, slicer);
+    }
+
+    if(int_aff->uri_variables != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "uriVariables", sizeof("uriVariables")-1, slicer);
+        _wot_td_fill_json_uri(receiver, int_aff->uri_variables, slicer);
+    }
+
 }
 
-void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop_affordance_t *prop_aff, wot_td_ser_slicer_t *slicer){
+void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop_affordance_t *prop_aff, char *lang, wot_td_ser_slicer_t *slicer){
     wot_td_prop_affordance_t *tmp = prop_aff;
 
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_prop_aff_obj_key, sizeof(wot_td_ser_prop_aff_obj_key)-1, slicer);
@@ -644,7 +714,7 @@ void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop
         _wot_td_fill_json_obj_key(receiver, wot_td_observable_obj_key, sizeof(wot_td_observable_obj_key)-1, slicer);
         _wot_td_fill_json_bool(receiver, tmp->observable, slicer);
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _serialize_int_aff(receiver, tmp->int_affordance, slicer);
+        _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         tmp = tmp->next;
     }
@@ -709,9 +779,21 @@ void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_a
 }
 
 void _serialize_data_schema_number(wot_td_serialize_receiver_t receiver, wot_td_number_schema_t *schema, wot_td_ser_slicer_t *slicer){
+    char buf[16];
+    bool has_minimum = false;
     if(schema->minimum != NULL){
         _wot_td_fill_json_obj_key(receiver, wot_td_min_obj_key, sizeof(wot_td_min_obj_key)-1, slicer);
-        //Todo: Implement double to string conversion
+        sprintf(buf, "%f", schema->minimum); 
+
+    }
+    if(schema->maximum != NULL){
+        if(has_minimum){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
+        
+        _wot_td_fill_json_obj_key(receiver, wot_td_max_obj_key, sizeof(wot_td_max_obj_key)-1, slicer);
+        memset(buf, 0, 16);
+        sprintf(buf, "%f", schema->maximum);
     }
 }
 
@@ -1030,7 +1112,7 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
 
     if(thing->properties != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _serialize_prop_aff_array(receiver, thing->properties, slicer);
+        _serialize_prop_aff_array(receiver, thing->properties, thing->default_language_tag, slicer);
     }
 
     if(thing->actions != NULL){
