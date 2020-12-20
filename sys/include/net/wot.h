@@ -21,6 +21,7 @@ typedef enum {
 } wot_td_sec_scheme_type_t;
 
 typedef enum {
+    SECURITY_SCHEME_IN_DEFAULT,
     SECURITY_SCHEME_IN_HEADER,
     SECURITY_SCHEME_IN_QUERY,
     SECURITY_SCHEME_IN_BODY,
@@ -87,7 +88,7 @@ typedef struct wot_td_multi_language {
 typedef struct {
     const char *type;
     wot_td_multi_lang_t *descriptions;
-    const char *proxy;
+    wot_td_uri_t *proxy;
     wot_td_sec_scheme_type_t scheme_type;
     void *scheme;
 } wot_td_sec_scheme_t;
@@ -248,7 +249,7 @@ typedef struct {
     wot_td_multi_lang_t *titles;
     wot_td_multi_lang_t *descriptions;
     wot_td_form_t *forms;
-    wot_td_data_schema_t *uri_variables;
+    wot_td_data_schema_map_t *uri_variables;
 } wot_td_int_affordance_t;
 
 typedef struct wot_td_prop_affordance {

@@ -377,7 +377,7 @@ void _serialize_sec_scheme_bearer(wot_td_serialize_receiver_t receiver, wot_td_b
         _wot_td_fill_json_string(receiver, scheme->format, strlen(scheme->format), slicer);
     }
 
-    if(scheme->in != NULL){
+    if(scheme->in != SECURITY_SCHEME_IN_DEFAULT){
         _previous_prop_check(receiver, has_prev_prop, slicer);
         has_prev_prop = true;
         _wot_td_fill_json_obj_key(receiver, wot_td_in_obj_key, sizeof(wot_td_in_obj_key)-1, slicer);
@@ -401,7 +401,7 @@ void _serialize_sec_scheme_psk(wot_td_serialize_receiver_t receiver, wot_td_psk_
 
 void _serialize_sec_scheme_oauth2(wot_td_serialize_receiver_t receiver, wot_td_oauth2_sec_scheme_t *scheme, wot_td_ser_slicer_t *slicer){
     _wot_td_fill_json_obj_key(receiver, "flow", sizeof("flow")-1, slicer);
-    _wot_td_fill_json_uri(receiver, scheme->flow, slicer);
+    _wot_td_fill_json_string(receiver, scheme->flow, strlen(scheme->flow), slicer);
 
     if(scheme->authorization != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
@@ -454,7 +454,27 @@ void _serialize_security_schema(wot_td_serialize_receiver_t receiver, wot_td_sec
     }
 }
 
-//Todo: Full implementation
+void _serialize_security(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme_t *scheme, char *lang, wot_td_ser_slicer_t *slicer){
+    _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+
+    _wot_td_fill_json_obj_key(receiver, wot_td_schema_obj_key, sizeof(wot_td_schema_obj_key)-1, slicer);
+    _security_scheme_string(receiver, scheme->scheme_type, slicer);
+    _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+    _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
+    if(scheme->proxy != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, "proxy", sizeof("proxy"), slicer);
+        _wot_td_fill_json_uri(receiver, scheme->proxy, slicer);
+    }
+
+    if(scheme->scheme_type != SECURITY_SCHEME_NONE){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+    }
+    _serialize_security_schema(receiver, scheme, slicer);
+
+    _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+}
+
 void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_security_t *security, char *lang, wot_td_ser_slicer_t *slicer){
     wot_td_security_t *tmp_sec = security;
     wot_td_sec_scheme_t *scheme = NULL;
@@ -463,16 +483,7 @@ void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_secu
     while (tmp_sec != NULL){
         scheme = tmp_sec->value;
         _wot_td_fill_json_obj_key(receiver, tmp_sec->key, strlen(tmp_sec->key), slicer);
-        _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
-        _wot_td_fill_json_obj_key(receiver, wot_td_schema_obj_key, sizeof(wot_td_schema_obj_key)-1, slicer);
-        _security_scheme_string(receiver, scheme->scheme_type, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
-        if(scheme->scheme_type != SECURITY_SCHEME_NONE){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        }
-        _serialize_security_schema(receiver, scheme, slicer);
-        _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+        _serialize_security(receiver, scheme, lang, slicer);
         tmp_sec = tmp_sec->next;
     }
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
@@ -681,6 +692,8 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
 
+void _serialize_data_schema(wot_td_serialize_receiver_t receiver, wot_td_data_schema_t *data_schema, char *lang, wot_td_ser_slicer_t *slicer);
+
 void _serialize_int_aff(wot_td_serialize_receiver_t receiver, wot_td_int_affordance_t *int_aff, char *lang, wot_td_ser_slicer_t *slicer){
 
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_form_obj_key, sizeof(wot_td_ser_form_obj_key)-1, slicer);
@@ -698,9 +711,31 @@ void _serialize_int_aff(wot_td_serialize_receiver_t receiver, wot_td_int_afforda
     if(int_aff->uri_variables != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, "uriVariables", sizeof("uriVariables")-1, slicer);
-        _wot_td_fill_json_uri(receiver, int_aff->uri_variables, slicer);
+        wot_td_data_schema_map_t *data_map = int_aff->uri_variables;
+        _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+        while (data_map != NULL){
+            _wot_td_fill_json_obj_key(receiver, data_map->key, strlen(data_map->key), slicer);
+            _serialize_data_schema(receiver, data_map->value, lang, slicer);
+            data_map = data_map->next;
+        }
+        _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
     }
 
+    if(int_aff->type != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key, sizeof(wot_td_type_obj_key)-1, slicer);
+        _wot_td_fill_json_string(receiver, int_aff->type, strlen(int_aff->type), slicer);
+    }
+
+}
+
+void _serialize_prop_aff(wot_td_serialize_receiver_t receiver, wot_td_prop_affordance_t *prop_aff, char *lang, wot_td_ser_slicer_t *slicer){
+    _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+    _wot_td_fill_json_obj_key(receiver, wot_td_observable_obj_key, sizeof(wot_td_observable_obj_key)-1, slicer);
+    _wot_td_fill_json_bool(receiver, prop_aff->observable, slicer);
+    _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+    _serialize_int_aff(receiver, prop_aff->int_affordance, lang, slicer);
+    _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
 }
 
 void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop_affordance_t *prop_aff, char *lang, wot_td_ser_slicer_t *slicer){
@@ -710,12 +745,7 @@ void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
     while(tmp != NULL){
         _wot_td_fill_json_obj_key(receiver, tmp->key, strlen(tmp->key), slicer);
-        _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
-        _wot_td_fill_json_obj_key(receiver, wot_td_observable_obj_key, sizeof(wot_td_observable_obj_key)-1, slicer);
-        _wot_td_fill_json_bool(receiver, tmp->observable, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
-        _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+        _serialize_prop_aff(receiver, tmp, lang, slicer);
         tmp = tmp->next;
     }
 
@@ -783,7 +813,7 @@ void _serialize_data_schema_number(wot_td_serialize_receiver_t receiver, wot_td_
     bool has_minimum = false;
     if(schema->minimum != NULL){
         _wot_td_fill_json_obj_key(receiver, wot_td_min_obj_key, sizeof(wot_td_min_obj_key)-1, slicer);
-        sprintf(buf, "%f", schema->minimum); 
+        sprintf(buf, "%f", *schema->minimum); 
 
     }
     if(schema->maximum != NULL){
@@ -793,7 +823,7 @@ void _serialize_data_schema_number(wot_td_serialize_receiver_t receiver, wot_td_
         
         _wot_td_fill_json_obj_key(receiver, wot_td_max_obj_key, sizeof(wot_td_max_obj_key)-1, slicer);
         memset(buf, 0, 16);
-        sprintf(buf, "%f", schema->maximum);
+        sprintf(buf, "%f", *schema->maximum);
     }
 }
 
@@ -861,7 +891,6 @@ void _serialize_json_type(wot_td_serialize_receiver_t receiver, wot_td_json_type
     }
 }
 
-//Todo: Implement
 void _serialize_data_schema(wot_td_serialize_receiver_t receiver, wot_td_data_schema_t *data_schema, char *lang, wot_td_ser_slicer_t *slicer){
     bool has_previous_prop = false;
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
@@ -976,7 +1005,7 @@ void _serialize_action_aff_array(wot_td_serialize_receiver_t receiver, wot_td_ac
         _wot_td_fill_json_obj_key(receiver, wot_td_idempotent_obj_key, sizeof(wot_td_idempotent_obj_key)-1, slicer);
         _wot_td_fill_json_bool(receiver, tmp->idempotent, slicer);
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _serialize_int_aff(receiver, tmp->int_affordance, slicer);
+        _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         tmp = tmp->next;
     }
@@ -1011,7 +1040,7 @@ void _serialize_event_aff_array(wot_td_serialize_receiver_t receiver, wot_td_eve
             _serialize_data_schema(receiver, tmp->cancellation, lang, slicer);
         }
         _previous_prop_check(receiver, has_previous_prop, slicer);
-        _serialize_int_aff(receiver, tmp->int_affordance, slicer);
+        _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         if(tmp->next != NULL){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
