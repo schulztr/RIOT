@@ -193,14 +193,14 @@ typedef struct wot_td_data_enum {
 } wot_td_data_enums_t;
 
 typedef enum {
+    JSON_TYPE_NONE,
     JSON_TYPE_OBJECT,
     JSON_TYPE_ARRAY,
     JSON_TYPE_STRING,
     JSON_TYPE_NUMBER,
     JSON_TYPE_INTEGER,
     JSON_TYPE_BOOLEAN,
-    JSON_TYPE_NULL,
-    JSON_TYPE_NONE
+    JSON_TYPE_NULL
 } wot_td_json_type_t;
 
 typedef struct wot_td_type {
