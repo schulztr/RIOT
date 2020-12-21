@@ -679,11 +679,14 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
 
         }
 
-        if(tmp->extension != NULL){
+        if(tmp->extensions != NULL){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-            wot_td_extension_t *extension = tmp->extension;
-            wot_td_ser_parser_t parser = extension->parser;
-            parser(receiver, extension->name, extension->data);
+            wot_td_extension_t *extension = tmp->extensions;
+            while(extension != NULL){
+                wot_td_ser_parser_t parser = extension->parser;
+                parser(receiver, extension->name, extension->data);
+                extension = extension->next;
+            }
         }
 
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
