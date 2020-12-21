@@ -737,8 +737,10 @@ void _serialize_prop_aff(wot_td_serialize_receiver_t receiver, wot_td_prop_affor
     _wot_td_fill_json_obj_key(receiver, wot_td_observable_obj_key, sizeof(wot_td_observable_obj_key)-1, slicer);
     _wot_td_fill_json_bool(receiver, prop_aff->observable, slicer);
     _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-    _serialize_data_schema(receiver, prop_aff->data_schema, lang, false, slicer);
-    _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+    if(prop_aff->data_schema != NULL){
+        _serialize_data_schema(receiver, prop_aff->data_schema, lang, false, slicer);
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+    }
     _serialize_int_aff(receiver, prop_aff->int_affordance, lang, slicer);
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
 }
