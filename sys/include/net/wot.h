@@ -156,6 +156,7 @@ typedef struct wot_td_extension {
     const char *name;
     const void *data;
     wot_td_ser_parser_t parser;
+    struct wot_td_extension *next;
 } wot_td_extension_t;
 
 typedef struct wot_td_form {
@@ -167,7 +168,7 @@ typedef struct wot_td_form {
     wot_td_security_t *security;
     wot_td_auth_scopes_t *scopes;
     wot_td_expected_res_t *expected_response;
-    wot_td_extension_t *extension;
+    wot_td_extension_t *extensions;
     struct wot_td_form *next;
 } wot_td_form_t;
 

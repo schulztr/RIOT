@@ -148,12 +148,13 @@ gcoap_listener_t * _find_last_gcoap_listener(void){
     return listener;
 }
 
-//Todo: Add COAP_MATCH_SUBTREE to href. 
+//Todo: Add COAP_MATCH_SUBTREE to href.
+//Todo: Possible problem when other module needs to add an additional extension to it. Think about an elegant solution for this.
 void _add_method_to_int_affordance(wot_td_int_affordance_t * affordance, gcoap_listener_t * listener){
     wot_td_form_t *form = affordance->forms;
     wot_td_extension_t *extension;
     while(form != NULL){
-        extension = form->extension;
+        extension = form->extensions;
         extension->name = wot_td_coap_binding_context.key;
         extension->data = &(listener->resources->methods);
         extension->parser = (wot_td_ser_parser_t) &_wot_td_coap_method_ser;
