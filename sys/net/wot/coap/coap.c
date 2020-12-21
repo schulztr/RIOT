@@ -24,6 +24,9 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 sock_udp_ep_t wot_coap_sock = { .port=COAP_PORT, .family=AF_INET6 };
 
+static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
+                            size_t maxlen, coap_link_encoder_ctx_t *context);
+
 wot_td_thing_t wot_thing;
 
 static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
@@ -133,10 +136,32 @@ static const coap_resource_t _wot_td_coap_resources[] = {
         { "/.well-known/wot-thing-description", COAP_GET, _wot_td_coap_handler, NULL },
 };
 
+static const char *_wot_td_link_params[] = {
+    ";et=\"wot.thing\"",
+};
+
+/* Adds link format params to resource list. TODO: Can probably be streamlined */
+static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
+                            size_t maxlen, coap_link_encoder_ctx_t *context) {
+    ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
+    if (res > 0) {
+        if (_wot_td_link_params[context->link_pos]
+                && (strlen(_wot_td_link_params[context->link_pos]) < (maxlen - res))) {
+            if (buf) {
+                memcpy(buf+res, _wot_td_link_params[context->link_pos],
+                       strlen(_wot_td_link_params[context->link_pos]));
+            }
+            return res + strlen(_wot_td_link_params[context->link_pos]);
+        }
+    }
+
+    return res;
+}
+
 gcoap_listener_t _wot_td_gcoap_listener = {
         &_wot_td_coap_resources[0],
         sizeof(_wot_td_coap_resources) / sizeof(_wot_td_coap_resources[0]),
-        NULL,
+        _encode_link,
         NULL
 };
 
