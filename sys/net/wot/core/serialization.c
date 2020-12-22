@@ -876,7 +876,7 @@ void _serialize_data_schema_subclass(wot_td_serialize_receiver_t receiver, wot_t
 }
 
 void _serialize_json_type(wot_td_serialize_receiver_t receiver, wot_td_json_type_t json_type, wot_td_ser_slicer_t *slicer) {
-    _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key+1, sizeof(wot_td_type_obj_key)-1, slicer);
+    _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key+1, sizeof(wot_td_type_obj_key)-2, slicer);
     switch(json_type){
         case JSON_TYPE_ARRAY:
             _wot_td_fill_json_string(receiver, "array", sizeof("array")-1, slicer);
