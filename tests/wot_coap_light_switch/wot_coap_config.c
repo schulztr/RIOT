@@ -110,14 +110,6 @@ const coap_resource_t _coap_resources[] = {
         { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
 };
 
-const coap_resource_t _coap_resources[] = {
-        { "/echo", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL },
-        { "/led/off", COAP_POST, _led_off_handler, NULL },
-        { "/led/on", COAP_POST, _led_on_handler, NULL },
-        { "/led/status", COAP_GET, _led_status_handler, NULL },
-        { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
-};
-
 static gcoap_listener_t _coap_listener_echo = {
         &_coap_resources[0],
         sizeof(_coap_resources),
