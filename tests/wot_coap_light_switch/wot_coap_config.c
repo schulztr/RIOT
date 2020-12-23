@@ -110,10 +110,45 @@ const coap_resource_t _coap_resources[] = {
         { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
 };
 
-static gcoap_listener_t _coap_listener = {
+const coap_resource_t _coap_resources[] = {
+        { "/echo", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL },
+        { "/led/off", COAP_POST, _led_off_handler, NULL },
+        { "/led/on", COAP_POST, _led_on_handler, NULL },
+        { "/led/status", COAP_GET, _led_status_handler, NULL },
+        { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
+};
+
+static gcoap_listener_t _coap_listener_echo = {
         &_coap_resources[0],
-        ARRAY_SIZE(_coap_resources),
-        // sizeof(_coap_resources) / sizeof(_coap_resources[0]),
+        sizeof(_coap_resources),
+        NULL,
+        NULL
+};
+
+static gcoap_listener_t _coap_listener_led_off = {
+        &_coap_resources[1],
+        sizeof(_coap_resources),
+        NULL,
+        NULL
+};
+
+static gcoap_listener_t _coap_listener_led_on = {
+        &_coap_resources[2],
+        sizeof(_coap_resources),
+        NULL,
+        NULL
+};
+
+static gcoap_listener_t _coap_listener_led_status = {
+        &_coap_resources[3],
+        sizeof(_coap_resources),
+        NULL,
+        NULL
+};
+
+static gcoap_listener_t _coap_listener_led_toggle = {
+        &_coap_resources[4],
+        sizeof(_coap_resources),
         NULL,
         NULL
 };
@@ -293,27 +328,27 @@ wot_td_action_affordance_t wot_led_toggle_affordance = {
 };
 
 wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
-        .coap_resource = &_coap_listener,
+        .coap_resource = &_coap_listener_echo,
         .affordance = &wot_echo_affordance,
 };
 
 wot_td_coap_action_affordance_t wot_coap_led_off_affordance = {
-        .coap_resource = &_coap_listener,
+        .coap_resource = &_coap_listener_led_off,
         .affordance = &wot_led_off_affordance,
 };
 
 wot_td_coap_action_affordance_t wot_coap_led_on_affordance = {
-        .coap_resource = &_coap_listener,
+        .coap_resource = &_coap_listener_led_on,
         .affordance = &wot_led_on_affordance,
 };
 
 wot_td_coap_prop_affordance_t wot_coap_led_status_affordance = {
-        .coap_resource = &_coap_listener,
+        .coap_resource = &_coap_listener_led_status,
         .affordance = &wot_led_status_affordance,
 };
 
 wot_td_coap_action_affordance_t wot_coap_led_toggle_affordance = {
-        .coap_resource = &_coap_listener,
+        .coap_resource = &_coap_listener_led_toggle,
         .affordance = &wot_led_toggle_affordance,
 };
 
@@ -325,4 +360,3 @@ int wot_td_coap_config_init(wot_td_thing_t *thing){
     wot_td_coap_action_add(thing, &wot_coap_led_toggle_affordance);
     return 0;
 }
-
