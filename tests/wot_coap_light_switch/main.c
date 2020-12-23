@@ -6,14 +6,18 @@
 #include "net/wot/coap.h"
 #include "shell.h"
 
-extern int led_cmd(int argc, char **argv);
-extern void led_cmd_init(void);
+#ifndef IS_NATIVE
+    extern int led_cmd(int argc, char **argv);
+    extern void led_cmd_init(void);
+#endif
 
 #define MAIN_QUEUE_SIZE (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 static const shell_command_t shell_commands[] = {
-    {"led", "Turns on an LED (has to be connected via GPIO 33). ", led_cmd},
+    #ifndef IS_NATIVE
+        {"led", "Turns on an LED (has to be connected via GPIO 33). ", led_cmd},
+    #endif
     { NULL, NULL, NULL }
 };
 
@@ -24,7 +28,9 @@ int main(void) {
     //Todo: Implement auto init
     wot_td_coap_server_init();
 
-    led_cmd_init();
+    #ifndef IS_NATIVE
+        led_cmd_init();
+    #endif
 
     /* start shell */
     puts("All up, running the shell now");

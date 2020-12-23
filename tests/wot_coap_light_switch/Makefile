@@ -26,6 +26,10 @@ LED_GPIO = GPIO33
 CFLAGS += -DLED_GPIO=$(LED_GPIO)
 endif
 
+ifeq ($(BOARD),native)
+CFLAGS += -DIS_NATIVE
+endif
+
 # Shell
 USEMODULE += shell
 USEMODULE += shell_commands
