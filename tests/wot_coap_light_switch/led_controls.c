@@ -5,6 +5,8 @@
 #include "led.h"
 #include "periph/gpio.h"
 
+#ifndef IS_NATIVE
+
 bool led_on;
 
 bool is_led_on(void) {
@@ -71,4 +73,5 @@ void led_cmd_init(void) {
     gpio_set(LED_GPIO);
     led_on = true;
 }
-    
+
+#endif

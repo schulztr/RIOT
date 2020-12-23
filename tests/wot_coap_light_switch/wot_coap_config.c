@@ -2,9 +2,30 @@
 #include "net/wot/coap.h"
 #include "net/wot/coap/config.h"
 
-extern void toggle_led(void);
-extern bool is_led_on(void);
-extern char* get_led_status(void);
+#ifndef IS_NATIVE
+    extern void toggle_led(void);
+    extern bool is_led_on(void);
+    extern char* get_led_status(void);
+#else
+    bool led_on;
+
+    bool is_led_on(void) {
+        return led_on;
+    }
+
+    void toggle_led(void) {
+        led_on = !led_on;
+    }
+
+    char* get_led_status(void) {
+        if (led_on) {
+            return "on";
+        }
+        else {
+            return "off";
+        }
+    }
+#endif
 
 static ssize_t _led_status_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
