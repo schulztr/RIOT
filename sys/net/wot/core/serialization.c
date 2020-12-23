@@ -182,7 +182,7 @@ void _serialize_context_array(wot_td_serialize_receiver_t receiver, json_ld_cont
 
     while(tmp_ctx != NULL){
         _serialize_context(receiver, tmp_ctx, slicer);
-        if(tmp_ctx != NULL && tmp_ctx->next != NULL){
+        if(tmp_ctx->next != NULL){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         }
         tmp_ctx = tmp_ctx->next;
@@ -552,6 +552,9 @@ void _serialize_op_array(wot_td_serialize_receiver_t receiver, wot_td_form_op_t 
     _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
     while(tmp != NULL){
         _form_op_type_string(receiver, tmp->op_type, slicer);
+        if(tmp->next != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         tmp = tmp->next;
     }
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
@@ -696,6 +699,9 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
         }
 
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+        if(tmp->next != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         tmp = tmp->next;
     }
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
@@ -759,6 +765,9 @@ void _serialize_prop_aff_array(wot_td_serialize_receiver_t receiver, wot_td_prop
     while(tmp != NULL){
         _wot_td_fill_json_obj_key(receiver, tmp->key, strlen(tmp->key), slicer);
         _serialize_prop_aff(receiver, tmp, lang, slicer);
+        if(tmp->next != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         tmp = tmp->next;
     }
 
@@ -797,6 +806,9 @@ void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_a
         _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
         while (item != NULL){
             _serialize_data_schema(receiver, item->value, lang, true, slicer);
+            if(item->next != NULL){
+                _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            }
             item = item->next;
         }
         _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
@@ -1039,6 +1051,9 @@ void _serialize_action_aff_array(wot_td_serialize_receiver_t receiver, wot_td_ac
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+        if(tmp->next != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         tmp = tmp->next;
     }
 
