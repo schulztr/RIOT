@@ -2,15 +2,11 @@
 #include "net/wot/coap.h"
 #include "net/wot/coap/config.h"
 
-extern void turn_off_led(void);
-extern void turn_on_led(void);
 extern void toggle_led(void);
 extern bool is_led_on(void);
 extern char* get_led_status(void);
 
 static ssize_t _led_status_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
-static ssize_t _led_on_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
-static ssize_t _led_off_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 
 static ssize_t _echo_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, void *context)
@@ -26,46 +22,6 @@ static ssize_t _echo_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, void *co
     size_t sub_uri_len = strlen(sub_uri);
     return coap_reply_simple(pkt, COAP_CODE_CONTENT, buf, len, COAP_FORMAT_JSON,
                              (uint8_t *)sub_uri, sub_uri_len);
-}
-
-static ssize_t _led_off_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
-{
-    (void)ctx;
-
-    /* read coap method type in packet */
-    unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));
-
-    if (method_flag == COAP_POST) {
-        if (!is_led_on()) {
-        return gcoap_response(pdu, buf, len, COAP_CODE_VALID);
-        }
-        else {
-        turn_off_led();
-        return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);
-        }
-    }
-
-    return 0;
-}
-
-static ssize_t _led_on_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
-{
-    (void)ctx;
-
-    /* read coap method type in packet */
-    unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));
-
-    if (method_flag == COAP_POST) {
-        if (is_led_on()) {
-        return gcoap_response(pdu, buf, len, COAP_CODE_VALID);
-        }
-        else {
-        turn_on_led();
-        return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);
-        }
-    }
-
-    return 0;
 }
 
 static ssize_t _led_status_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
@@ -104,28 +60,12 @@ static ssize_t _led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 
 const coap_resource_t _coap_resources[] = {
         { "/echo", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL },
-        { "/led/off", COAP_POST, _led_off_handler, NULL },
-        { "/led/on", COAP_POST, _led_on_handler, NULL },
         { "/led/status", COAP_GET, _led_status_handler, NULL },
         { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
 };
 
 static gcoap_listener_t _coap_listener_echo = {
         &_coap_resources[0],
-        sizeof(_coap_resources),
-        NULL,
-        NULL
-};
-
-static gcoap_listener_t _coap_listener_led_off = {
-        &_coap_resources[1],
-        sizeof(_coap_resources),
-        NULL,
-        NULL
-};
-
-static gcoap_listener_t _coap_listener_led_on = {
-        &_coap_resources[2],
         sizeof(_coap_resources),
         NULL,
         NULL
@@ -150,16 +90,6 @@ wot_td_form_op_t wot_td_echo_form_op = {
         .next = NULL,
 };
 
-wot_td_form_op_t wot_td_led_off_form_op = {
-        .op_type = FORM_OP_INVOKE_ACTION,
-        .next = NULL,
-};
-
-wot_td_form_op_t wot_td_led_on_form_op = {
-        .op_type = FORM_OP_INVOKE_ACTION,
-        .next = NULL,
-};
-
 wot_td_form_op_t wot_td_led_status_form_op = {
         .op_type = FORM_OP_READ_PROPERTY,
         .next = NULL,
@@ -172,12 +102,6 @@ wot_td_form_op_t wot_td_led_toggle_form_op = {
 
 wot_td_uri_t wot_td_echo_aff_form_href = {0};
 wot_td_extension_t wot_td_echo_form_coap = {0};
-
-wot_td_uri_t wot_td_led_off_aff_form_href = {0};
-wot_td_extension_t wot_td_led_off_form_coap = {0};
-
-wot_td_uri_t wot_td_led_on_aff_form_href = {0};
-wot_td_extension_t wot_td_led_on_form_coap = {0};
 
 wot_td_uri_t wot_td_led_status_aff_form_href = {0};
 wot_td_extension_t wot_td_led_status_form_coap = {0};
@@ -203,20 +127,6 @@ wot_td_form_t wot_td_echo_aff_form = {
         .next = NULL,
 };
 
-wot_td_form_t wot_td_led_off_aff_form = {
-        .op = &wot_td_led_off_form_op,
-        .href = &wot_td_led_off_aff_form_href,
-        .extensions = &wot_td_led_off_form_coap,
-        .next = NULL,
-};
-
-wot_td_form_t wot_td_led_on_aff_form = {
-        .op = &wot_td_led_on_form_op,
-        .href = &wot_td_led_on_aff_form_href,
-        .extensions = &wot_td_led_on_form_coap,
-        .next = NULL,
-};
-
 wot_td_form_t wot_td_led_status_aff_form = {
         .op = &wot_td_led_status_form_op,
         .content_type = &wot_td_led_status_content_type,
@@ -234,14 +144,6 @@ wot_td_form_t wot_td_led_toggle_aff_form = {
 
 wot_td_int_affordance_t wot_echo_int_affordance = {
         .forms = &wot_td_echo_aff_form
-};
-
-wot_td_int_affordance_t wot_led_off_int_affordance = {
-        .forms = &wot_td_led_off_aff_form
-};
-
-wot_td_int_affordance_t wot_led_on_int_affordance = {
-        .forms = &wot_td_led_on_aff_form
 };
 
 wot_td_int_affordance_t wot_led_status_int_affordance = {
@@ -293,18 +195,6 @@ wot_td_prop_affordance_t wot_echo_affordance = {
         .next = NULL,
 };
 
-wot_td_action_affordance_t wot_led_off_affordance = {
-        .key = "off",
-        .int_affordance = &wot_led_off_int_affordance,
-        .next = NULL,
-};
-
-wot_td_action_affordance_t wot_led_on_affordance = {
-        .key = "on",
-        .int_affordance = &wot_led_on_int_affordance,
-        .next = NULL,
-};
-
 wot_td_prop_affordance_t wot_led_status_affordance = {
         .observable = false,
         .key = "status",
@@ -324,16 +214,6 @@ wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
         .affordance = &wot_echo_affordance,
 };
 
-wot_td_coap_action_affordance_t wot_coap_led_off_affordance = {
-        .coap_resource = &_coap_listener_led_off,
-        .affordance = &wot_led_off_affordance,
-};
-
-wot_td_coap_action_affordance_t wot_coap_led_on_affordance = {
-        .coap_resource = &_coap_listener_led_on,
-        .affordance = &wot_led_on_affordance,
-};
-
 wot_td_coap_prop_affordance_t wot_coap_led_status_affordance = {
         .coap_resource = &_coap_listener_led_status,
         .affordance = &wot_led_status_affordance,
@@ -346,8 +226,6 @@ wot_td_coap_action_affordance_t wot_coap_led_toggle_affordance = {
 
 int wot_td_coap_config_init(wot_td_thing_t *thing){
     wot_td_coap_prop_add(thing, &wot_coap_echo_affordance);
-    wot_td_coap_action_add(thing, &wot_coap_led_off_affordance);
-    wot_td_coap_action_add(thing, &wot_coap_led_on_affordance);
     wot_td_coap_prop_add(thing, &wot_coap_led_status_affordance);
     wot_td_coap_action_add(thing, &wot_coap_led_toggle_affordance);
     return 0;
