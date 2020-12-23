@@ -2,8 +2,7 @@
 APPLICATION = wot_coap
 
 # If no BOARD is found in the environment, use this default:
-#BOARD ?= nrf52dk
-BOARD ?= esp32-wroom-32
+BOARD ?= native
 
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../..
