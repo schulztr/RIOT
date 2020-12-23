@@ -1016,17 +1016,26 @@ void _serialize_action_aff_array(wot_td_serialize_receiver_t receiver, wot_td_ac
     while (tmp != NULL){
         _wot_td_fill_json_obj_key(receiver, tmp->key, strlen(tmp->key), slicer);
         _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
-        _wot_td_fill_json_obj_key(receiver, wot_td_input_obj_key, sizeof(wot_td_input_obj_key)-1, slicer);
-        _serialize_data_schema(receiver, tmp->input, lang, true, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _wot_td_fill_json_obj_key(receiver, wot_td_output_obj_key, sizeof(wot_td_output_obj_key)-1, slicer);
-        _serialize_data_schema(receiver,tmp->output, lang, true, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+
         _wot_td_fill_json_obj_key(receiver, wot_td_safe_obj_key, sizeof(wot_td_safe_obj_key)-1, slicer);
         _wot_td_fill_json_bool(receiver, tmp->safe, slicer);
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, wot_td_idempotent_obj_key, sizeof(wot_td_idempotent_obj_key)-1, slicer);
         _wot_td_fill_json_bool(receiver, tmp->idempotent, slicer);
+        
+        if(tmp->input != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _wot_td_fill_json_obj_key(receiver, wot_td_input_obj_key, sizeof(wot_td_input_obj_key)-1, slicer);
+            _serialize_data_schema(receiver, tmp->input, lang, true, slicer);
+        }
+
+        if(tmp->output != NULL){
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _wot_td_fill_json_obj_key(receiver, wot_td_output_obj_key, sizeof(wot_td_output_obj_key)-1, slicer);
+            _serialize_data_schema(receiver,tmp->output, lang, true, slicer);
+        }
+
+        
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _serialize_int_aff(receiver, tmp->int_affordance, lang, slicer);
         _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
