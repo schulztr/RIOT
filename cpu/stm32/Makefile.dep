@@ -8,12 +8,32 @@ ifneq (,$(filter periph_usbdev,$(FEATURES_USED)))
   USEMODULE += xtimer
 endif
 
-ifneq (,$(filter bootloader_stm32,$(FEATURES_USED)))
-  USEMODULE += bootloader_stm32
-endif
-
 ifneq (,$(filter periph_uart_nonblocking,$(USEMODULE)))
   USEMODULE += tsrb
+endif
+
+ifneq (,$(filter stm32_eth_%,$(USEMODULE)))
+  USEMODULE += stm32_eth
+endif
+
+ifneq (,$(filter stm32_eth_auto,$(USEMODULE)))
+  USEMODULE += stm32_eth_link_up
+endif
+
+ifneq (,$(filter stm32_eth,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_eth
+  USEMODULE += netdev_eth
+  USEMODULE += iolist
+  USEMODULE += xtimer
+endif
+
+ifneq (,$(filter periph_can,$(FEATURES_USED)))
+  FEATURES_REQUIRED += periph_gpio
+  FEATURES_REQUIRED += periph_gpio_irq
+endif
+
+ifneq (,$(filter periph_eth periph_ptp,$(USEMODULE)))
+  USEMODULE += periph_eth_common
 endif
 
 include $(RIOTCPU)/cortexm_common/Makefile.dep

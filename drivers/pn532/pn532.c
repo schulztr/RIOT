@@ -28,7 +28,7 @@
 #include "periph/i2c.h"
 #include "periph/spi.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG                0
 #include "debug.h"
 
 #define PN532_I2C_ADDRESS           (0x24)
@@ -78,7 +78,7 @@
 /* Length for passive listings */
 #define LIST_PASSIVE_LEN_14443(num)   (num * 20)
 
-#if ENABLE_DEBUG
+#if IS_ACTIVE(ENABLE_DEBUG)
 #define PRINTBUFF printbuff
 static void printbuff(uint8_t *buff, unsigned len)
 {

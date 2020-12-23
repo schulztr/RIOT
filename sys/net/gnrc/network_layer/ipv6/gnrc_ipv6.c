@@ -19,7 +19,7 @@
 
 #include "byteorder.h"
 #include "cpu_conf.h"
-#include "kernel_types.h"
+#include "sched.h"
 #include "net/gnrc.h"
 #include "net/gnrc/icmpv6.h"
 #include "net/gnrc/sixlowpan/ctx.h"
@@ -37,22 +37,21 @@
 #include "net/gnrc/ipv6/ext/frag.h"
 #endif
 
+#ifdef MODULE_FIB
+#include "net/fib.h"
+#include "net/fib/table.h"
+#endif
+
 #include "net/gnrc/ipv6.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG        0
 #include "debug.h"
 
 #define _MAX_L2_ADDR_LEN    (8U)
 
-#if ENABLE_DEBUG
-static char _stack[GNRC_IPV6_STACK_SIZE + THREAD_EXTRA_STACKSIZE_PRINTF];
-#else
-static char _stack[GNRC_IPV6_STACK_SIZE];
-#endif
+static char _stack[GNRC_IPV6_STACK_SIZE + DEBUG_EXTRA_STACKSIZE];
 
 #ifdef MODULE_FIB
-#include "net/fib.h"
-#include "net/fib/table.h"
 /**
  * @brief buffer to store the entries in the IPv6 forwarding table
  */
@@ -175,7 +174,7 @@ static void *_event_loop(void *args)
 {
     msg_t msg, reply, msg_q[GNRC_IPV6_MSG_QUEUE_SIZE];
     gnrc_netreg_entry_t me_reg = GNRC_NETREG_ENTRY_INIT_PID(GNRC_NETREG_DEMUX_CTX_ALL,
-                                                            sched_active_pid);
+                                                            thread_getpid());
 
     (void)args;
     msg_init_queue(msg_q, GNRC_IPV6_MSG_QUEUE_SIZE);
@@ -311,9 +310,7 @@ static gnrc_pktsnip_t *_create_netif_hdr(uint8_t *dst_l2addr,
     hdr->flags = flags;
 
     /* add netif_hdr to front of the pkt list */
-    LL_PREPEND(pkt, netif_hdr);
-
-    return pkt;
+    return gnrc_pkt_prepend(pkt, netif_hdr);
 }
 
 static bool _is_ipv6_hdr(gnrc_pktsnip_t *hdr)

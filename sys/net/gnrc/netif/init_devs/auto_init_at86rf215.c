@@ -29,6 +29,7 @@
 #include "net/gnrc/gomach/gomach.h"
 #endif
 #include "net/gnrc.h"
+#include "include/init_devs.h"
 
 #include "at86rf215.h"
 #include "at86rf215_params.h"
@@ -37,7 +38,7 @@
  * @brief   Define stack parameters for the MAC layer thread
  * @{
  */
-#define AT86RF215_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT)
+#define AT86RF215_MAC_STACKSIZE     (IEEE802154_STACKSIZE_DEFAULT)
 #ifndef AT86RF215_MAC_PRIO
 #define AT86RF215_MAC_PRIO          (GNRC_NETIF_PRIO)
 #endif
@@ -52,7 +53,7 @@ static gnrc_netif_t _netif[AT86RF215_NUM * USED_BANDS];
 static char _at86rf215_stacks[AT86RF215_NUM * USED_BANDS][AT86RF215_MAC_STACKSIZE];
 
 static inline void _setup_netif(gnrc_netif_t *netif, void* netdev, void* stack,
-                                int prio)
+                                int prio, const char *name)
 {
     if (netif == NULL || netdev == NULL) {
         return;
@@ -61,26 +62,22 @@ static inline void _setup_netif(gnrc_netif_t *netif, void* netdev, void* stack,
 #if defined(MODULE_GNRC_GOMACH)
         gnrc_netif_gomach_create(netif, stack,
                                  AT86RF215_MAC_STACKSIZE,
-                                 prio, "at86rf215-gomach",
-                                 netdev);
+                                 prio, name, netdev);
 #elif defined(MODULE_GNRC_LWMAC)
         gnrc_netif_lwmac_create(netif, stack,
                                 AT86RF215_MAC_STACKSIZE,
-                                prio, "at86rf215-lwmac",
-                                netdev);
+                                prio, name, netdev);
 #else
         gnrc_netif_ieee802154_create(netif, stack,
                                      AT86RF215_MAC_STACKSIZE,
-                                     prio, "at86rf215",
-                                     netdev);
+                                     prio, name, netdev);
 #endif
 }
 
 void auto_init_at86rf215(void)
 {
     unsigned i = 0;
-    unsigned j = 0;
-    while (j < AT86RF215_NUM) {
+    for (unsigned j = 0; j < AT86RF215_NUM; ++j) {
 
         at86rf215_t *dev_09 = NULL;
         at86rf215_t *dev_24 = NULL;
@@ -103,13 +100,13 @@ void auto_init_at86rf215(void)
             ++i;
         }
 
-        at86rf215_setup(dev_09, dev_24, &at86rf215_params[j++]);
+        at86rf215_setup(dev_09, dev_24, &at86rf215_params[j], j);
 
         /* setup sub-GHz interface */
-        _setup_netif(netif_09, dev_09, stack_09, AT86RF215_MAC_PRIO_SUBGHZ);
+        _setup_netif(netif_09, dev_09, stack_09, AT86RF215_MAC_PRIO_SUBGHZ, "at86rf215 [sub GHz]");
 
         /* setup 2.4-GHz interface */
-        _setup_netif(netif_24, dev_24, stack_24, AT86RF215_MAC_PRIO);
+        _setup_netif(netif_24, dev_24, stack_24, AT86RF215_MAC_PRIO, "at86rf215 [2.4 GHz]");
     }
 }
 /** @} */

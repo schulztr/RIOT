@@ -17,6 +17,7 @@
  * @}
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -343,6 +344,42 @@ static void test_sock_ip_recv__non_blocking(void)
     expect(_check_net());
 }
 
+static void test_sock_ip_recv__aux(void)
+{
+    static const ipv6_addr_t src_addr = { .u8 = _TEST_ADDR_REMOTE };
+    static const ipv6_addr_t dst_addr = { .u8 = _TEST_ADDR_LOCAL };
+    static const sock_ip_ep_t local = { .family = AF_INET6 };
+    static const inject_aux_t inject_aux = { .timestamp = 42 };
+    sock_ip_ep_t result;
+    sock_ip_aux_rx_t aux = {
+        .flags = SOCK_AUX_GET_LOCAL | SOCK_AUX_GET_TIMESTAMP
+    };
+
+    expect(0 == sock_ip_create(&_sock, &local, NULL, _TEST_PROTO,
+                               SOCK_FLAGS_REUSE_EP));
+    expect(_inject_packet_aux(&src_addr, &dst_addr, _TEST_PROTO, "ABCD",
+                              sizeof("ABCD"), _TEST_NETIF, &inject_aux));
+    expect(sizeof("ABCD") == sock_ip_recv_aux(&_sock, _test_buffer,
+                                              sizeof(_test_buffer), 0, &result,
+                                              &aux));
+    expect(AF_INET6 == result.family);
+    expect(memcmp(&result.addr, &src_addr, sizeof(result.addr)) == 0);
+    expect(_TEST_NETIF == result.netif);
+#if IS_USED(MODULE_SOCK_AUX_LOCAL)
+    expect(!(aux.flags & SOCK_AUX_GET_LOCAL));
+    expect(memcmp(&aux.local.addr, &dst_addr, sizeof(dst_addr)) == 0);
+#else
+    expect(aux.flags & SOCK_AUX_GET_LOCAL);
+#endif
+#if IS_USED(MODULE_SOCK_AUX_TIMESTAMP)
+    expect(!(aux.flags & SOCK_AUX_GET_TIMESTAMP));
+    expect(aux.timestamp == inject_aux.timestamp);
+#else
+    expect(aux.flags & SOCK_AUX_GET_TIMESTAMP);
+#endif
+    expect(_check_net());
+}
+
 static void test_sock_ip_recv_buf__success(void)
 {
     static const ipv6_addr_t src_addr = { .u8 = _TEST_ADDR_REMOTE };
@@ -366,10 +403,20 @@ static void test_sock_ip_recv_buf__success(void)
     assert(_check_net());
 }
 
-static void test_sock_ip_send__EAFNOSUPPORT(void)
+static void test_sock_ip_send__EAFNOSUPPORT_INET(void)
 {
     static const sock_ip_ep_t remote = { .addr = { .ipv6 = _TEST_ADDR_REMOTE },
                                          .family = AF_INET };
+
+    expect(-EAFNOSUPPORT == sock_ip_send(NULL, "ABCD", sizeof("ABCD"),
+                                         _TEST_PROTO, &remote));
+    expect(_check_net());
+}
+
+static void test_sock_ip_send__EAFNOSUPPORT_UNSPEC(void)
+{
+    static const sock_ip_ep_t remote = { .addr = { .ipv6 = _TEST_ADDR_REMOTE },
+                                         .family = AF_UNSPEC };
 
     expect(-EAFNOSUPPORT == sock_ip_send(NULL, "ABCD", sizeof("ABCD"),
                                          _TEST_PROTO, &remote));
@@ -639,9 +686,11 @@ int main(void)
     CALL(test_sock_ip_recv__unsocketed_with_remote());
     CALL(test_sock_ip_recv__with_timeout());
     CALL(test_sock_ip_recv__non_blocking());
+    CALL(test_sock_ip_recv__aux());
     CALL(test_sock_ip_recv_buf__success());
     _prepare_send_checks();
-    CALL(test_sock_ip_send__EAFNOSUPPORT());
+    CALL(test_sock_ip_send__EAFNOSUPPORT_INET());
+    CALL(test_sock_ip_send__EAFNOSUPPORT_UNSPEC());
     CALL(test_sock_ip_send__EINVAL_addr());
     CALL(test_sock_ip_send__EINVAL_netif());
     CALL(test_sock_ip_send__ENOTCONN());

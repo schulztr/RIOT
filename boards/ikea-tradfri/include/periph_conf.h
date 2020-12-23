@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Bas Stottelaar <basstottelaar@gmail.com>
+ * Copyright (C) 2017-2020 Bas Stottelaar <basstottelaar@gmail.com>
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -48,12 +48,40 @@ extern "C" {
 #endif
 /** @} */
 
+/**
+ * @name    ADC configuration
+ * @{
+ */
+static const adc_conf_t adc_config[] = {
+    {
+        .dev = ADC0,
+        .cmu = cmuClock_ADC0,
+    }
+};
+
+static const adc_chan_conf_t adc_channel_config[] = {
+    {
+        .dev = 0,
+        .input = adcPosSelTEMP,
+        .reference = adcRef1V25,
+        .acq_time = adcAcqTime8
+    },
+    {
+        .dev = 0,
+        .input = adcPosSelAVDD,
+        .reference = adcRef5V,
+        .acq_time = adcAcqTime8
+    }
+};
+
+#define ADC_DEV_NUMOF       ARRAY_SIZE(adc_config)
+#define ADC_NUMOF           ARRAY_SIZE(adc_channel_config)
+/** @} */
 
 /**
  * @name    RTT configuration
  * @{
  */
-
 #define RTT_MAX_VALUE       (0xFFFFFFFF)
 #define RTT_FREQUENCY       (1U)
 /** @} */
@@ -82,25 +110,41 @@ static const spi_dev_t spi_config[] = {
 /**
  * @name    Timer configuration
  *
- * The implementation uses two timers in cascade mode.
+ * The implementation can use one low-energy timer
+ * or two regular timers in cascade mode.
  * @{
  */
 static const timer_conf_t timer_config[] = {
     {
-        {
+        .prescaler = {
             .dev = TIMER0,
             .cmu = cmuClock_TIMER0
         },
-        {
+        .timer = {
             .dev = TIMER1,
             .cmu = cmuClock_TIMER1
         },
-        .irq = TIMER1_IRQn
+        .irq = TIMER1_IRQn,
+        .channel_numof = 3
+    },
+    {
+        .prescaler = {
+            .dev = NULL,
+            .cmu = cmuClock_LETIMER0
+        },
+        .timer = {
+            .dev = LETIMER0,
+            .cmu = cmuClock_LETIMER0
+        },
+        .irq = LETIMER0_IRQn,
+        .channel_numof = 2
     }
 };
 
-#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 #define TIMER_0_ISR         isr_timer1
+#define TIMER_1_ISR         isr_letimer0
+
+#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 /** @} */
 
 /**

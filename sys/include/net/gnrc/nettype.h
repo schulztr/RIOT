@@ -49,15 +49,6 @@ extern "C" {
  */
 typedef enum {
     /**
-     * @brief   Not so much protocol but data type that is passed to network
-     *          devices using the netdev interface
-     *
-     * @deprecated  Unused since https://github.com/RIOT-OS/RIOT/pull/11193.
-     *              Will be removed after 2020.10 release.
-     *
-     */
-    GNRC_NETTYPE_IOVEC = -2,
-    /**
      * @brief   Protocol is as defined in @ref gnrc_netif_hdr_t. Not usable with
      *          @ref net_gnrc_netreg
      */
@@ -85,6 +76,17 @@ typedef enum {
      */
 #if IS_USED(MODULE_GNRC_NETTYPE_LWMAC) || defined(DOXYGEN)
     GNRC_NETTYPE_LWMAC,          /**< Protocol is lwMAC */
+#endif
+    /**
+     * @}
+     */
+
+    /**
+     * @{
+     * @name Link layer
+     */
+#if IS_USED(MODULE_GNRC_NETTYPE_CUSTOM) || defined(DOXYGEN)
+    GNRC_NETTYPE_CUSTOM,            /**< Custom ethertype */
 #endif
     /**
      * @}
@@ -178,6 +180,10 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
         case ETHERTYPE_6LOENC:
             return GNRC_NETTYPE_SIXLOWPAN;
 #endif
+#if IS_USED(MODULE_GNRC_NETTYPE_CUSTOM)
+        case ETHERTYPE_CUSTOM:
+            return GNRC_NETTYPE_CUSTOM;
+#endif
         default:
             return GNRC_NETTYPE_UNDEF;
     }
@@ -211,6 +217,10 @@ static inline uint16_t gnrc_nettype_to_ethertype(gnrc_nettype_t type)
 #if IS_USED(MODULE_GNRC_NETTYPE_NDN)
         case GNRC_NETTYPE_NDN:
             return ETHERTYPE_NDN;
+#endif
+#if IS_USED(MODULE_GNRC_NETTYPE_CUSTOM)
+        case GNRC_NETTYPE_CUSTOM:
+            return ETHERTYPE_CUSTOM;
 #endif
         default:
             return ETHERTYPE_UNKNOWN;

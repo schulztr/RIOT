@@ -47,7 +47,7 @@
 #include "periph/init.h"
 #include "periph/pm.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 typedef enum {
@@ -75,11 +75,14 @@ netdev_tap_params_t netdev_tap_params[NETDEV_TAP_MAX];
 #include "board.h"
 #include "mtd_native.h"
 #endif
-#ifdef MODULE_CAN_LINUX
+#ifdef MODULE_PERIPH_CAN
 #include "candev_linux.h"
 #endif
 #ifdef MODULE_PERIPH_SPIDEV_LINUX
 #include "spidev_linux.h"
+#endif
+#ifdef MODULE_PERIPH_GPIO_LINUX
+#include "gpiodev_linux.h"
 #endif
 #ifdef MODULE_SOCKET_ZEP
 #include "socket_zep_params.h"
@@ -92,10 +95,13 @@ extern char eeprom_file[EEPROM_FILEPATH_MAX_LEN];
 #endif
 
 static const char short_opts[] = ":hi:s:deEoc:"
+#ifdef MODULE_PERIPH_GPIO_LINUX
+    "g:"
+#endif
 #ifdef MODULE_MTD_NATIVE
     "m:"
 #endif
-#ifdef MODULE_CAN_LINUX
+#ifdef MODULE_PERIPH_CAN
     "n:"
 #endif
 #ifdef MODULE_SOCKET_ZEP
@@ -115,10 +121,13 @@ static const struct option long_opts[] = {
     { "stderr-noredirect", no_argument, NULL, 'E' },
     { "stdout-pipe", no_argument, NULL, 'o' },
     { "uart-tty", required_argument, NULL, 'c' },
+#ifdef MODULE_PERIPH_GPIO_LINUX
+    { "gpio", required_argument, NULL, 'g' },
+#endif
 #ifdef MODULE_MTD_NATIVE
     { "mtd", required_argument, NULL, 'm' },
 #endif
-#ifdef MODULE_CAN_LINUX
+#ifdef MODULE_PERIPH_CAN
     { "can", required_argument, NULL, 'n' },
 #endif
 #ifdef MODULE_SOCKET_ZEP
@@ -260,6 +269,9 @@ void usage_exit(int status)
     }
 #endif
     real_printf(" [-i <id>] [-d] [-e|-E] [-o] [-c <tty>]\n");
+#ifdef MODULE_PERIPH_GPIO_LINUX
+    real_printf(" [-g <gpiochip>]\n");
+#endif
 #if defined(MODULE_SOCKET_ZEP) && (SOCKET_ZEP_MAX > 0)
     real_printf(" -z [[<laddr>:<lport>,]<raddr>:<rport>]\n");
     for (int i = 0; i < SOCKET_ZEP_MAX - 1; i++) {
@@ -295,10 +307,18 @@ void usage_exit(int status)
 "    -c <tty>, --uart-tty=<tty>\n"
 "        specify TTY device for UART. This argument can be used multiple\n"
 "        times (up to UART_NUMOF)\n"
+#ifdef MODULE_PERIPH_GPIO_LINUX
+"    -g <gpio>, --gpio=<gpio>\n"
+"        specify gpiochip device for GPIO access.\n"
+"        This argument can be used multiple times.\n"
+"        Example: --gpio=/dev/gpiochip0 uses gpiochip0 for port 0\n"
+#endif
 #if defined(MODULE_SOCKET_ZEP) && (SOCKET_ZEP_MAX > 0)
 "    -z [<laddr>:<lport>,]<raddr>:<rport> --zep=[<laddr>:<lport>,]<raddr>:<rport>\n"
-"        provide a ZEP interface with local address and port (<laddr>, <lport>)\n"
-"        and remote address and port (default local: [::]:17754).\n"
+"        provide a ZEP interface with an (optional) local address and port\n"
+"        (<laddr>:<lport>) and a remote address and port (<raddr>:<rport>).\n"
+"        The ZEP interface connects to the remote address and may listen\n"
+"        on a local address.\n"
 "        Required to be provided SOCKET_ZEP_MAX times\n"
 #endif
     );
@@ -307,7 +327,7 @@ void usage_exit(int status)
 "    -m <mtd>, --mtd=<mtd>\n"
 "       specify the file name of mtd emulated device\n");
 #endif
-#if defined(MODULE_CAN_LINUX)
+#if defined(MODULE_PERIPH_CAN)
     real_printf(
 "    -n <ifnum>:<ifname>, --can <ifnum>:<ifname>\n"
 "        specify CAN interface <ifname> to use for CAN device #<ifnum>\n"
@@ -371,13 +391,16 @@ static void _zep_params_setup(char *zep_str, int zep)
 {
     char *save_ptr, *first_ep, *second_ep;
 
+    /* reboot uses execve() so we need to preserve argv */
+    zep_str = strdup(zep_str);
+
     if ((first_ep = strtok_r(zep_str, ",", &save_ptr)) == NULL) {
         usage_exit(EXIT_FAILURE);
     }
     second_ep = strtok_r(NULL, ",", &save_ptr);
     if (second_ep == NULL) {
-        socket_zep_params[zep].local_addr = SOCKET_ZEP_LOCAL_ADDR_DEFAULT;
-        socket_zep_params[zep].local_port = SOCKET_ZEP_PORT_DEFAULT;
+        socket_zep_params[zep].local_addr = NULL;
+        socket_zep_params[zep].local_port = NULL;
         _parse_ep_str(first_ep, &socket_zep_params[zep].remote_addr,
                       &socket_zep_params[zep].remote_port);
     }
@@ -463,6 +486,13 @@ __attribute__((constructor)) static void startup(int argc, char **argv, char **e
                 }
                 force_stderr = true;
                 break;
+#ifdef MODULE_PERIPH_GPIO_LINUX
+            case 'g':
+                if (gpio_linux_setup(optarg) < 0) {
+                    usage_exit(EXIT_FAILURE);
+                }
+                break;
+#endif
             case 'o':
                 stdouttype = _STDIOTYPE_FILE;
                 break;
@@ -474,7 +504,7 @@ __attribute__((constructor)) static void startup(int argc, char **argv, char **e
                 ((mtd_native_dev_t *)mtd0)->fname = strndup(optarg, PATH_MAX - 1);
                 break;
 #endif
-#if defined(MODULE_CAN_LINUX)
+#if defined(MODULE_PERIPH_CAN)
             case 'n':{
                 int i;
                 i = atol(optarg);
@@ -488,7 +518,7 @@ __attribute__((constructor)) static void startup(int argc, char **argv, char **e
                     usage_exit(EXIT_FAILURE);
                 }
                 optarg++;
-                strncpy(candev_linux_conf[i].interface_name, optarg,
+                strncpy(candev_conf[i].interface_name, optarg,
                         CAN_MAX_SIZE_INTERFACE_NAME);
                 }
                 break;

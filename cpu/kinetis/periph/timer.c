@@ -42,7 +42,7 @@
 #define KINETIS_PIT_COMBINED_IRQ 0
 #endif
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #define PIT_MAX_VALUE     (PIT_LDVAL_TSV_MASK >> PIT_LDVAL_TSV_SHIFT)
@@ -607,7 +607,7 @@ static inline void lptmr_irq_handler(tim_t tim)
 #endif
 /* ****** Common timer API functions ****** */
 
-int timer_init(tim_t dev, unsigned long freq, timer_cb_t cb, void *arg)
+int timer_init(tim_t dev, uint32_t freq, timer_cb_t cb, void *arg)
 {
     if ((unsigned int)dev >= TIMER_NUMOF) {
         /* invalid timer */

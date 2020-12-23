@@ -28,6 +28,28 @@
 #include "xtimer.h"
 #endif
 
+#if MODULE_SHELL_HOOKS
+void shell_post_readline_hook(void)
+{
+    puts("shell_post_readline_hook");
+}
+
+void shell_pre_command_hook(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    puts("shell_pre_command_hook");
+}
+
+void shell_post_command_hook(int ret, int argc, char **argv)
+{
+    (void)ret;
+    (void)argc;
+    (void)argv;
+    puts("shell_post_command_hook");
+}
+#endif
+
 static int print_teststart(int argc, char **argv)
 {
     (void) argc;
@@ -75,13 +97,18 @@ static const shell_command_t shell_commands[] = {
 
 int main(void)
 {
-
     printf("test_shell.\n");
 
     /* define buffer to be used by the shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
 
     /* define own shell commands */
+    shell_run_once(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    puts("shell exited");
+
+    /* Restart the shell after the previous one exits, so that we can test
+     * Ctrl-D exit */
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     /* or use only system shell commands */

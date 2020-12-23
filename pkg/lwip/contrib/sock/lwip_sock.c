@@ -283,10 +283,10 @@ static void _netconn_cb(struct netconn *conn, enum netconn_evt evt,
                         default:
                             break;
                     }
-                    if (cib_avail(&conn->acceptmbox.mbox.cib)) {
+                    if (mbox_avail(&conn->acceptmbox.mbox)) {
                         flags |= SOCK_ASYNC_CONN_RECV;
                     }
-                    if (cib_avail(&conn->recvmbox.mbox.cib)) {
+                    if (mbox_avail(&conn->recvmbox.mbox)) {
                         flags |= SOCK_ASYNC_MSG_RECV;
                     }
 #endif
@@ -340,6 +340,7 @@ static int _create(int type, int proto, uint16_t flags, struct netconn **out)
     return 0;
 }
 
+#include <assert.h>
 #include <stdio.h>
 
 int lwip_sock_create(struct netconn **conn, const struct _sock_tl_ep *local,
@@ -490,13 +491,15 @@ int lwip_sock_get_addr(struct netconn *conn, struct _sock_tl_ep *ep, u8_t local)
         ) {
         return res;
     }
-#if LWIP_IPV6 && LWIP_IPV4
-    ep->family = (addr.type == IPADDR_TYPE_V6) ? AF_INET6 : AF_INET;
-#elif LWIP_IPV6
-    ep->family = (conn->type & NETCONN_TYPE_IPV6) ? AF_INET6 : AF_INET;
-#elif LWIP_IPV4
-    ep->family = AF_INET;
-#endif
+    if (NETCONNTYPE_ISIPV6(conn->type)) {
+        ep->family = AF_INET6;
+    }
+    else if (IS_ACTIVE(LWIP_IPV4)) {
+        ep->family = AF_INET;
+    }
+    else {
+        ep->family = AF_UNSPEC;
+    }
     if (local) {
         ep->netif = lwip_sock_bind_addr_to_netif(&addr);
     }
@@ -521,7 +524,7 @@ int lwip_sock_recv(struct netconn *conn, uint32_t timeout, struct netbuf **buf)
     }
     else
 #endif
-    if ((timeout == 0) && !cib_avail(&conn->recvmbox.mbox.cib)) {
+    if ((timeout == 0) && !mbox_avail(&conn->recvmbox.mbox)) {
         return -EAGAIN;
     }
     switch (netconn_recv(conn, buf)) {
@@ -547,7 +550,7 @@ int lwip_sock_recv(struct netconn *conn, uint32_t timeout, struct netbuf **buf)
 #if IS_ACTIVE(SOCK_HAS_ASYNC)
     lwip_sock_base_t *sock = netconn_get_callback_arg(conn);
 
-    if (sock && sock->async_cb.gen && cib_avail(&conn->recvmbox.mbox.cib)) {
+    if (sock && sock->async_cb.gen && mbox_avail(&conn->recvmbox.mbox)) {
         sock->async_cb.gen(sock, SOCK_ASYNC_MSG_RECV, sock->async_cb_arg);
     }
 #endif

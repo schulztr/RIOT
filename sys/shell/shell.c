@@ -38,15 +38,16 @@
 #include "shell.h"
 #include "shell_commands.h"
 
-#define ETX '\x03'  /** ASCII "End-of-Text", or ctrl-C */
+#define ETX '\x03'  /** ASCII "End-of-Text", or Ctrl-C */
+#define EOT '\x04'  /** ASCII "End-of-Transmission", or Ctrl-D */
 #define BS  '\x08'  /** ASCII "Backspace" */
 #define DEL '\x7f'  /** ASCII "Delete" */
 
-#ifdef MODULE_NEWLIB
+#if defined(MODULE_NEWLIB) || defined(MODULE_PICOLIBC)
     #define flush_if_needed() fflush(stdout)
 #else
     #define flush_if_needed()
-#endif /* MODULE_NEWLIB */
+#endif /* MODULE_NEWLIB || MODULE_PICOLIBC */
 
 #ifndef SHELL_NO_ECHO
     #define ECHO_ON 1
@@ -199,7 +200,9 @@ static void handle_input_line(const shell_command_t *command_list, char *line)
     char *writepos = readpos;
 
     uint8_t pstate = PARSE_BLANK;
-
+    if (IS_USED(MODULE_SHELL_HOOKS)) {
+        shell_post_readline_hook();
+    }
     for (; *readpos != '\0'; readpos++) {
 
         char wordbreak = SPACE;
@@ -300,7 +303,14 @@ static void handle_input_line(const shell_command_t *command_list, char *line)
     /* then we call the appropriate handler */
     shell_command_handler_t handler = find_handler(command_list, argv[0]);
     if (handler != NULL) {
-        handler(argc, argv);
+        if (IS_USED(MODULE_SHELL_HOOKS)) {
+            shell_pre_command_hook(argc, argv);
+            int res = handler(argc, argv);
+            shell_post_command_hook(res, argc, argv);
+        }
+        else {
+            handler(argc, argv);
+        }
     }
     else {
         if (strcmp("help", argv[0]) == 0) {
@@ -310,6 +320,25 @@ static void handle_input_line(const shell_command_t *command_list, char *line)
             printf("shell: command not found: %s\n", argv[0]);
         }
     }
+}
+
+__attribute__((weak)) void shell_post_readline_hook(void)
+{
+
+}
+
+__attribute__((weak)) void shell_pre_command_hook(int argc, char **argv)
+{
+    (void)argv;
+    (void)argc;
+}
+
+__attribute__((weak)) void shell_post_command_hook(int ret, int argc,
+                                                   char **argv)
+{
+    (void)ret;
+    (void)argv;
+    (void)argc;
 }
 
 static inline void print_prompt(void)
@@ -383,6 +412,9 @@ static int readline(char *buf, size_t size)
 
         switch (c) {
 
+            case EOT:
+                /* Ctrl-D terminates the current shell instance. */
+                /* fall-thru */
             case EOF:
                 return EOF;
 

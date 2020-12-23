@@ -31,7 +31,7 @@
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    0
 #include "debug.h"
 
 #if defined(MODULE_NIMBLE_AUTOCONN_IPSP)
@@ -164,20 +164,16 @@ static void _on_scan_evt(uint8_t type, const ble_addr_t *addr, int8_t rssi,
 
 static void _evt_dbg(const char *msg, int handle, const uint8_t *addr)
 {
-#if ENABLE_DEBUG
-    printf("[autoconn] %s (%i|", msg, handle);
-    if (addr) {
-        bluetil_addr_print(addr);
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        printf("[autoconn] %s (%i|", msg, handle);
+        if (addr) {
+            bluetil_addr_print(addr);
+        }
+        else {
+            printf("n/a");
+        }
+        puts(")");
     }
-    else {
-        printf("n/a");
-    }
-    puts(")");
-#else
-    (void)msg;
-    (void)handle;
-    (void)addr;
-#endif
 }
 
 static void _on_netif_evt(int handle, nimble_netif_event_t event,
@@ -279,15 +275,16 @@ int nimble_autoconn_update(const nimble_autoconn_params_t *params,
     ble_npl_time_ms_to_ticks(params->period_jitter, &_period_jitter);
 
     /* populate the connection parameters */
-    _conn_params.scan_itvl = ((params->scan_win * 1000) / BLE_HCI_SCAN_ITVL);
-    _conn_params.scan_window = ((params->scan_win * 1000) / BLE_HCI_SCAN_ITVL);
-    _conn_params.itvl_min = ((params->conn_itvl * 1000) / BLE_HCI_CONN_ITVL);
-    _conn_params.itvl_max = ((params->conn_itvl * 1000) / BLE_HCI_CONN_ITVL);
+    _conn_params.scan_itvl = BLE_GAP_SCAN_ITVL_MS(params->scan_win);
+    _conn_params.scan_window = _conn_params.scan_itvl;
+    _conn_params.itvl_min = BLE_GAP_CONN_ITVL_MS(params->conn_itvl);
+    _conn_params.itvl_max = _conn_params.itvl_min;
     _conn_params.latency = 0;
-    _conn_params.supervision_timeout = (params->conn_super_to / 10);
+    _conn_params.supervision_timeout = BLE_GAP_SUPERVISION_TIMEOUT_MS(
+                                                         params->conn_super_to);
     _conn_params.min_ce_len = 0;
     _conn_params.max_ce_len = 0;
-    _conn_timeout = ((params->conn_timeout * 1000) / BLE_HCI_SCAN_ITVL);
+    _conn_timeout = params->conn_timeout;
 
     /* we use the same values to updated existing connections */
     struct ble_gap_upd_params conn_update_params;
@@ -300,18 +297,18 @@ int nimble_autoconn_update(const nimble_autoconn_params_t *params,
 
     /* calculate the used scan parameters */
     struct ble_gap_disc_params scan_params;
-    scan_params.itvl = ((params->scan_itvl * 1000) / BLE_HCI_SCAN_ITVL),
-    scan_params.window = ((params->scan_win * 1000) / BLE_HCI_SCAN_ITVL),
-    scan_params.filter_policy = 0,
-    scan_params.limited = 0,
-    scan_params.passive = 0,
-    scan_params.filter_duplicates = 1,
+    scan_params.itvl = BLE_GAP_SCAN_ITVL_MS(params->scan_itvl);
+    scan_params.window = BLE_GAP_SCAN_WIN_MS(params->scan_win);
+    scan_params.filter_policy = 0;
+    scan_params.limited = 0;
+    scan_params.passive = 0;
+    scan_params.filter_duplicates = 1;
 
     /* set the advertising parameters used */
     _adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     _adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    _adv_params.itvl_min = ((params->adv_itvl * 1000) / BLE_HCI_ADV_ITVL);
-    _adv_params.itvl_max = ((params->adv_itvl * 1000) / BLE_HCI_ADV_ITVL);
+    _adv_params.itvl_min = BLE_GAP_ADV_ITVL_MS(params->adv_itvl);
+    _adv_params.itvl_max = _adv_params.itvl_min;
     _adv_params.channel_map = 0;
     _adv_params.filter_policy = 0;
     _adv_params.high_duty_cycle = 0;

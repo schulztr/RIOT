@@ -22,6 +22,11 @@ config HAS_ARCH_32BIT
     help
         Indicates that the CPU has a 32-bits architecture.
 
+config HAS_ARCH_ARM
+    bool
+    help
+        Indicates that the current architecture is ARM.
+
 config HAS_ARDUINO
     bool
     help
@@ -36,16 +41,6 @@ config HAS_BACKUP_RAM
     bool
     help
         Indicates that Backup RAM is supported.
-
-config HAS_BOOTLOADER_ARDUINO
-    bool
-    help
-        Indicates that the Arduino bootloader is used.
-
-config HAS_BOOTLOADER_NRFUTIL
-    bool
-    help
-        Indicates that the NRF Util bootloader is used.
 
 config HAS_CPP
     bool
@@ -66,6 +61,18 @@ config HAS_ETHERNET
     bool
     help
         Indicates that Ethernet connectivity is present.
+
+config HAS_HIGHLEVEL_STDIO
+    bool
+    help
+        Indicates that a high-level stdio method (such as CDC ACM) is used.
+        This requires a running thread and set-up and will not print during
+        a crash.
+
+config HAS_LIBSTDCPP
+    bool
+    help
+        Indicates that in addition to C++ support an libstdc++ is available.
 
 config HAS_NO_IDLE_THREAD
     bool
@@ -117,10 +124,10 @@ config HAS_PERIPH_FLASHPAGE
     help
         Indicates that a Flashpage peripheral is present.
 
-config HAS_PERIPH_FLASHPAGE_RAW
+config HAS_PERIPH_FLASHPAGE_PAGEWISE
     bool
     help
-        Indicates that the Flashpage peripheral supports raw writing.
+        Indicates that the Flashpage peripheral supports pagewise writing.
 
 config HAS_PERIPH_FLASHPAGE_RWEE
     bool
@@ -137,6 +144,19 @@ config HAS_PERIPH_GPIO_IRQ
     help
         Indicates that the GPIO peripheral supports external interrupts is
         present.
+
+config HAS_PERIPH_GPIO_FAST_READ
+    bool
+    help
+	Indicates that the GPIO peripheral supports a mode in which pin read
+	operations are faster, usually with a tradeoff against a different
+	property.
+
+config HAS_PERIPH_GPIO_TAMPER_WAKE
+    bool
+    help
+        Indicates that Tamper Detection can be used to wake the CPU from
+        Deep Sleep.
 
 config HAS_PERIPH_HWRNG
     bool
@@ -175,10 +195,30 @@ config HAS_PERIPH_MCG
     help
         Indicates that an MCG peripheral is present.
 
+config HAS_PERIPH_PLIC
+    bool
+    help
+        Indicates that a RISC-V Platform-local Interrupt Controller (PLIC) peripheral is present.
+
 config HAS_PERIPH_PM
     bool
     help
         Indicates that a Power Management (PM) peripheral is present.
+
+config HAS_PERIPH_PTP
+    bool
+    help
+        Indicates that a PTP clock is present.
+
+config HAS_PERIPH_PTP_SPEED_ADJUSTMENT
+    bool
+    help
+        Indicates that the PTP clock speed can be adjust. This can be used for clock drift correction and synchronization.
+
+config HAS_PERIPH_PTP_TIMER
+    bool
+    help
+        Indicates that the PTP clock can be used as timer.
 
 config HAS_PERIPH_PWM
     bool
@@ -204,6 +244,11 @@ config HAS_PERIPH_SPI
     bool
     help
         Indicates that an SPI peripheral is present.
+
+config HAS_PERIPH_SPI_ON_QSPI
+    bool
+    help
+        Indicates that the QSPI peripheral can be used in SPI mode.
 
 config HAS_PERIPH_SPI_RECONFIGURE
     bool
@@ -251,6 +296,11 @@ config HAS_PERIPH_UART_NONBLOCKING
     help
         Indicates that the UART peripheral allows non-blocking operations.
 
+config HAS_PERIPH_UART_RECONFIGURE
+    bool
+    help
+        Indicates that the UART pins can be re-configured as GPIOs.
+
 config HAS_PERIPH_USBDEV
     bool
     help
@@ -265,6 +315,11 @@ config HAS_PERIPH_WDT_CB
     bool
     help
         Indicates that the WDT peripheral allows setting a callback.
+
+config HAS_PICOLIBC
+    bool
+    help
+        Indicates that the picolibc C library is available for the platform.
 
 config HAS_PUF_SRAM
     bool

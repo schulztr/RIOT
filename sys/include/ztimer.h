@@ -122,6 +122,24 @@
  * (now() - B) + T[1]). Thus even though the list is keeping relative offsets,
  * the time keeping is done by keeping track of the absolute times.
  *
+ * Currently, a sorted singly linked list is used for storing the timers.
+ * This choice has some implications:
+ *
+ * - only one pointer needed per timer object (for "next" element)
+ * - simple implementation
+ * - acceptable runtime for expected number of active timers (<50)
+ * - constant get_min() (important for timer triggering)
+ * - O(n) insertion / removal of timer objects
+ *
+ * By making the list doubly-linked, removal of timer objects could be easily
+ * made a constant operation, at the price of another pointer per timer object
+ * (for "previous" element).
+ *
+ * If deemed necessary, the linked list can be exchanged our augmented with
+ * another data structure providing better algorithmic guarantees. It remains
+ * to be shown whether the increased complexity would lead to better
+ * performance for any reasonable amount of active timers.
+ *
  *
  * ## Clock extension
  *
@@ -216,8 +234,9 @@
 
 #include <stdint.h>
 
-#include "kernel_types.h"
+#include "sched.h"
 #include "msg.h"
+#include "mutex.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -295,7 +314,9 @@ struct ztimer_clock {
     ztimer_base_t list;             /**< list of active timers              */
     const ztimer_ops_t *ops;        /**< pointer to methods structure       */
     ztimer_base_t *last;            /**< last timer in queue, for _is_set() */
-    uint32_t adjust;                /**< will be subtracted on every set()  */
+    uint16_t adjust_set;            /**< will be subtracted on every set()  */
+    uint16_t adjust_sleep;          /**< will be subtracted on every sleep(),
+                                         in addition to adjust_set          */
 #if MODULE_ZTIMER_EXTEND || MODULE_ZTIMER_NOW64 || DOXYGEN
     /* values used for checkpointed intervals and 32bit extension */
     uint32_t max_value;             /**< maximum relative timer value       */
@@ -445,6 +466,22 @@ void ztimer_periodic_wakeup(ztimer_clock_t *clock, uint32_t *last_wakeup,
 void ztimer_sleep(ztimer_clock_t *clock, uint32_t duration);
 
 /**
+ * @brief   Busy-wait specified duration
+ *
+ * @note: This blocks lower priority threads. Use only for *very* short delays.
+ *
+ * @param[in]   clock           ztimer clock to use
+ * @param[in]   duration        duration to spin, in @p clock time units
+ */
+static inline void ztimer_spin(ztimer_clock_t *clock, uint32_t duration) {
+    uint32_t end = ztimer_now(clock) + duration;
+
+    /* Rely on integer overflow. `end - now` will be smaller than `duration`,
+     * counting down, until it underflows to UINT32_MAX. Loop ends then. */
+    while ((end - ztimer_now(clock)) <= duration) {}
+}
+
+/**
  * @brief Set a timer that wakes up a thread
  *
  * This function sets a timer that will wake up a thread when the timer has
@@ -472,6 +509,19 @@ void ztimer_set_timeout_flag(ztimer_clock_t *clock, ztimer_t *timer,
                              uint32_t timeout);
 
 /**
+ * @brief   Try to lock the given mutex, but give up after @p timeout
+ *
+ * @param[in]       clock       ztimer clock to operate on
+ * @param[in,out]   mutex       Mutex object to lock
+ * @param[in]       timeout     timeout after which to give up
+ *
+ * @retval  0               Success, caller has the mutex
+ * @retval  -ECANCELED      Failed to obtain mutex within @p timeout
+ */
+int ztimer_mutex_lock_timeout(ztimer_clock_t *clock, mutex_t *mutex,
+                              uint32_t timeout);
+
+/**
  * @brief   Update ztimer clock head list offset
  *
  * @internal
@@ -485,6 +535,7 @@ void ztimer_update_head_offset(ztimer_clock_t *clock);
  */
 void ztimer_init(void);
 
+#if defined(MODULE_ZTIMER_EXTEND) || defined(DOXYGEN)
 /**
  * @brief   Initialize possible ztimer extension intermediate timer
  *
@@ -501,6 +552,7 @@ static inline void ztimer_init_extend(ztimer_clock_t *clock)
         clock->ops->set(clock, clock->max_value >> 1);
     }
 }
+#endif /* MODULE_ZTIMER_EXTEND */
 
 /* default ztimer virtual devices */
 /**

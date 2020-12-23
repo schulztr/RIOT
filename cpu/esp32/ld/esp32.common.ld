@@ -97,6 +97,13 @@ SECTIONS
     _iram_start = ABSOLUTE(0);
   } > iram0_0_seg
 
+  /* If Bluetooth is not used, this DRAM section can be used as heap */
+  . = _data_start_btdm; /* 0x3ffae6e0 */
+  . = ALIGN (4);
+  _sheap1 = ABSOLUTE(.);
+  . = 0x3ffb0000;
+  _eheap1 = ABSOLUTE(.);
+
   .iram0.text :
   {
     /* Code marked as running out of IRAM */
@@ -109,30 +116,43 @@ SECTIONS
     *libc.a:*(.literal .text .literal.* .text.*)
 
     /* Xtensa basic functionality written in assembler should be placed in iram */
-    *xtensa.a:*(.literal .text .literal.* .text.*)
+    *xtensa/*(.literal .text .literal.* .text.*)
     /* ESP-IDF parts that have to run in IRAM */
-    *esp_idf_heap.a:*(.literal .text .literal.* .text.*)
-    *esp_idf_spi_flash.a:*(.literal .text .literal.* .text.*)
+    *esp_idf_heap/*(.literal .text .literal.* .text.*)
+    *esp_idf_spi_flash/*(.literal .text .literal.* .text.*)
     /* parts of RIOT that should to run in IRAM */
-    *core.a:*(.literal .text .literal.* .text.*)
-    *littlefs.a:*(.literal .text .literal.* .text.*)
-    *littlefs2.a:*(.literal .text .literal.* .text.*)
-    *newlib_syscalls_default.a:*(.literal .text .literal.* .text.*)
-    *spiffs_fs.a:*(.literal .text .literal.* .text.*)
-    *spiffs.a:*(.literal .text .literal.* .text.*)
+    *core/*(.literal .text .literal.* .text.*)
+    *littlefs/*(.literal .text .literal.* .text.*)
+    *littlefs2/*(.literal .text .literal.* .text.*)
+    *newlib_syscalls_default/*(.literal .text .literal.* .text.*)
+    *spiffs_fs/*(.literal .text .literal.* .text.*)
+    *spiffs/*(.literal .text .literal.* .text.*)
     *syscalls.o(.literal .text .literal.* .text.*)
-    *vfs.a:*(.literal .text .literal.* .text.*)
+    *vfs/*(.literal .text .literal.* .text.*)
 
     /* part of the RIOT port that should run in IRAM */
-    *cpu.a:*(.literal .text .literal.* .text.*)
-    *esp_common.a:*(.literal .text .literal.* .text.*)
-    *periph.a:*(.literal .text .literal.* .text.*)
-    *mtd.a:**(.literal .text .literal.* .text.*)
+    *cpu/*(.literal .text .literal.* .text.*)
+    *esp_common/*(.literal .text .literal.* .text.*)
+    *periph/*(.literal .text .literal.* .text.*)
+    *mtd/**(.literal .text .literal.* .text.*)
 
     INCLUDE esp32.spiram.rom-functions-iram.ld
     _iram_text_end = ABSOLUTE(.);
+
+    /* IRAM can't be used as heap since it only allows 32-bit aligned access */
+    /*
+    . = ALIGN (4);
+    _sheap4 = ABSOLUTE(.);
+    */
   } > iram0_0_seg
 
+  /* IRAM can't be used as heap since it only allows 32-bit aligned access */
+  /*
+  . = 0x400a0000;
+  _eheap4 = ABSOLUTE(.);
+  */
+
+  /* Starts at 0x3ffb000 if Bluetooth is not enabled, 0x3ffc0000 otherwise */
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
@@ -201,12 +221,22 @@ SECTIONS
     _sheap = ABSOLUTE(.);
   } >dram0_0_seg
 
-  /* TODO HEAP handling when BT is used
-     ETS system memory seems to start at 0x3FFE0000 if BT is not used.
-     This is the top of the heap for the app */
-    . = 0x3FFE0000;
+  /* Reserved ROM/ETS data start at 0x3ffe000. */
+  . = 0x3ffe0000;
   _heap_top = ABSOLUTE(.);
   _eheap = ABSOLUTE(.);
+
+  /* Reserved ROM/ETS data region for PRO CPU: 0x3ffe0000 ... 0x3ffe440 */
+  . = 0x3ffe0440;
+  _sheap2 = ABSOLUTE(.);
+  . = 0x3ffe4000;
+  _eheap2 = ABSOLUTE(.);
+
+  /* Reserved ROM/ETS data region for APP CPU: 0x3ffe4000 ... 0x3ffe4350 */
+  . = 0x3ffe4350;
+  _sheap3 = ABSOLUTE(.);
+  . = 0x40000000;
+  _eheap3 = ABSOLUTE(.);
 
   .flash.rodata :
   {

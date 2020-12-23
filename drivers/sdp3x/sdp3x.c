@@ -27,16 +27,18 @@
 #include "checksum/crc8.h"
 #include "thread.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG        0
 #include "debug.h"
 
-#define DEV_I2C      (dev->params.i2c_dev)
-#define DEV_ADDR     (dev->params.i2c_addr)
+#define DEV_I2C             (dev->params.i2c_dev)
+#define DEV_ADDR            (dev->params.i2c_addr)
 
 #define DATA_READY_SLEEP_US (50 * US_PER_MS)
 
 static bool _check_product_number(uint8_t *readData);
+#ifdef MODULE_SDP3X_IRQ
 static void _sdp3x_irq_callback(void *arg);
+#endif
 static int8_t _checkCRC(uint16_t value, uint8_t test);
 static int8_t _SDP3x_read_data(const sdp3x_t *dev, int16_t *data);
 static int32_t _SDP3x_convert_to_pascal(int16_t value,
@@ -87,13 +89,16 @@ int sdp3x_init(sdp3x_t *dev, const sdp3x_params_t *params)
         return ret;
     }
 
-#ifdef SDP3X_PARAM_IRQ_PIN
-    mutex_init(&dev->mutex);
-    /* lock mutex initially to be unlocked when interrupt is raised */
-    mutex_lock(&dev->mutex);
-    /* Interrupt set to trigger on falling edge of interrupt pin */
-    gpio_init_int(params->irq_pin, GPIO_IN, GPIO_FALLING, _sdp3x_irq_callback,
-                 dev);
+#ifdef MODULE_SDP3X_IRQ
+    /* check if current device has irq pin connected */
+    if (params->irq_pin != GPIO_UNDEF) {
+        mutex_init(&dev->mutex);
+        /* lock mutex initially to be unlocked when interrupt is raised */
+        mutex_lock(&dev->mutex);
+        /* Interrupt set to trigger on falling edge of interrupt pin */
+        gpio_init_int(params->irq_pin, GPIO_IN, GPIO_FALLING, _sdp3x_irq_callback,
+                     dev);
+    }
 #endif
 
     DEBUG("[SDP3x] init: Init done\n");
@@ -103,13 +108,14 @@ int sdp3x_init(sdp3x_t *dev, const sdp3x_params_t *params)
 int32_t sdp3x_read_single_temperature(sdp3x_t *dev, uint8_t flags)
 {
     _SDP3x_start_triggered(dev, flags);
-#ifndef SDP3X_PARAM_IRQ_PIN
-    /* Wait for measurement to be ready if irq pin not used */
-    xtimer_usleep(DATA_READY_SLEEP_US);
-#else
-    /* Try to lock mutex till the interrupt is raised or till timeut happens */
-    xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
-#endif
+    if (!IS_USED(MODULE_SDP3X_IRQ) || dev->params.irq_pin == GPIO_UNDEF) {
+        /* Wait for measurement to be ready if irq pin not used */
+        xtimer_usleep(DATA_READY_SLEEP_US);
+    }
+    else {
+        /* Try to lock mutex till the interrupt is raised or till timeut happens */
+        xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
+    }
     return _SDP3x_read_temp(dev);
 }
 
@@ -117,13 +123,14 @@ int32_t sdp3x_read_single_differential_pressure(sdp3x_t *dev,
                                                uint8_t flags)
 {
     _SDP3x_start_triggered(dev, flags);
-#ifndef SDP3X_PARAM_IRQ_PIN
-    /* Wait for measurement to be ready if irq pin not used */
-    xtimer_usleep(DATA_READY_SLEEP_US);
-#else
-    /* Try to lock mutex till the interrupt is raised or till timeut happens */
-    xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
-#endif
+    if (!IS_USED(MODULE_SDP3X_IRQ) || dev->params.irq_pin == GPIO_UNDEF) {
+        /* Wait for measurement to be ready if irq pin not used */
+        xtimer_usleep(DATA_READY_SLEEP_US);
+    }
+    else {
+        /* Try to lock mutex till the interrupt is raised or till timeut happens */
+        xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
+    }
     return _SDP3x_read_pressure(dev);
 }
 
@@ -131,13 +138,14 @@ int8_t sdp3x_read_single_measurement(sdp3x_t *dev, uint8_t flags,
                                      sdp3x_measurement_t *result)
 {
     _SDP3x_start_triggered(dev, flags);
-#ifndef SDP3X_PARAM_IRQ_PIN
-    /* Wait for measurement to be ready if irq pin not used */
-    xtimer_usleep(DATA_READY_SLEEP_US);
-#else
-    /* Try to lock mutex till the interrupt is raised or till timeut happens */
-    xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
-#endif
+    if (!IS_USED(MODULE_SDP3X_IRQ) || dev->params.irq_pin == GPIO_UNDEF) {
+        /* Wait for measurement to be ready if irq pin not used */
+        xtimer_usleep(DATA_READY_SLEEP_US);
+    }
+    else {
+        /* Try to lock mutex till the interrupt is raised or till timeut happens */
+        xtimer_mutex_lock_timeout(&dev->mutex, DATA_READY_SLEEP_US);
+    }
     /* read in sensor values here */
     int16_t data[3];
     uint8_t ret = _SDP3x_read_data(dev, data);
@@ -234,8 +242,8 @@ int8_t sdp3x_stop_continuous(sdp3x_t *dev, xtimer_t *continuous_timer)
     int ret = 0;
     uint8_t cmd[2] = { 0x3F, 0xF9 };
 
-    DEBUG("[SDP3x] stop_continuous: Stopping continuous\
-          measurement on device %#X\n", DEV_ADDR);
+    DEBUG("[SDP3x] stop_continuous: Stopping continuous"
+          " measurement on device %#X\n", DEV_ADDR);
     i2c_acquire(DEV_I2C);
     ret = i2c_write_bytes(DEV_I2C, DEV_ADDR, cmd, 2, 0);
     i2c_release(DEV_I2C);
@@ -340,8 +348,7 @@ static int32_t _SDP3x_read_pressure(const sdp3x_t *dev)
  *      2 byte Scale Factor differential pressure
  *      1 byte CRC
  *
- *      @param addr   Address byte 1 = 0x21, 2 = 0x22, 3 = 0x23,
- *                    else = Last address
+ *      @param dev    sdp3x device
  *      @param data   Data will be stored here
  *
  *      @return       0 if data could be read, 1 if CRC-Error
@@ -379,9 +386,9 @@ static int8_t _SDP3x_read_data(const sdp3x_t *dev, int16_t *data)
 
 /**
  *      intern method to convert sensor value to pascal
- *      @param  dev      device
- *      @param  value    raw sensor value
- *      @return pressure value in centiPa
+ *      @param  value                 raw sensor value
+ *      @param  dp_scale_factor scale factor for sensor
+ *      @return pressure              value in centiPa
  */
 static int32_t _SDP3x_convert_to_pascal(int16_t value, int16_t dp_scale_factor)
 {
@@ -391,7 +398,6 @@ static int32_t _SDP3x_convert_to_pascal(int16_t value, int16_t dp_scale_factor)
 
 /**
  *      intern method to convert sensor value to celsius
- *      @param  dev     device
  *      @param  value   raw sensor value
  *      @return temperature in centi°C
  */
@@ -423,6 +429,7 @@ static int8_t _checkCRC(uint16_t value, uint8_t test)
  *      @param  arguments passed when interrupt is raised
  *              (in this case sdp3x dev)
  */
+#ifdef MODULE_SDP3X_IRQ
 static void _sdp3x_irq_callback(void *arg)
 {
     sdp3x_t *dev = (sdp3x_t *)arg;
@@ -430,12 +437,12 @@ static void _sdp3x_irq_callback(void *arg)
         mutex_unlock(&(dev->mutex));
     }
 }
+#endif
 
 /**
  *      Function to check if the product number set
  *      is the one we get from the sensor
  *      @param  data  data read from the sensor
- *      @param  dev   sdp3x device
  *      @return true  if values from sensor were correct
  */
 static bool _check_product_number(uint8_t *readData)
@@ -446,7 +453,7 @@ static bool _check_product_number(uint8_t *readData)
     if (readData[1] != SDP31_PRODUCT_NO_BYTE_1) {
         return false;
     }
-    if ((readData[3] != SDP3X_MODEL_31) || (readData[3] != SDP3X_MODEL_32)) {
+    if ((readData[3] != SDP3X_MODEL_31) && (readData[3] != SDP3X_MODEL_32)) {
         return false;
     }
     if (readData[4] != SDP31_PRODUCT_NO_BYTE_3) {

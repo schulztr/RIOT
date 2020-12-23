@@ -28,12 +28,6 @@
 #include "thread.h"
 #include "ztimer.h"
 
-typedef struct {
-    mutex_t *mutex;
-    thread_t *thread;
-    int timeout;
-} mutex_thread_t;
-
 static void _callback_unlock_mutex(void *arg)
 {
     mutex_t *mutex = (mutex_t *)arg;
@@ -51,17 +45,25 @@ void ztimer_sleep(ztimer_clock_t *clock, uint32_t duration)
         .arg = (void *)&mutex,
     };
 
+    /* correct board / MCU specific overhead */
+    if (duration > clock->adjust_sleep) {
+        duration -= clock->adjust_sleep;
+    }
+    else {
+        duration = 0;
+    }
+
     ztimer_set(clock, &timer, duration);
     mutex_lock(&mutex);
 }
 
-void ztimer_periodic_wakeup(ztimer_clock_t *clock, ztimer_now_t *last_wakeup,
+void ztimer_periodic_wakeup(ztimer_clock_t *clock, uint32_t *last_wakeup,
                             uint32_t period)
 {
     unsigned state = irq_disable();
-    ztimer_now_t now = ztimer_now(clock);
-    ztimer_now_t target = *last_wakeup + period;
-    ztimer_now_t offset = target - now;
+    uint32_t now = ztimer_now(clock);
+    uint32_t target = *last_wakeup + period;
+    uint32_t offset = target - now;
 
     irq_restore(state);
 
@@ -109,7 +111,7 @@ int ztimer_msg_receive_timeout(ztimer_clock_t *clock, msg_t *msg,
     ztimer_t t;
     msg_t m = { .type = MSG_ZTIMER, .content.ptr = &m };
 
-    ztimer_set_msg(clock, &t, timeout, &m, sched_active_pid);
+    ztimer_set_msg(clock, &t, timeout, &m, thread_getpid());
 
     msg_receive(msg);
     ztimer_remove(clock, &t);
@@ -134,7 +136,7 @@ void ztimer_set_timeout_flag(ztimer_clock_t *clock, ztimer_t *t,
                              uint32_t timeout)
 {
     t->callback = _set_timeout_flag_callback;
-    t->arg = (thread_t *)sched_active_thread;
+    t->arg = thread_get_active();
     thread_flags_clear(THREAD_FLAG_TIMEOUT);
     ztimer_set(clock, t, timeout);
 }
@@ -154,4 +156,27 @@ void ztimer_set_wakeup(ztimer_clock_t *clock, ztimer_t *timer, uint32_t offset,
     timer->arg = (void *)((intptr_t)pid);
 
     ztimer_set(clock, timer, offset);
+}
+
+static void timeout_cb(void *arg) {
+    mutex_cancel(arg);
+}
+
+int ztimer_mutex_lock_timeout(ztimer_clock_t *clock, mutex_t *mutex,
+                              uint32_t timeout)
+{
+    if (mutex_trylock(mutex)) {
+        return 0;
+    }
+
+    mutex_cancel_t mc = mutex_cancel_init(mutex);
+    ztimer_t t = { .callback = timeout_cb, .arg = &mc };
+
+    ztimer_set(clock, &t, timeout);
+    if (mutex_lock_cancelable(&mc)) {
+        return -ECANCELED;
+    }
+
+    ztimer_remove(clock, &t);
+    return 0;
 }

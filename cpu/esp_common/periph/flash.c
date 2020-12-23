@@ -20,10 +20,12 @@
 
 #if MODULE_MTD
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
+#include "architecture.h"
 #include "board.h"
 #include "esp_common.h"
 #include "irq_arch.h"
@@ -47,7 +49,7 @@
 
 #endif /* MCU_ESP32 */
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #define ESP_PART_TABLE_ADDR         0x8000 /* TODO configurable as used in Makefile.include */
@@ -58,8 +60,8 @@
 /* the external pointer to the system MTD device */
 mtd_dev_t* mtd0 = 0;
 
-mtd_dev_t  _flash_dev;
-mtd_desc_t _flash_driver;
+static mtd_dev_t  _flash_dev;
+static mtd_desc_t _flash_driver;
 
 #ifdef MCU_ESP8266
 
@@ -77,6 +79,8 @@ extern uint32_t spi_flash_get_id(void);
 static int _flash_init  (mtd_dev_t *dev);
 static int _flash_read  (mtd_dev_t *dev, void *buff, uint32_t addr, uint32_t size);
 static int _flash_write (mtd_dev_t *dev, const void *buff, uint32_t addr, uint32_t size);
+static int _flash_write_page (mtd_dev_t *dev, const void *buff, uint32_t page,
+                              uint32_t offset, uint32_t size);
 static int _flash_erase (mtd_dev_t *dev, uint32_t addr, uint32_t size);
 static int _flash_power (mtd_dev_t *dev, enum mtd_power_state power);
 
@@ -120,6 +124,7 @@ void spi_flash_drive_init (void)
     _flash_driver.init  = &_flash_init;
     _flash_driver.read  = &_flash_read;
     _flash_driver.write = &_flash_write;
+    _flash_driver.write_page = &_flash_write_page;
     _flash_driver.erase = &_flash_erase;
     _flash_driver.power = &_flash_power;
 
@@ -130,10 +135,12 @@ void spi_flash_drive_init (void)
 
     /* read in partition table an determine the top of all partitions */
     uint32_t part_addr = ESP_PART_TABLE_ADDR;
-    uint8_t  part_buf[ESP_PART_ENTRY_SIZE];
+    uint8_t WORD_ALIGNED part_buf[ESP_PART_ENTRY_SIZE];
     bool     part_read = true;
     uint32_t part_top = 0;
-    esp_partition_info_t* part = (esp_partition_info_t*)part_buf;
+    /* Use intermediate cast to uintptr_t to silence false positive of
+     * -Wcast-align. We aligned part_buf to word size via attribute */
+    esp_partition_info_t* part = (esp_partition_info_t*)(uintptr_t)part_buf;
 
     while (part_read && part_addr < ESP_PART_TABLE_ADDR + ESP_PART_TABLE_SIZE) {
         spi_flash_read (part_addr, (void*)part_buf, ESP_PART_ENTRY_SIZE);
@@ -432,10 +439,12 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type,
                                                 const char* label)
 {
     uint32_t info_addr = ESP_PART_TABLE_ADDR;
-    uint8_t  info_buf[ESP_PART_ENTRY_SIZE];
-    bool     info_read = true;
+    uint8_t WORD_ALIGNED info_buf[ESP_PART_ENTRY_SIZE];
+    bool info_read = true;
 
-    esp_partition_info_t* info = (esp_partition_info_t*)info_buf;
+    /* use intermediate cast to uintptr_t to silence false positive of
+     * -Wcast-align. We used an attribute to align info_buf to word boundary */
+    esp_partition_info_t* info = (esp_partition_info_t*)(uintptr_t)info_buf;
     esp_partition_t* part;
 
     while (info_read && info_addr < ESP_PART_TABLE_ADDR + ESP_PART_TABLE_SIZE) {
@@ -526,6 +535,16 @@ static int _flash_write (mtd_dev_t *dev, const void *buff, uint32_t addr, uint32
     CHECK_PARAM_RET ((addr % _flashchip->page_size) + size <= _flashchip->page_size, -EOVERFLOW);
 
     return (spi_flash_write(_flash_beg + addr, buff, size) == ESP_OK) ? 0 : -EIO;
+}
+
+static int _flash_write_page (mtd_dev_t *dev, const void *buff, uint32_t page,  uint32_t offset,
+                              uint32_t size)
+{
+    uint32_t addr = _flash_beg + page * _flashchip->page_size + offset;
+    uint32_t remaining = _flashchip->page_size - offset;
+    size = MIN(size, remaining);
+
+    return (spi_flash_write(addr, buff, size) == ESP_OK) ? (int) size : -EIO;
 }
 
 static int _flash_erase (mtd_dev_t *dev, uint32_t addr, uint32_t size)

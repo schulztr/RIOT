@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "od.h"
 #include "timex.h"
 #include "random.h"
 #include "periph/rtt.h"
@@ -41,9 +42,6 @@
 #include "include/rx_state_machine.h"
 #include "include/lwmac_internal.h"
 
-#define ENABLE_DEBUG    (0)
-#include "debug.h"
-
 #ifndef LOG_LEVEL
 /**
  * @brief Default log level define
@@ -52,6 +50,9 @@
 #endif
 
 #include "log.h"
+
+#define ENABLE_DEBUG 0
+#include "debug.h"
 
 /**
  * @brief  LWMAC thread's PID
@@ -81,6 +82,38 @@ int gnrc_netif_lwmac_create(gnrc_netif_t *netif, char *stack, int stacksize,
 {
     return gnrc_netif_create(netif, stack, stacksize, priority, name, dev,
                              &lwmac_ops);
+}
+
+static void lwmac_reinit_radio(gnrc_netif_t *netif)
+{
+    /* Initialize low-level driver. */
+    netif->dev->driver->init(netif->dev);
+
+    /* Set MAC address length. */
+    uint16_t src_len = netif->l2addr_len;
+    netif->dev->driver->set(netif->dev, NETOPT_SRC_LEN, &src_len, sizeof(src_len));
+
+    /* Set the MAC address of the device. */
+    if (netif->l2addr_len == IEEE802154_LONG_ADDRESS_LEN) {
+        netif->dev->driver->set(netif->dev,
+                                NETOPT_ADDRESS_LONG,
+                                netif->l2addr,
+                                sizeof(netif->l2addr));
+    }
+    else {
+        netif->dev->driver->set(netif->dev,
+                                NETOPT_ADDR_LEN,
+                                netif->l2addr,
+                                sizeof(netif->l2addr));
+    }
+
+   /* Enable RX-start and TX-started and TX-END interrupts. */
+   netopt_enable_t enable = NETOPT_ENABLE;
+   netif->dev->driver->set(netif->dev, NETOPT_RX_START_IRQ, &enable, sizeof(enable));
+   netif->dev->driver->set(netif->dev, NETOPT_RX_END_IRQ, &enable, sizeof(enable));
+   netif->dev->driver->set(netif->dev, NETOPT_TX_START_IRQ, &enable, sizeof(enable));
+   netif->dev->driver->set(netif->dev, NETOPT_TX_END_IRQ, &enable, sizeof(enable));
+
 }
 
 static gnrc_pktsnip_t *_make_netif_hdr(uint8_t *mhr)
@@ -134,9 +167,6 @@ static gnrc_pktsnip_t *_recv(gnrc_netif_t *netif)
         if (!(state->flags & NETDEV_IEEE802154_RAW)) {
             gnrc_pktsnip_t *ieee802154_hdr, *netif_hdr;
             gnrc_netif_hdr_t *hdr;
-#if ENABLE_DEBUG
-            char src_str[GNRC_NETIF_HDR_L2ADDR_PRINT_LEN];
-#endif
             size_t mhr_len = ieee802154_get_frame_hdr_len(pkt->data);
 
             if (mhr_len == 0) {
@@ -175,18 +205,21 @@ static gnrc_pktsnip_t *_recv(gnrc_netif_t *netif)
             hdr->rssi = rx_info.rssi;
             gnrc_netif_hdr_set_netif(hdr, netif);
             pkt->type = state->proto;
-#if ENABLE_DEBUG
-            DEBUG("_recv_ieee802154: received packet from %s of length %u\n",
-                  gnrc_netif_addr_to_str(src_str, sizeof(src_str),
-                                         gnrc_netif_hdr_get_src_addr(hdr),
-                                         hdr->src_l2addr_len),
-                  nread);
-#if defined(MODULE_OD)
-            od_hex_dump(pkt->data, nread, OD_WIDTH_DEFAULT);
-#endif
-#endif
+            if (IS_ACTIVE(ENABLE_DEBUG)) {
+                char src_str[GNRC_NETIF_HDR_L2ADDR_PRINT_LEN];
+
+                DEBUG("_recv_ieee802154: received packet from %s of length %u\n",
+                      gnrc_netif_addr_to_str(gnrc_netif_hdr_get_src_addr(hdr),
+                                             hdr->src_l2addr_len,
+                                             src_str),
+                      nread);
+
+                if (IS_USED(MODULE_OD)) {
+                    od_hex_dump(pkt->data, nread, OD_WIDTH_DEFAULT);
+                }
+            }
             gnrc_pktbuf_remove_snip(pkt, ieee802154_hdr);
-            LL_APPEND(pkt, netif_hdr);
+            pkt = gnrc_pkt_append(pkt, netif_hdr);
         }
 
         DEBUG("_recv_ieee802154: reallocating.\n");
@@ -293,14 +326,15 @@ void lwmac_set_state(gnrc_netif_t *netif, gnrc_lwmac_state_t newstate)
                 uint32_t alarm;
 
                 rtt_clear_alarm();
-                alarm = random_uint32_range(RTT_US_TO_TICKS((3 * GNRC_LWMAC_WAKEUP_DURATION_US / 2)),
-                                            RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US -
-                                                            (3 * GNRC_LWMAC_WAKEUP_DURATION_US / 2)));
+                alarm = random_uint32_range(
+                            RTT_US_TO_TICKS((3 * GNRC_LWMAC_WAKEUP_DURATION_US / 2)),
+                            RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US -
+                                            (3 * GNRC_LWMAC_WAKEUP_DURATION_US / 2)));
                 LOG_WARNING("WARNING: [LWMAC] phase backoffed: %lu us\n",
                             (unsigned long)RTT_TICKS_TO_US(alarm));
                 netif->mac.prot.lwmac.last_wakeup = netif->mac.prot.lwmac.last_wakeup + alarm;
                 alarm = _next_inphase_event(netif->mac.prot.lwmac.last_wakeup,
-                                            RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US));
+                            RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US));
                 rtt_set_alarm(alarm, rtt_cb, (void *) GNRC_LWMAC_EVENT_RTT_WAKEUP_PENDING);
             }
 
@@ -327,6 +361,7 @@ void lwmac_set_state(gnrc_netif_t *netif, gnrc_lwmac_state_t newstate)
         case GNRC_LWMAC_START: {
             rtt_handler(GNRC_LWMAC_EVENT_RTT_START, netif);
             lwmac_set_state(netif, GNRC_LWMAC_LISTENING);
+            netif->mac.tx.preamble_fail_counts = 0;
             break;
         }
         case GNRC_LWMAC_STOP: {
@@ -374,7 +409,7 @@ static void _sleep_management(gnrc_netif_t *netif)
 
         if (neighbour != NULL) {
             /* if phase is unknown, send immediately. */
-            if (neighbour->phase > RTT_TICKS_TO_US(GNRC_LWMAC_WAKEUP_INTERVAL_US)) {
+            if (neighbour->phase > RTT_TICKS_TO_US(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US)) {
                 netif->mac.tx.current_neighbor = neighbour;
                 gnrc_lwmac_set_tx_continue(netif, false);
                 netif->mac.tx.tx_burst_count = 0;
@@ -388,16 +423,16 @@ static void _sleep_management(gnrc_netif_t *netif)
 
             /* If there's not enough time to prepare a WR to catch the phase
              * postpone to next interval */
-            if (time_until_tx < GNRC_LWMAC_WR_PREPARATION_US) {
-                time_until_tx += GNRC_LWMAC_WAKEUP_INTERVAL_US;
+            if (time_until_tx < CONFIG_GNRC_LWMAC_WR_PREPARATION_US) {
+                time_until_tx += CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US;
             }
-            time_until_tx -= GNRC_LWMAC_WR_PREPARATION_US;
+            time_until_tx -= CONFIG_GNRC_LWMAC_WR_PREPARATION_US;
 
             /* add a random time before goto TX, for avoiding one node for
              * always holding the medium (if the receiver's phase is recorded earlier in this
              * particular node) */
             uint32_t random_backoff;
-            random_backoff = random_uint32_range(0, GNRC_LWMAC_TIME_BETWEEN_WR_US);
+            random_backoff = random_uint32_range(0, CONFIG_GNRC_LWMAC_TIME_BETWEEN_WR_US);
             time_until_tx = time_until_tx + random_backoff;
 
             gnrc_lwmac_set_timeout(netif, GNRC_LWMAC_TIMEOUT_WAIT_DEST_WAKEUP, time_until_tx);
@@ -427,7 +462,7 @@ static void _rx_management_failed(gnrc_netif_t *netif)
     LOG_DEBUG("[LWMAC] Reception was NOT successful\n");
     gnrc_lwmac_rx_stop(netif);
 
-    if (netif->mac.rx.rx_bad_exten_count >= GNRC_LWMAC_MAX_RX_EXTENSION_NUM) {
+    if (netif->mac.rx.rx_bad_exten_count >= CONFIG_GNRC_LWMAC_MAX_RX_EXTENSION_NUM) {
         gnrc_lwmac_set_quit_rx(netif, true);
     }
 
@@ -442,7 +477,7 @@ static void _rx_management_failed(gnrc_netif_t *netif)
         phase = phase - netif->mac.prot.lwmac.last_wakeup;
     }
     /* If the relative phase is beyond 4/5 cycle time, go to sleep. */
-    if (phase > (4 * RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US) / 5)) {
+    if (phase > (4 * RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US) / 5)) {
         gnrc_lwmac_set_quit_rx(netif, true);
     }
 
@@ -473,7 +508,7 @@ static void _rx_management_success(gnrc_netif_t *netif)
         phase = phase - netif->mac.prot.lwmac.last_wakeup;
     }
     /* If the relative phase is beyond 4/5 cycle time, go to sleep. */
-    if (phase > (4 * RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US) / 5)) {
+    if (phase > (4 * RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US) / 5)) {
         gnrc_lwmac_set_quit_rx(netif, true);
     }
 
@@ -575,6 +610,13 @@ static void _tx_management(gnrc_netif_t *netif)
             gnrc_lwmac_set_tx_continue(netif, false);
             gnrc_lwmac_set_quit_tx(netif, true);
             /* TX packet will be dropped, no automatic resending here. */
+
+            /* Re-initialize the radio when needed. */
+            if (netif->mac.tx.preamble_fail_counts >= CONFIG_GNRC_LWMAC_RADIO_REINIT_THRESHOLD) {
+                netif->mac.tx.preamble_fail_counts = 0;
+                LOG_INFO("[LWMAC] Re-initialize radio.");
+                lwmac_reinit_radio(netif);
+            }
             /* Intentionally falls through */
 
         case GNRC_LWMAC_TX_STATE_SUCCESSFUL:
@@ -705,7 +747,7 @@ void rtt_handler(uint32_t event, gnrc_netif_t *netif)
         case GNRC_LWMAC_EVENT_RTT_SLEEP_PENDING: {
             /* Set next wake-up timing. */
             alarm = _next_inphase_event(netif->mac.prot.lwmac.last_wakeup,
-                                        RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US));
+                                        RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US));
             rtt_set_alarm(alarm, rtt_cb, (void *) GNRC_LWMAC_EVENT_RTT_WAKEUP_PENDING);
             lwmac_set_state(netif, GNRC_LWMAC_SLEEPING);
             break;
@@ -730,7 +772,7 @@ void rtt_handler(uint32_t event, gnrc_netif_t *netif)
             LOG_DEBUG("[LWMAC] RTT: Resume duty cycling\n");
             rtt_clear_alarm();
             alarm = _next_inphase_event(netif->mac.prot.lwmac.last_wakeup,
-                                        RTT_US_TO_TICKS(GNRC_LWMAC_WAKEUP_INTERVAL_US));
+                                        RTT_US_TO_TICKS(CONFIG_GNRC_LWMAC_WAKEUP_INTERVAL_US));
             rtt_set_alarm(alarm, rtt_cb, (void *) GNRC_LWMAC_EVENT_RTT_WAKEUP_PENDING);
             gnrc_lwmac_set_dutycycle_active(netif, true);
             break;
@@ -882,10 +924,8 @@ static void _lwmac_msg_handler(gnrc_netif_t *netif, msg_t *msg)
         }
 #endif
         default: {
-#if ENABLE_DEBUG
-            DEBUG("[LWMAC]: unknown message type 0x%04x"
+            DEBUG("[LWMAC]: unknown message type 0x%04x "
                   "(no message handler defined)\n", msg->type);
-#endif
             break;
         }
     }

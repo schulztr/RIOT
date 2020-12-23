@@ -1,3 +1,6 @@
+ifneq (,$(filter samd10%,$(CPU_MODEL)))
+  CFLAGS += -DCPU_SAMD10
+endif
 ifneq (,$(filter samd21%a,$(CPU_MODEL)))
   CFLAGS += -DCPU_SAMD21A
 endif
@@ -13,6 +16,8 @@ endif
 ifneq (,$(filter samr21%,$(CPU_MODEL)))
   CFLAGS += -DCPU_SAMR21
 endif
+
+CFLAGS += -DCPU_COMMON_SAMD21
 
 include $(RIOTCPU)/sam0_common/Makefile.include
 include $(RIOTMAKE)/arch/cortexm.inc.mk

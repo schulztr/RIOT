@@ -7,6 +7,7 @@ USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_lorawan
 USEMODULE += gnrc_pktdump
+USEMODULE += gnrc_neterr
 
 BOARD ?= b-l072z-lrwan1
 RIOTBASE ?= ../../
@@ -18,13 +19,6 @@ DEVELHELP ?= 1
 DRIVER ?= sx1276
 
 USEMODULE += $(DRIVER)
-
-# We can reduce the size of the packet buffer for LoRaWAN, since there's no IP
-# support. This will reduce RAM consumption.
-# Set GNRC_PKTBUF_SIZE via CFLAGS if not being set via Kconfig.
-ifndef CONFIG_GNRC_PKTBUF_SIZE
-  CFLAGS += -DCONFIG_GNRC_PKTBUF_SIZE=512
-endif
 
 ########################### COMPILE TIME CONFIGURATION ########################
 # NOTE: The following options can be configured on runtime as well using
@@ -56,3 +50,15 @@ CFLAGS += -DLORAMAC_DEFAULT_JOIN_PROCEDURE=LORAMAC_JOIN_OTAA
 CFLAGS += -DLORAMAC_DEFAULT_TX_MODE=LORAMAC_TX_CNF
 
 include $(RIOTBASE)/Makefile.include
+
+# We can reduce the size of the packet buffer for LoRaWAN, since there's no IP
+# support. This will reduce RAM consumption.
+# Set GNRC_PKTBUF_SIZE via CFLAGS if not being set via Kconfig.
+ifndef CONFIG_GNRC_PKTBUF_SIZE
+  CFLAGS += -DCONFIG_GNRC_PKTBUF_SIZE=512
+endif
+
+# Set region
+ifeq (,$(CONFIG_LORAMAC_REGION_EU_868)$(CONFIG_LORAMAC_REGION_IN_865))
+    CFLAGS += -DCONFIG_LORAMAC_REGION_EU_868=1
+endif

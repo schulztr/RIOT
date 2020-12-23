@@ -16,11 +16,12 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "thread.h"
 #include "sched.h"
 #include "thread.h"
-#include "kernel_types.h"
+#include "sched.h"
 
 #ifdef MODULE_SCHEDSTATISTICS
 #include "schedstatistics.h"
@@ -31,35 +32,17 @@
 #include "tlsf-malloc.h"
 #endif
 
-/* list of states copied from tcb.h */
-static const char *state_names[] = {
-    [STATUS_RUNNING] = "running",
-    [STATUS_PENDING] = "pending",
-    [STATUS_STOPPED] = "stopped",
-    [STATUS_SLEEPING] = "sleeping",
-    [STATUS_ZOMBIE] = "zombie",
-    [STATUS_MUTEX_BLOCKED] = "bl mutex",
-    [STATUS_RECEIVE_BLOCKED] = "bl rx",
-    [STATUS_SEND_BLOCKED] = "bl send",
-    [STATUS_REPLY_BLOCKED] = "bl reply",
-    [STATUS_FLAG_BLOCKED_ANY] = "bl anyfl",
-    [STATUS_FLAG_BLOCKED_ALL] = "bl allfl",
-    [STATUS_MBOX_BLOCKED] = "bl mbox",
-    [STATUS_COND_BLOCKED] = "bl cond",
-};
-
 /**
  * @brief Prints a list of running threads including stack usage to stdout.
  */
 void ps(void)
 {
-    const char queued_name[] = {'_', 'Q'};
 #ifdef DEVELHELP
     int overall_stacksz = 0, overall_used = 0;
 #endif
 
     printf("\tpid | "
-#ifdef DEVELHELP
+#ifdef CONFIG_THREAD_NAMES
             "%-21s| "
 #endif
             "%-9sQ | pri "
@@ -70,7 +53,7 @@ void ps(void)
            "| runtime  | switches"
 #endif
            "\n",
-#ifdef DEVELHELP
+#ifdef CONFIG_THREAD_NAMES
            "name",
 #endif
            "state");
@@ -92,7 +75,7 @@ void ps(void)
 #ifdef MODULE_SCHEDSTATISTICS
     uint64_t rt_sum = 0;
     for (kernel_pid_t i = KERNEL_PID_FIRST; i <= KERNEL_PID_LAST; i++) {
-        thread_t *p = (thread_t *)sched_threads[i];
+        thread_t *p = thread_get(i);
         if (p != NULL) {
             rt_sum += sched_pidlist[i].runtime_ticks;
         }
@@ -100,12 +83,12 @@ void ps(void)
 #endif /* MODULE_SCHEDSTATISTICS */
 
     for (kernel_pid_t i = KERNEL_PID_FIRST; i <= KERNEL_PID_LAST; i++) {
-        thread_t *p = (thread_t *)sched_threads[i];
+        thread_t *p = thread_get(i);
 
         if (p != NULL) {
-            thread_status_t state = p->status;                                     /* copy state */
-            const char *sname = state_names[state];                                /* get state name */
-            const char *queued = &queued_name[(int)(state >= STATUS_ON_RUNQUEUE)]; /* get queued flag */
+            thread_status_t state = thread_get_status(p);                          /* copy state */
+            const char *sname = thread_state_to_string(state);                     /* get state name */
+            const char *queued = thread_is_active(p) ? "Q" : "_";                  /* get queued flag */
 #ifdef DEVELHELP
             int stacksz = p->stack_size;                                           /* get stack size */
             overall_stacksz += stacksz;
@@ -121,7 +104,7 @@ void ps(void)
             unsigned switches = sched_pidlist[i].schedules;
 #endif
             printf("\t%3" PRIkernel_pid
-#ifdef DEVELHELP
+#ifdef CONFIG_THREAD_NAMES
                    " | %-20s"
 #endif
                    " | %-8s %.1s | %3i"
@@ -133,7 +116,7 @@ void ps(void)
 #endif
                    "\n",
                    p->pid,
-#ifdef DEVELHELP
+#ifdef CONFIG_THREAD_NAMES
                    p->name,
 #endif
                    sname, queued, p->priority

@@ -32,13 +32,14 @@ static const mtd_spi_nor_params_t _nrf52840dk_nor_params = {
     .wait_chip_erase = 50LU * US_PER_SEC,
     .wait_32k_erase = 240LU *US_PER_MS,
     .wait_sector_erase = 40LU * US_PER_MS,
-    .wait_4k_erase = 40LU * US_PER_MS,
     .wait_chip_wake_up = 35LU * US_PER_MS,
     .clk = NRF52840DK_NOR_SPI_CLK,
     .flag = NRF52840DK_NOR_FLAGS,
     .spi = NRF52840DK_NOR_SPI_DEV,
     .mode = NRF52840DK_NOR_SPI_MODE,
     .cs = NRF52840DK_NOR_SPI_CS,
+    .wp = GPIO_UNDEF,
+    .hold = GPIO_UNDEF,
     .addr_width = 3,
 };
 

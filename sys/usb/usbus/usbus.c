@@ -21,6 +21,8 @@
 #include "kernel_defines.h"
 #include "bitarithm.h"
 #include "event.h"
+#include "fmt.h"
+#include "luid.h"
 #include "thread.h"
 #include "thread_flags.h"
 #include "periph/usbdev.h"
@@ -32,11 +34,12 @@
 #include "usb.h"
 #include "cpu.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG             0
 #include "debug.h"
 
 #define _USBUS_MSG_QUEUE_SIZE    (16)
@@ -120,6 +123,16 @@ uint16_t usbus_add_interface(usbus_t *usbus, usbus_interface_t *iface)
     return idx;
 }
 
+void usbus_add_interface_alt(usbus_interface_t *iface,
+                             usbus_interface_alt_t *alt)
+{
+    usbus_interface_alt_t **last = &iface->alts;
+    while (*last) {
+        last = &(*last)->next;
+    }
+    *last = alt;
+}
+
 void usbus_register_event_handler(usbus_t *usbus, usbus_handler_t *handler)
 {
     /* See note above for reasons against clist.h */
@@ -181,8 +194,7 @@ static void _set_ep_event(usbus_t *usbus, usbdev_ep_t *ep)
         irq_restore(state);
     }
 
-    thread_flags_set((thread_t *)thread_get(usbus->pid),
-                     USBUS_THREAD_FLAG_USBDEV_EP);
+    thread_flags_set(thread_get(usbus->pid), USBUS_THREAD_FLAG_USBDEV_EP);
 }
 
 static uint32_t _get_and_reset_ep_events(usbus_t *usbus)
@@ -226,11 +238,11 @@ static void *_usbus_thread(void *args)
     usbus_control_init(usbus, &ep0_handler);
 
     usbdev_t *dev = usbus->dev;
-    usbus->pid = sched_active_pid;
+    usbus->pid = thread_getpid();
     usbus->addr = 0;
     usbus->iface = NULL;
     usbus->str_idx = 1;
-    DEBUG("usbus: starting thread %i\n", sched_active_pid);
+    DEBUG("usbus: starting thread %i\n", thread_getpid());
     /* setup the link-layer's message queue */
     /* register the event callback with the device driver */
     dev->cb = _event_cb;
@@ -243,6 +255,18 @@ static void *_usbus_thread(void *args)
                                 CONFIG_USB_CONFIGURATION_STR);
     usbus_add_string_descriptor(usbus, &usbus->product, CONFIG_USB_PRODUCT_STR);
     usbus_add_string_descriptor(usbus, &usbus->manuf, CONFIG_USB_MANUF_STR);
+
+#ifdef CONFIG_USB_SERIAL_STR
+    usbus_add_string_descriptor(usbus, &usbus->serial, CONFIG_USB_SERIAL_STR);
+#else
+    static_assert(CONFIG_USB_SERIAL_BYTE_LENGTH <= UINT8_MAX/4,
+                  "USB serial byte length must be at most 63 due to protocol "
+                  "limitations");
+    uint8_t luid_buf[CONFIG_USB_SERIAL_BYTE_LENGTH];
+    luid_get(luid_buf, sizeof(luid_buf));
+    fmt_bytes_hex(usbus->serial_str, luid_buf, sizeof(luid_buf));
+    usbus_add_string_descriptor(usbus, &usbus->serial, usbus->serial_str);
+#endif
 
     usbus->state = USBUS_STATE_DISCONNECT;
 
@@ -297,8 +321,7 @@ static void _event_cb(usbdev_t *usbdev, usbdev_event_t event)
     usbus_t *usbus = (usbus_t *)usbdev->context;
 
     if (event == USBDEV_EVENT_ESR) {
-        thread_flags_set((thread_t *)thread_get(usbus->pid),
-                         USBUS_THREAD_FLAG_USBDEV);
+        thread_flags_set(thread_get(usbus->pid), USBUS_THREAD_FLAG_USBDEV);
     }
     else {
         usbus_event_usb_t msg;

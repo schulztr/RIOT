@@ -687,7 +687,7 @@ static inline void ipv6_addr_set_all_routers_multicast(ipv6_addr_t *addr, unsign
  */
 static inline void ipv6_addr_set_solicited_nodes(ipv6_addr_t *out, const ipv6_addr_t *in)
 {
-    out->u64[0] = byteorder_htonll(0xff02000000000000);
+    out->u64[0] = byteorder_htonll(0xff02000000000000ull);
     out->u32[2] = byteorder_htonl(1);
     out->u8[12] = 0xff;
     out->u8[13] = in->u8[13];
@@ -720,14 +720,35 @@ char *ipv6_addr_to_str(char *result, const ipv6_addr_t *addr, uint8_t result_len
  *          RFC 5952
  *      </a>
  *
- * @param[in] result    The resulting byte representation
- * @param[in] addr      An IPv6 address string representation
+ * @param[out] result    The resulting byte representation
+ * @param[in] addr       An IPv6 address string representation
  *
  * @return  @p result, on success
  * @return  NULL, if @p addr was malformed
  * @return  NULL, if @p result or @p addr was NULL
  */
 ipv6_addr_t *ipv6_addr_from_str(ipv6_addr_t *result, const char *addr);
+
+/**
+ * @brief   Converts an IPv6 address from a buffer of characters to a
+ *          byte-represented IPv6 address
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc5952">
+ *          RFC 5952
+ *      </a>
+ *
+ * @note    @p addr_len should be between 0 and IPV6_ADDR_MAX_STR_LEN
+ *
+ * @param[out] result    The resulting byte representation
+ * @param[in] addr       An IPv6 address string representation
+ * @param[in] addr_len   The amount of characters to parse
+ *
+ * @return  @p result, on success
+ * @return  NULL, if @p addr was malformed
+ * @return  NULL, if @p result or @p addr was NULL
+ */
+ipv6_addr_t *ipv6_addr_from_buf(ipv6_addr_t *result, const char *addr,
+                                size_t addr_len);
 
 /**
  * @brief split IPv6 address string representation and return remaining string

@@ -48,7 +48,7 @@
 #include "native_internal.h"
 #include "periph/timer.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #define NATIVE_TIMER_SPEED 1000000
@@ -81,7 +81,7 @@ void native_isr_timer(void)
     _callback(_cb_arg, 0);
 }
 
-int timer_init(tim_t dev, unsigned long freq, timer_cb_t cb, void *arg)
+int timer_init(tim_t dev, uint32_t freq, timer_cb_t cb, void *arg)
 {
     (void)freq;
     DEBUG("%s\n", __func__);

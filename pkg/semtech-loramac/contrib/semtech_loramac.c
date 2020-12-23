@@ -47,7 +47,7 @@
 #include "periph/eeprom.h"
 #endif
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #define SEMTECH_LORAMAC_MSG_QUEUE                   (4U)
@@ -539,13 +539,15 @@ static void _semtech_loramac_event_cb(netdev_t *dev, netdev_event_t event)
 
         case NETDEV_EVENT_RX_COMPLETE:
         {
-            size_t len;
-            uint8_t radio_payload[SX127X_RX_BUFFER_SIZE];
+            int len;
             len = dev->driver->recv(dev, NULL, 0, 0);
-            dev->driver->recv(dev, radio_payload, len, &packet_info);
-            semtech_loramac_radio_events.RxDone(radio_payload,
-                                                len, packet_info.rssi,
-                                                packet_info.snr);
+            if (len > 0) {
+                uint8_t radio_payload[SX127X_RX_BUFFER_SIZE];
+                dev->driver->recv(dev, radio_payload, len, &packet_info);
+                semtech_loramac_radio_events.RxDone(radio_payload,
+                                                    len, packet_info.rssi,
+                                                    packet_info.snr);
+            } /* len could be -EBADMSG, in which case a CRC error message will be received shortly */
             break;
         }
         case NETDEV_EVENT_RX_TIMEOUT:
@@ -609,7 +611,7 @@ void *_semtech_loramac_event_loop(void *arg)
                 case MSG_TYPE_MAC_TIMEOUT:
                 {
                     DEBUG("[semtech-loramac] MAC timer timeout\n");
-                    void (*callback)(void) = msg.content.ptr;
+                    void (*callback)(void) = (void (*)(void))(uintptr_t)msg.content.value;
                     callback();
                     break;
                 }
@@ -710,7 +712,7 @@ void *_semtech_loramac_event_loop(void *arg)
                         /* save the uplink counter */
                         _save_uplink_counter(mac);
 #endif
-                        if (ENABLE_DEBUG) {
+                        if (IS_ACTIVE(ENABLE_DEBUG)) {
                             switch (confirm->McpsRequest) {
                                 case MCPS_UNCONFIRMED:
                                 {
@@ -753,7 +755,7 @@ void *_semtech_loramac_event_loop(void *arg)
                         break;
                     }
 
-                    if (ENABLE_DEBUG) {
+                    if (IS_ACTIVE(ENABLE_DEBUG)) {
                         switch (indication->McpsIndication) {
                             case MCPS_UNCONFIRMED:
                                 DEBUG("[semtech-loramac] MCPS indication Unconfirmed\n");
@@ -828,7 +830,7 @@ void *_semtech_loramac_event_loop(void *arg)
 
 int semtech_loramac_init(semtech_loramac_t *mac)
 {
-    sx127x_setup(&sx127x, &sx127x_params[0]);
+    sx127x_setup(&sx127x, &sx127x_params[0], 0);
     sx127x.netdev.driver = &sx127x_driver;
     sx127x.netdev.event_callback = _semtech_loramac_event_cb;
 

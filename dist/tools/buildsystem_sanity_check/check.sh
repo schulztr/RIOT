@@ -66,14 +66,14 @@ check_providing_features_only_makefile_features() {
     local patterns=()
     local pathspec=()
 
-    patterns+=(-e 'FEATURES_PROVIDED *+= *')
+    patterns+=(-e '^[ ]*FEATURES_PROVIDED *+= *')
 
-    pathspec+=("boards/*Makefile*" "cpu/*Makefile*")
+    pathspec+=("*Makefile\.*")
 
     pathspec+=(":!*Makefile.features")
 
     git -C "${RIOTBASE}" grep "${patterns[@]}" -- "${pathspec[@]}" \
-        | error_with_message 'Features in cpu and boards should only be provided in Makefile.features files'
+        | error_with_message 'Features should only be provided in Makefile.features files'
 }
 
 # Some variables do not need to be exported and even cause issues when being
@@ -110,6 +110,7 @@ UNEXPORTED_VARIABLES+=('JLINK_PRE_FLASH' 'JLINK_RESET_FILE')
 UNEXPORTED_VARIABLES+=('GIT_CACHE' 'GIT_CACHE_DIR')
 UNEXPORTED_VARIABLES+=('LINKXX')
 UNEXPORTED_VARIABLES+=('APPDEPS' 'BUILDDEPS' 'DEBUGDEPS')
+UNEXPORTED_VARIABLES+=('EMULATOR' 'EMULATOR_FLAGS')
 
 EXPORTED_VARIABLES_ONLY_IN_VARS=()
 EXPORTED_VARIABLES_ONLY_IN_VARS+=('CPU_ARCH')
@@ -142,6 +143,7 @@ check_not_exporting_variables() {
     # only place that should export common variables
     pathspec+=('*')
     pathspec+=(':!makefiles/vars.inc.mk')
+    pathspec+=(':!**/Vagrantfile')
 
     patterns=()
     for variable in "${EXPORTED_VARIABLES_ONLY_IN_VARS[@]}"; do

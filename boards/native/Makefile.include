@@ -69,7 +69,7 @@ endif
 LINKFLAGS += -ffunction-sections
 
 # set the tap interface for term/valgrind
-ifneq (,$(filter netdev_default,$(USEMODULE)))
+ifneq (,$(filter netdev_tap,$(USEMODULE)))
   PORT ?= tap0
 endif
 
@@ -137,9 +137,6 @@ endif
 
 all: # do not override first target
 
-all-debug: all
-	@$(COLOR_ECHO) '$(COLOR_RED)`all-debug` is deprecated, just use `all`$(COLOR_RESET)'
-
 all-gprof: all
 
 all-asan: all
@@ -169,5 +166,3 @@ eval-gprof:
 
 eval-cachegrind:
 	$(CGANNOTATE) $(shell ls -rt cachegrind.out* | tail -1)
-
-UNDEF += $(BINDIR)/cpu/startup.o

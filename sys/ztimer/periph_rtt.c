@@ -20,10 +20,12 @@
  * @}
  */
 #include "assert.h"
+
+#include "irq.h"
 #include "periph/rtt.h"
 #include "ztimer/periph_rtt.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 static void _ztimer_periph_rtt_callback(void *arg)

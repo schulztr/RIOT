@@ -39,7 +39,7 @@
 #include "kw2xrf_tm.h"
 #include "kw2xrf_intern.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #define _MACACKWAITDURATION         (864 / 16) /* 864us * 62500Hz */
@@ -71,7 +71,7 @@ static int _init(netdev_t *netdev)
 {
     kw2xrf_t *dev = (kw2xrf_t *)netdev;
 
-    dev->thread = (thread_t *)thread_get(thread_getpid());
+    dev->thread = thread_get_active();
 
     /* initialize SPI and GPIOs */
     if (kw2xrf_init(dev, &_irq_handler)) {
@@ -798,7 +798,7 @@ static void _isr(netdev_t *netdev)
     }
     kw2xrf_write_dreg(dev, MKW2XDM_IRQSTS2, irqsts2);
 
-    if (ENABLE_DEBUG) {
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
         /* for debugging only */
         kw2xrf_read_dregs(dev, MKW2XDM_IRQSTS1, dregs, MKW2XDM_IRQSTS1 + 3);
         if (dregs[MKW2XDM_IRQSTS1] & 0x7f) {

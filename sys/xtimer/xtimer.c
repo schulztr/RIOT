@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "xtimer.h"
+#include "msg.h"
 #include "mutex.h"
 #include "rmutex.h"
 #include "thread.h"
@@ -38,24 +39,6 @@
 
 #define ENABLE_DEBUG 0
 #include "debug.h"
-
-/*
- * @brief: struct for mutex lock with timeout
- * xtimer_mutex_lock_timeout() uses it to give information to the timer callback function
- */
-typedef struct {
-    mutex_t *mutex;
-    thread_t *thread;
-    /*
-     * @brief:  one means the thread was removed from the mutex thread waiting list
-     *          by _mutex_timeout()
-     */
-    volatile uint8_t dequeued;
-    /*
-     * @brief:  mutex_lock() should block because _mutex_timeout() did not shoot
-     */
-    volatile uint8_t blocking;
-} mutex_thread_t;
 
 static void _callback_unlock_mutex(void* arg)
 {
@@ -166,7 +149,7 @@ int _xtimer_msg_receive_timeout64(msg_t *m, uint64_t timeout_ticks) {
     msg_t tmsg;
     xtimer_t t;
     _setup_timer_msg(&tmsg, &t);
-    _xtimer_set_msg64(&t, timeout_ticks, &tmsg, sched_active_pid);
+    _xtimer_set_msg64(&t, timeout_ticks, &tmsg, thread_getpid());
     return _msg_wait(m, &tmsg, &t);
 }
 
@@ -175,7 +158,7 @@ int _xtimer_msg_receive_timeout(msg_t *msg, uint32_t timeout_ticks)
     msg_t tmsg;
     xtimer_t t;
     _setup_timer_msg(&tmsg, &t);
-    _xtimer_set_msg(&t, timeout_ticks, &tmsg, sched_active_pid);
+    _xtimer_set_msg(&t, timeout_ticks, &tmsg, thread_getpid());
     return _msg_wait(msg, &tmsg, &t);
 }
 #endif /* MODULE_CORE_MSG */
@@ -209,66 +192,30 @@ void xtimer_now_timex(timex_t *out)
     out->microseconds = now - (out->seconds * US_PER_SEC);
 }
 
-/*
- * The value pointed to by unlocked will be set to 1 if the thread was removed from the waiting queue otherwise 0.
- */
-static void _mutex_remove_thread_from_waiting_queue(mutex_t *mutex, thread_t *thread, volatile uint8_t *unlocked)
-{
-    unsigned irqstate = irq_disable();
-    assert(mutex != NULL && thread != NULL);
-
-    if (mutex->queue.next != MUTEX_LOCKED && mutex->queue.next != NULL) {
-        list_node_t *node = list_remove(&mutex->queue, (list_node_t *)&thread->rq_entry);
-        /* if thread was removed from the list */
-        if (node != NULL) {
-            if (mutex->queue.next == NULL) {
-                mutex->queue.next = MUTEX_LOCKED;
-            }
-            *unlocked = 1;
-
-            sched_set_status(thread, STATUS_PENDING);
-            irq_restore(irqstate);
-            sched_switch(thread->priority);
-            return;
-        }
-    }
-    *unlocked = 0;
-    irq_restore(irqstate);
-}
-
 static void _mutex_timeout(void *arg)
 {
-    /* interrupts are disabled because xtimer can spin
-     * if xtimer_set spins the callback is executed
-     * in the thread context
-     *
-     * If the xtimer spin is fixed in the future
-     * interups disable/restore can be removed
-     */
-    unsigned int irqstate = irq_disable();
-
-    mutex_thread_t *mt = (mutex_thread_t *)arg;
-    mt->blocking = 0;
-    _mutex_remove_thread_from_waiting_queue(mt->mutex, mt->thread, &mt->dequeued);
-    irq_restore(irqstate);
+    mutex_cancel(arg);
 }
 
 int xtimer_mutex_lock_timeout(mutex_t *mutex, uint64_t timeout)
 {
-    xtimer_t t;
-    mutex_thread_t mt = { mutex, (thread_t *)sched_active_thread, .dequeued=0, .blocking=1 };
-
-    if (timeout != 0) {
-        t.callback = _mutex_timeout;
-        t.arg = (void *)((mutex_thread_t *)&mt);
-        xtimer_set64(&t, timeout);
+    if (mutex_trylock(mutex)) {
+        return 0;
     }
-    int ret = _mutex_lock(mutex, &mt.blocking);
-    if (ret == 0) {
+
+    if (timeout == 0) {
+        return - 1;
+    }
+
+    mutex_cancel_t mc = mutex_cancel_init(mutex);
+    xtimer_t t = { .callback = _mutex_timeout, .arg = &mc };
+
+    xtimer_set64(&t, timeout);
+    if (mutex_lock_cancelable(&mc)) {
         return -1;
     }
     xtimer_remove(&t);
-    return -mt.dequeued;
+    return 0;
 }
 
 int xtimer_rmutex_lock_timeout(rmutex_t *rmutex, uint64_t timeout)
@@ -294,7 +241,7 @@ static void _set_timeout_flag_callback(void* arg)
 static void _set_timeout_flag_prepare(xtimer_t *t)
 {
     t->callback = _set_timeout_flag_callback;
-    t->arg = (thread_t *)sched_active_thread;
+    t->arg = thread_get_active();
     thread_flags_clear(THREAD_FLAG_TIMEOUT);
 }
 

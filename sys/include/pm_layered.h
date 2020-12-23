@@ -34,7 +34,7 @@
 #ifndef PM_LAYERED_H
 #define PM_LAYERED_H
 
-#include "assert.h"
+#include <stdint.h>
 #include "periph_cpu.h"
 
 #ifdef __cplusplus

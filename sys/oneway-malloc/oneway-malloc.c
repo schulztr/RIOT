@@ -22,7 +22,7 @@
 
 #include "malloc.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 extern void *sbrk(int incr);
@@ -61,6 +61,11 @@ void __attribute__((weak)) *realloc(void *ptr, size_t size)
 
 void __attribute__((weak)) *calloc(size_t size, size_t cnt)
 {
+    /* ensure size * cnt doesn't overflow size_t */
+    if (cnt && size > (size_t)-1 / cnt) {
+        return NULL;
+    }
+
     void *mem = malloc(size * cnt);
     if (mem) {
         memset(mem, 0, size * cnt);

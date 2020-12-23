@@ -19,6 +19,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     nucleo-f334r8 \
     nucleo-l0% \
     phynode-kw41z \
+    samd10-xmini \
     samd21-xpro \
     saml10-xpro \
     saml11-xpro \
@@ -28,9 +29,11 @@ BOARD_INSUFFICIENT_MEMORY := \
     samr34-xpro \
     sensebox_samd21 \
     sodaq-% \
+    stk3200 \
     stm32f030f4-demo \
     stm32f0discovery \
     stm32l0538-disco \
+    stm32mp157c-dk2 \
     usb-kw41z \
     yunjia-nrf51822 \
     #

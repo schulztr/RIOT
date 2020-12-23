@@ -45,9 +45,6 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define ENABLE_DEBUG    (0)
-#include "debug.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -74,6 +71,9 @@
 #include "esp8266/rom_functions.h"
 #include "sdk/sdk.h"
 #endif /* MCU_ESP32 */
+
+#define ENABLE_DEBUG 0
+#include "debug.h"
 
 /* User exception dispatcher when exiting */
 extern void _xt_user_exit(void);
@@ -142,12 +142,12 @@ char* thread_stack_init(thread_task_func_t task_func, void *arg, void *stack_sta
     uint8_t *top_of_stack;
     uint8_t *sp;
 
-    top_of_stack = (uint8_t*)((uint32_t)stack_start + stack_size - 1);
+    top_of_stack = (uint8_t*)((uintptr_t)stack_start + stack_size - 1);
 
     /* BEGIN - code from FreeRTOS port for Xtensa from Cadence */
 
     /* Create interrupt stack frame aligned to 16 byte boundary */
-    sp = (uint8_t*)(((uint32_t)(top_of_stack + 1) - XT_STK_FRMSZ - XT_CP_SIZE) & ~0xf);
+    sp = (uint8_t*)(((uintptr_t)(top_of_stack + 1) - XT_STK_FRMSZ - XT_CP_SIZE) & ~0xf);
 
     /* Clear whole stack with a known value to assist debugging */
     #if !defined(DEVELHELP) && !defined(SCHED_TEST_STACK)
@@ -160,7 +160,9 @@ char* thread_stack_init(thread_task_func_t task_func, void *arg, void *stack_sta
     /* ensure that stack is big enough */
     assert (sp > (uint8_t*)stack_start);
 
-    XtExcFrame* exc_frame = (XtExcFrame*)sp;
+    /* sp is aligned to 16 byte boundary, so cast is safe here. Use an
+     * intermediate cast to uintptr_t to silence -Wcast-align false positive */
+    XtExcFrame* exc_frame = (XtExcFrame*)(uintptr_t)sp;
 
     /* Explicitly initialize certain saved registers for call0 ABI */
     exc_frame->pc   = (uint32_t)task_func;         /* task entry point */
@@ -262,10 +264,11 @@ void IRAM_ATTR thread_yield_higher(void)
 
     /* yield next task */
     #if defined(ENABLE_DEBUG) && defined(DEVELHELP)
-    if (sched_active_thread) {
+    thread_t *active_thread = thread_get_active();
+    if (active_thread) {
         DEBUG("%u old task %u %s %u\n", system_get_time(),
-               sched_active_thread->pid, sched_active_thread->name,
-               sched_active_thread->sp - sched_active_thread-> stack_start);
+               active_thread->pid, active_thread->name,
+               active_thread->sp - active_thread-> stack_start);
     }
     #endif
     if (!irq_is_in()) {
@@ -285,10 +288,11 @@ void IRAM_ATTR thread_yield_higher(void)
     }
 
     #if defined(ENABLE_DEBUG) && defined(DEVELHELP)
-    if (sched_active_thread) {
+    active_thread = thread_get_active();
+    if (active_thread) {
         DEBUG("%u new task %u %s %u\n", system_get_time(),
-               sched_active_thread->pid, sched_active_thread->name,
-               sched_active_thread->sp - sched_active_thread-> stack_start);
+               active_thread->pid, active_thread->name,
+               active_thread->sp - active_thread-> stack_start);
     }
     #endif
 
@@ -307,7 +311,7 @@ void thread_stack_print(void)
     /* Print the current stack to stdout. */
 
     #if defined(DEVELHELP)
-    volatile thread_t* task = thread_get(sched_active_pid);
+    thread_t* task = thread_get_active();
     if (task) {
 
         char* stack_top = task->stack_start + task->stack_size;
@@ -342,9 +346,11 @@ void thread_isr_stack_init(void)
     register uint32_t *sp __asm__ ("a1");
 #endif /* MCU_ESP32 */
 
-    /* assign each int of the stack the value of it's address */
-    uintptr_t *stackmax = (uintptr_t *)sp;
-    uintptr_t *stackp = (uintptr_t *)&port_IntStack;
+    /* assign each int of the stack the value of it's address. We can safely
+     * cast, as stack is aligned. Use an intermediate cast to uintptr_t to
+     * silence -Wcast-align false positive */
+    uintptr_t *stackmax = (uintptr_t *)(uintptr_t)sp;
+    uintptr_t *stackp = (uintptr_t *)(uintptr_t)&port_IntStack;
 
     while (stackp < stackmax) {
         *stackp = (uintptr_t) stackp;
@@ -414,8 +420,10 @@ NORETURN void cpu_switch_context_exit(void)
  */
 NORETURN void task_exit(void)
 {
+    extern volatile thread_t *sched_active_thread;
+    extern volatile kernel_pid_t sched_active_pid;
     DEBUG("sched_task_exit: ending thread %" PRIkernel_pid "...\n",
-          sched_active_thread ? sched_active_thread->pid : KERNEL_PID_UNDEF);
+          thread_getpid());
 
     (void) irq_disable();
 

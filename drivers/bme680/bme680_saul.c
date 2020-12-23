@@ -54,7 +54,7 @@ static unsigned _dev2index (const bme680_t *dev)
     return BME680_NUMOF;
 }
 
-static int read(int dev)
+static int _read(int dev)
 {
     /* measure and read sensor values */
     int res;
@@ -65,7 +65,7 @@ static int read(int dev)
     if ((drt = bme680_get_duration(&bme680_devs_saul[dev])) < 0) {
         return BME680_INVALID;
     }
-    xtimer_usleep(drt * US_PER_MS);
+    xtimer_msleep(drt);
 
     bme680_field_data_t data;
     if ((res = bme680_get_data(&bme680_devs_saul[dev], &data)) != BME680_OK) {
@@ -101,7 +101,7 @@ static int read_temp(const void *dev, phydat_t *data)
     }
 
     /* either local variable is valid or fetching it was successful */
-    if (_temp_valid[dev_index] || read(dev_index) == BME680_OK) {
+    if (_temp_valid[dev_index] || _read(dev_index) == BME680_OK) {
         /* mark local variable as invalid */
         _temp_valid[dev_index] = false;
 
@@ -123,7 +123,7 @@ static int read_press(const void *dev, phydat_t *data)
     }
 
     /* either local variable is valid or fetching it was successful */
-    if (_press_valid[dev_index] || read(dev_index) == BME680_OK) {
+    if (_press_valid[dev_index] || _read(dev_index) == BME680_OK) {
         /* mark local variable as invalid */
         _press_valid[dev_index] = false;
 
@@ -145,7 +145,7 @@ static int read_hum(const void *dev, phydat_t *data)
     }
 
     /* either local variable is valid or fetching it was successful */
-    if (_hum_valid[dev_index] || read(dev_index) == BME680_OK) {
+    if (_hum_valid[dev_index] || _read(dev_index) == BME680_OK) {
         /* mark local variable as invalid */
         _hum_valid[dev_index] = false;
 
@@ -167,7 +167,7 @@ static int read_gas(const void *dev, phydat_t *data)
     }
 
     /* either local variable is valid or fetching it was successful */
-    if (_gas_valid[dev_index] || read(dev_index) == BME680_OK) {
+    if (_gas_valid[dev_index] || _read(dev_index) == BME680_OK) {
         /* mark local variable as invalid */
         _gas_valid[dev_index] = false;
 

@@ -18,6 +18,7 @@
  * @}
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <inttypes.h>
 
@@ -46,6 +47,7 @@ void *thread1(void *arg)
 
     /* check if the message came from the right bus */
     assert(msg_is_from_bus(arg, &msg));
+    assert(msg_bus_get_sender_pid(&msg) == p_main);
 
     printf("T1 recv: %s (type=%d)\n",
           (char*) msg.content.ptr, msg_bus_get_type(&msg));
@@ -69,6 +71,7 @@ void *thread2(void *arg)
 
     /* check if the message came from the right bus */
     assert(msg_is_from_bus(arg, &msg));
+    assert(msg_bus_get_sender_pid(&msg) == p_main);
 
     printf("T2 recv: %s (type=%d)\n",
           (char*) msg.content.ptr, msg_bus_get_type(&msg));
@@ -92,6 +95,7 @@ void *thread3(void *arg)
 
     /* check if the message came from the right bus */
     assert(msg_is_from_bus(arg, &msg));
+    assert(msg_bus_get_sender_pid(&msg) == p_main);
 
     printf("T3 recv: %s (type=%d)\n",
           (char*) msg.content.ptr, msg_bus_get_type(&msg));
@@ -107,7 +111,7 @@ int main(void)
 
     msg_bus_init(&my_bus);
 
-    p_main = sched_active_pid;
+    p_main = thread_getpid();
     p1 = thread_create(t1_stack, sizeof(t1_stack), THREAD_PRIORITY_MAIN - 3,
                        THREAD_CREATE_STACKTEST, thread1, &my_bus, "nr1");
     p2 = thread_create(t2_stack, sizeof(t2_stack), THREAD_PRIORITY_MAIN - 2,
@@ -123,7 +127,14 @@ int main(void)
         printf("Posted event %d to %d threads\n", id, woken);
     }
 
-    puts("SUCCESS");
+    /* make sure all threads have terminated */
+    if (thread_getstatus(p1) != STATUS_NOT_FOUND ||
+        thread_getstatus(p2) != STATUS_NOT_FOUND ||
+        thread_getstatus(p3) != STATUS_NOT_FOUND ) {
+        puts("FAILED");
+        return 1;
+    }
 
+    puts("SUCCESS");
     return 0;
 }

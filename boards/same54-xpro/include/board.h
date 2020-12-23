@@ -21,6 +21,7 @@
 #define BOARD_H
 
 #include "cpu.h"
+#include "mtd.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +65,14 @@ extern "C" {
 #define BTN0_PORT           PORT->Group[PB]
 #define BTN0_PIN            GPIO_PIN(PB, 31)
 #define BTN0_MODE           GPIO_IN_PU
+/** @} */
+
+/**
+ * @name MTD configuration
+ * @{
+ */
+extern mtd_dev_t *mtd0;
+#define MTD_0 mtd0
 /** @} */
 
 /**

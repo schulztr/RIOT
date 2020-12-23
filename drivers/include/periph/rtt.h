@@ -79,21 +79,23 @@ extern "C" {
 #define RTT_MIN_OFFSET (2U)
 #endif
 
-#ifndef RTT_FREQUENCY
 /* Allow mock-RTT for unit tests */
 #ifdef MOCK_RTT_FREQUENCY
+#undef RTT_FREQUENCY
 #define RTT_FREQUENCY MOCK_RTT_FREQUENCY
 #else
+#ifndef RTT_FREQUENCY
 #warning "RTT_FREQUENCY undefined. Set RTT_FREQUENCY to the number of ticks " \
          "per second for the current architecture."
 #endif
 #endif
 
-#ifndef RTT_MAX_VALUE
 /* Allow mock-RTT for unit tests */
 #ifdef MOCK_RTT_MAX_VALUE
+#undef RTT_MAX_VALUE
 #define RTT_MAX_VALUE MOCK_RTT_MAX_VALUE
 #else
+#ifndef RTT_MAX_VALUE
 #warning "RTT_MAX_VALUE is undefined. Set RTT_MAX_VALUE to the maximum value " \
          "for the RTT counter, ensure it is (2^n - 1)."
 #endif
@@ -104,35 +106,35 @@ extern "C" {
  * @param[in]   us      number of microseconds
  * @return              rtt ticks
  */
-#define RTT_US_TO_TICKS(us)     ((uint32_t)((uint64_t)(us) * RTT_FREQUENCY / 1000000UL))
+#define RTT_US_TO_TICKS(us)     (RTT_SEC_TO_TICKS(us) / 1000000UL)
 
 /**
  * @brief       Convert milliseconds to rtt ticks
  * @param[in]   ms      number of milliseconds
  * @return              rtt ticks
  */
-#define RTT_MS_TO_TICKS(ms)     ( RTT_US_TO_TICKS((ms) * 1000) )
+#define RTT_MS_TO_TICKS(ms)     (RTT_SEC_TO_TICKS(ms) / 1000UL)
 
 /**
  * @brief       Convert seconds to rtt ticks
  * @param[in]   sec     number of seconds
  * @return              rtt ticks
  */
-#define RTT_SEC_TO_TICKS(sec)   ( RTT_MS_TO_TICKS((sec) * 1000) )
+#define RTT_SEC_TO_TICKS(sec)   (sec * RTT_FREQUENCY)
 
 /**
  * @brief       Convert minutes to rtt ticks
  * @param[in]   min     number of minutes
  * @return              rtt ticks
  */
-#define RTT_MIN_TO_TICKS(min)   ( RTT_SEC_TO_TICKS((min) * 60) )
+#define RTT_MIN_TO_TICKS(min)   (RTT_SEC_TO_TICKS((min) * 60))
 
 /**
  * @brief       Convert rtt ticks to microseconds
  * @param[in]   ticks   rtt ticks
  * @return              number of microseconds
  */
-#define RTT_TICKS_TO_US(ticks)  ((uint32_t)((uint64_t)(ticks) * 1000000UL / RTT_FREQUENCY))
+#define RTT_TICKS_TO_US(ticks)  ((uint64_t)(ticks) * 1000000UL / RTT_FREQUENCY)
 
 /**
  * @brief       Convert rtt ticks to milliseconds

@@ -412,45 +412,6 @@ extern "C" {
 #endif
 
 /**
- * @brief   Reduce payload length by this value for a request
- *
- * Accommodates writing Content-Format option in gcoap_finish(). May set to
- * zero if function not used.
- *
- * @deprecated  Will not be available after the 2020.07 release. Used only by
- * gcoap_finish(), which also is deprecated.
- */
-#ifndef CONFIG_GCOAP_REQ_OPTIONS_BUF
-#define CONFIG_GCOAP_REQ_OPTIONS_BUF   (4)
-#endif
-
-/**
- * @brief   Reduce payload length by this value for a response
- *
- * Accommodates writing Content-Format option in gcoap_finish(). May set to
- * zero if function not used.
- *
- * @deprecated  Will not be available after the 2020.07 release. Used only by
- * gcoap_finish(), which also is deprecated.
- */
-#ifndef CONFIG_GCOAP_RESP_OPTIONS_BUF
-#define CONFIG_GCOAP_RESP_OPTIONS_BUF  (4)
-#endif
-
-/**
- * @brief   Reduce payload length by this value for an observe notification
- *
- * Accommodates writing Content-Format option in gcoap_finish(). May set to
- * zero if function not used.
- *
- * @deprecated  Will not be available after the 2020.07 release. Used only by
- * gcoap_finish(), which also is deprecated.
- */
-#ifndef CONFIG_GCOAP_OBS_OPTIONS_BUF
-#define CONFIG_GCOAP_OBS_OPTIONS_BUF   (4)
-#endif
-
-/**
  * @brief   Maximum number of requests awaiting a response
  */
 #ifndef CONFIG_GCOAP_REQ_WAITING_MAX
@@ -498,10 +459,11 @@ extern "C" {
  * @{
  */
 #define GCOAP_MEMO_UNUSED       (0)     /**< This memo is unused */
-#define GCOAP_MEMO_WAIT         (1)     /**< Request sent; awaiting response */
-#define GCOAP_MEMO_RESP         (2)     /**< Got response */
-#define GCOAP_MEMO_TIMEOUT      (3)     /**< Timeout waiting for response */
-#define GCOAP_MEMO_ERR          (4)     /**< Error processing response packet */
+#define GCOAP_MEMO_RETRANSMIT   (1)     /**< Request sent, retransmitting until response arrives */
+#define GCOAP_MEMO_WAIT         (2)     /**< Request sent; awaiting response */
+#define GCOAP_MEMO_RESP         (3)     /**< Got response */
+#define GCOAP_MEMO_TIMEOUT      (4)     /**< Timeout waiting for response */
+#define GCOAP_MEMO_ERR          (5)     /**< Error processing response packet */
 /** @} */
 
 /**
@@ -619,6 +581,7 @@ extern "C" {
 
 /**
  * @name Bitwise positional flags for encoding resource links
+ * @anchor COAP_LINK_FLAG_
  * @{
  */
 #define COAP_LINK_FLAG_INIT_RESLIST  (1)  /**< initialize as for first resource
@@ -631,8 +594,8 @@ extern "C" {
 typedef struct {
     unsigned content_format;            /**< link format */
     size_t link_pos;                    /**< position of link within listener */
-    uint16_t flags;                     /**< encoder switches; see GCOAP_LINK_FLAG_*
-                                             constants */
+    uint16_t flags;                     /**< encoder switches; see @ref
+                                             COAP_LINK_FLAG_ constants */
 } coap_link_encoder_ctx_t;
 
 /**
@@ -650,15 +613,58 @@ typedef ssize_t (*gcoap_link_encoder_t)(const coap_resource_t *resource, char *b
                                         size_t maxlen, coap_link_encoder_ctx_t *context);
 
 /**
+ * @name    Return values for resource related operations
+ * @{
+ */
+#define GCOAP_RESOURCE_FOUND        (0)
+#define GCOAP_RESOURCE_WRONG_METHOD (1)
+#define GCOAP_RESOURCE_NO_PATH      (2)
+#define GCOAP_RESOURCE_ERROR        (3)
+/** @} */
+
+/**
+ * @brief   Forward declaration of the gcoap listener state container
+ */
+typedef struct gcoap_listener gcoap_listener_t;
+
+/**
+ * @brief   Handler function for the request matcher strategy
+ *
+ * @param[in]  listener     Listener context
+ * @param[out] resource     Matching resource
+ * @param[in]  pdu          Pointer to the PDU
+ *
+ * @return  GCOAP_RESOURCE_FOUND      on resource match
+ * @return  GCOAP_RESOURCE_NO_PATH    on no path found in @p resource
+ *                                    that matches @p pdu
+ * @return  GCOAP_RESOURCE_ERROR      on processing failure of the request
+ */
+typedef int (*gcoap_request_matcher_t)(gcoap_listener_t *listener,
+                                       const coap_resource_t **resource,
+                                       const coap_pkt_t *pdu);
+
+/**
  * @brief   A modular collection of resources for a server
  */
-typedef struct gcoap_listener {
+struct gcoap_listener {
     const coap_resource_t *resources;   /**< First element in the array of
                                          *   resources; must order alphabetically */
     size_t resources_len;               /**< Length of array */
     gcoap_link_encoder_t link_encoder;  /**< Writes a link for a resource */
     struct gcoap_listener *next;        /**< Next listener in list */
-} gcoap_listener_t;
+
+    /**
+     * @brief  Function that picks a suitable request handler from a
+     * request.
+     *
+     * @note Leaving this NULL selects the default strategy that picks
+     * handlers by matching their Uri-Path to resource paths (as per
+     * the documentation of the @ref resources and @ref resources_len
+     * fields). Alternative handlers may cast the @ref resources and
+     * @ref resources_len fields to fit their needs.
+     */
+    gcoap_request_matcher_t request_matcher;
+};
 
 /**
  * @brief   Forward declaration of the request memo type
@@ -727,6 +733,16 @@ kernel_pid_t gcoap_init(void);
 /**
  * @brief   Starts listening for resource paths
  *
+ * @pre @p listener is a valid pointer to a single listener (that is,
+ *      `listener->next == NULL`)
+ *
+ * @note If you are tempted to register a pre-linked chain of listeners,
+ *       consider placing all their resources in the resources array of a
+ *       single listener instead. In the few cases where this does not work
+ *       (that is, when the resources need a different `link_encoder` or other
+ *       fields of the listener struct), they can just be registered
+ *       individually.
+ *
  * @param[in] listener  Listener containing the resources.
  */
 void gcoap_register_listener(gcoap_listener_t *listener);
@@ -751,31 +767,6 @@ void gcoap_register_listener(gcoap_listener_t *listener);
  */
 int gcoap_req_init(coap_pkt_t *pdu, uint8_t *buf, size_t len,
                    unsigned code, const char *path);
-
-/**
- * @brief   Finishes formatting a CoAP PDU after the payload has been written
- *
- * Assumes the PDU has been initialized with a gcoap_xxx_init() function, like
- * gcoap_req_init().
- *
- * @deprecated  Will not be available after the 2020.07 release. Use
- * coap_opt_finish() instead.
- *
- * @warning To use this function, you only may have added an Option with
- * option number less than COAP_OPT_CONTENT_FORMAT. Otherwise, use the
- * struct-based API described with @link net_nanocoap nanocoap. @endlink With
- * this API, you specify the format with coap_opt_add_uint(), prepare for the
- * payload with coap_opt_finish(), and then write the payload.
- *
- * @param[in,out] pdu       Request metadata
- * @param[in] payload_len   Length of the payload, or 0 if none
- * @param[in] format        Format code for the payload; use COAP_FORMAT_NONE if
- *                          not specified
- *
- * @return  size of the PDU
- * @return  < 0 on error
- */
-ssize_t gcoap_finish(coap_pkt_t *pdu, size_t payload_len, unsigned format);
 
 /**
  * @brief   Writes a complete CoAP request PDU when there is not a payload

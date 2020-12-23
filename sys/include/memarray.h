@@ -18,8 +18,10 @@
 #ifndef MEMARRAY_H
 #define MEMARRAY_H
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,12 +56,42 @@ void memarray_init(memarray_t *mem, void *data, size_t size, size_t num);
  *
  * @pre `mem != NULL`
  *
+ * @note Allocated structure is not cleared before returned
+ *
  * @param[in,out] mem   memarray pool to allocate block in
  *
  * @return pointer to allocated structure, if enough memory was available
  * @return NULL, on failure
  */
-void *memarray_alloc(memarray_t *mem);
+static inline void *memarray_alloc(memarray_t *mem)
+{
+    assert(mem != NULL);
+
+    void *free = mem->free_data;
+    if (free) {
+        mem->free_data = *((void **)mem->free_data);
+    }
+    return free;
+}
+
+/**
+ * @brief Allocate and clear memory chunk in memarray pool
+ *
+ * @pre `mem != NULL`
+ *
+ * @param[in,out] mem   memarray pool to allocate block in
+ *
+ * @return pointer to allocated structure, if enough memory was available
+ * @return NULL, on failure
+ */
+static inline void *memarray_calloc(memarray_t *mem)
+{
+    void *new = memarray_alloc(mem);
+    if (new) {
+        memset(new, 0, mem->size);
+    }
+    return new;
+}
 
 /**
  * @brief Free memory chunk in memarray pool
@@ -70,7 +102,13 @@ void *memarray_alloc(memarray_t *mem);
  * @param[in,out] mem   memarray pool to free block in
  * @param[in]     ptr   pointer to memarray chunk
  */
-void memarray_free(memarray_t *mem, void *ptr);
+static inline void memarray_free(memarray_t *mem, void *ptr)
+{
+    assert((mem != NULL) && (ptr != NULL));
+
+    memcpy(ptr, &mem->free_data, sizeof(void *));
+    mem->free_data = ptr;
+}
 
 #ifdef __cplusplus
 }

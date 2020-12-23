@@ -99,6 +99,11 @@ void gnrc_netif_init_devs(void)
         auto_init_dose();
     }
 
+    if (IS_USED(MODULE_SAM0_ETH)) {
+        extern void auto_init_sam0_eth(void);
+        auto_init_sam0_eth();
+    }
+
     if (IS_USED(MODULE_SLIPDEV)) {
         extern void auto_init_slipdev(void);
         auto_init_slipdev();
@@ -137,11 +142,6 @@ void gnrc_netif_init_devs(void)
     if (IS_USED(MODULE_SOCKET_ZEP)) {
         extern void auto_init_socket_zep(void);
         auto_init_socket_zep();
-    }
-
-    if (IS_USED(MODULE_NORDIC_SOFTDEVICE_BLE)) {
-        extern void gnrc_nordic_ble_6lowpan_init(void);
-        gnrc_nordic_ble_6lowpan_init();
     }
 
     if (IS_USED(MODULE_NRFMIN)) {

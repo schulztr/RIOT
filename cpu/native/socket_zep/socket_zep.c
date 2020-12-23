@@ -32,13 +32,16 @@
 
 #include "socket_zep.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG            0
 #include "debug.h"
 
 #define _UNIX_NTP_ERA_OFFSET    (2208988800U)
 /* can't use timex.h's US_PER_SEC as timeval's tv_usec is signed long
  * (https://pubs.opengroup.org/onlinepubs/9699919799.2016edition/basedefs/time.h.html) */
 #define TV_USEC_PER_SEC         (1000000L)
+
+/* dummy packet to register with ZEP dispatcher */
+#define SOCKET_ZEP_V2_TYPE_HELLO   (255)
 
 static size_t _zep_hdr_fill_v2_data(socket_zep_t *dev, zep_v2_data_hdr_t *hdr,
                                     size_t payload_len)
@@ -183,14 +186,14 @@ static int _recv(netdev_t *netdev, void *buf, size_t len, void *info)
           (unsigned)len, (void *)info);
     if ((buf == NULL) || (len == 0)) {
         int res = real_ioctl(dev->sock_fd, FIONREAD, &size);
-#if ENABLE_DEBUG
-        if (res < 0) {
-            DEBUG("socket_zep::recv: error reading FIONREAD: %s",
-                  strerror(errno));
+
+        if (IS_ACTIVE(ENABLE_DEBUG)) {
+            if (res < 0) {
+                DEBUG("socket_zep::recv: error reading FIONREAD: %s",
+                    strerror(errno));
+            }
         }
-#else
-        (void)res;
-#endif
+
         return size;
     }
     else if (len > 0) {
@@ -322,24 +325,24 @@ static const netdev_driver_t socket_zep_driver = {
     .set = _set,
 };
 
-void socket_zep_setup(socket_zep_t *dev, const socket_zep_params_t *params)
+static int _bind_local(const socket_zep_params_t *params)
 {
+    int res;
     static const struct addrinfo hints = { .ai_family = AF_UNSPEC,
                                            .ai_socktype = SOCK_DGRAM };
-    struct addrinfo *ai = NULL, *remote;
-    int res;
+    struct addrinfo *ai = NULL;
 
-    DEBUG("socket_zep_setup(%p, %p)\n", (void *)dev, (void *)params);
-    assert((params->local_addr != NULL) && (params->local_port != NULL) &&
-           (params->remote_addr != NULL) && (params->remote_port != NULL));
-    memset(dev, 0, sizeof(socket_zep_t));
-    dev->netdev.netdev.driver = &socket_zep_driver;
+    if (params->local_addr == NULL) {
+        return -1;
+    }
+
     /* bind and connect socket */
     if ((res = real_getaddrinfo(params->local_addr, params->local_port, &hints,
                                 &ai)) < 0) {
         errx(EXIT_FAILURE, "ZEP: unable to get local address: %s\n",
              gai_strerror(res));
     }
+
     for (struct addrinfo *local = ai; local != NULL; local = local->ai_next) {
         if ((res = real_socket(local->ai_family, local->ai_socktype,
                                local->ai_protocol)) < 0) {
@@ -350,25 +353,83 @@ void socket_zep_setup(socket_zep_t *dev, const socket_zep_params_t *params)
         }
     }
     real_freeaddrinfo(ai);
+
     if (res < 0) {
         err(EXIT_FAILURE, "ZEP: Unable to bind socket");
     }
-    dev->sock_fd = res;
-    ai = NULL;
+
+    return res;
+}
+
+static int _connect_remote(socket_zep_t *dev, const socket_zep_params_t *params)
+{
+    int res;
+    static const struct addrinfo hints = { .ai_family = AF_UNSPEC,
+                                           .ai_socktype = SOCK_DGRAM };
+    struct addrinfo *ai = NULL, *remote;
+
+    if (params->remote_addr == NULL) {
+        return -1;
+    }
+
     if ((res = real_getaddrinfo(params->remote_addr, params->remote_port, &hints,
                                 &ai)) < 0) {
         errx(EXIT_FAILURE, "ZEP: unable to get remote address: %s\n",
              gai_strerror(res));
     }
+
     for (remote = ai; remote != NULL; remote = remote->ai_next) {
         if (real_connect(dev->sock_fd, remote->ai_addr, remote->ai_addrlen) == 0) {
             break;  /* successfully connected */
         }
     }
+
     if (remote == NULL) {
         err(EXIT_FAILURE, "ZEP: Unable to connect socket");
     }
+
     real_freeaddrinfo(ai);
+
+    return res;
+}
+
+static void _send_zep_hello(socket_zep_t *dev)
+{
+    if (IS_USED(MODULE_SOCKET_ZEP_HELLO)) {
+        /* dummy packet */
+        zep_v2_data_hdr_t hdr = {
+            .hdr.preamble = "EX",
+            .hdr.version  = 2,
+            .type = SOCKET_ZEP_V2_TYPE_HELLO,
+            .resv = "HELLO",
+        };
+
+        real_write(dev->sock_fd, &hdr, sizeof(hdr));
+    }
+}
+
+void socket_zep_setup(socket_zep_t *dev, const socket_zep_params_t *params)
+{
+    int res;
+
+    DEBUG("socket_zep_setup(%p, %p)\n", (void *)dev, (void *)params);
+    assert((params->remote_addr != NULL) && (params->remote_port != NULL));
+
+    memset(dev, 0, sizeof(socket_zep_t));
+    dev->netdev.netdev.driver = &socket_zep_driver;
+
+    res = _bind_local(params);
+
+    if (res < 0) {
+        dev->sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
+    } else {
+        dev->sock_fd = res;
+    }
+
+    if (_connect_remote(dev, params) == 0) {
+        /* send dummy data to connect to dispatcher */
+        _send_zep_hello(dev);
+    }
 
     /* generate hardware address from local address */
     uint8_t ss_array[sizeof(struct sockaddr_storage)] = { 0 };

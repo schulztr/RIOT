@@ -15,6 +15,7 @@
 /boards/common/silabs/                      @basilfx
 /boards/common/slwstk6000b/                 @basilfx
 /boards/common/stm32/                       @aabadie @fjmolinas
+/boards/e180-zg120b-tb/                     @basilfx
 /boards/esp*/                               @gschorcht @yegorich
 /boards/hamilton/                           @Hyungsin
 /boards/ikea-tradfri/                       @basilfx
@@ -28,6 +29,7 @@
 /boards/slstk340*/                          @basilfx
 /boards/sltb001a/                           @basilfx
 /boards/slwstk6000b/                        @basilfx
+/boards/slwstk6220a/                        @basilfx
 /boards/sodaq-sara-aff/                     @leandrolanzieri
 /boards/stk3*00/                            @basilfx
 /boards/openmote*/                          @MrKevinWeiss
@@ -41,10 +43,10 @@
 /cpu/cc26x0/                                @hexluthor @smlng
 /cpu/cc26x2_cc13x2/                         @hexluthor @smlng
 /cpu/cc26xx_cc13xx/                         @hexluthor @smlng
-/cpu/cortexm_common/                        @haukepetersen @thomaseichinger @DipSwitch
+/cpu/cortexm_common/                        @kaspar030 @bergzand
 /cpu/efm32/                                 @basilfx
 /cpu/esp*/                                  @gschorcht
-/cpu/fe310/                                 @aabadie @kaspar030
+/cpu/fe310/                                 @aabadie @kaspar030 @bergzand
 /cpu/kinetis/                               @fjmolinas
 /cpu/lpc2387/                               @benpicco @maribu
 /cpu/mips*/                                 @kaspar030 @francois-berder
@@ -77,6 +79,7 @@
 /drivers/dose/                              @jue89
 /drivers/ds18/                              @leandrolanzieri
 /drivers/itg320x/                           @gschorcht
+/drivers/mcp2515/                           @wosym
 /drivers/mrf24j40/                          @bergzand
 /drivers/pca9685/                           @gschorcht
 /drivers/sht3x/                             @gschorcht
@@ -129,7 +132,6 @@
 
 /tests/                                     @smlng @leandrolanzieri @aabadie @MichelRottleuthner @fjmolinas
 /tests/candev/                              @wosym
-/tests/emb6*                                @miri64
 /tests/gnrc*                                @miri64
 /tests/lwip*                                @miri64
 /tests/slip/                                @miri64

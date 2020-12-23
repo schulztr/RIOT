@@ -22,7 +22,7 @@
 #ifndef PIR_H
 #define PIR_H
 
-#include "kernel_types.h"
+#include "sched.h"
 #include "periph/gpio.h"
 #include "stdbool.h"
 
@@ -123,7 +123,7 @@ pir_event_t pir_get_status(const pir_t *dev);
 int pir_get_occupancy(pir_t *dev, int16_t *occup);
 
 /**
- * @brief   Register a thread for notification whan state changes on the
+ * @brief   Register a thread for notification when state changes on the
  *          motion sensor.
  *
  * @note

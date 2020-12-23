@@ -17,9 +17,9 @@ $(RIOTTOOLS)/pic32prog/pic32prog: $(RIOTTOOLS)/pic32prog/Makefile
 	$(MAKE) -C $(@D)
 	@echo "[INFO] $(@F) binary successfully built!"
 
-$(RIOTTOOLS)/cc2538-bsl/cc2538-bsl.py:
+$(RIOTTOOLS)/cc2538-bsl/cc2538-bsl.py: $(RIOTTOOLS)/cc2538-bsl/Makefile
 	@echo "[INFO] cc2538-bsl.py not found - fetching it from GitHub now"
-	CC= CFLAGS= $(MAKE) -C $(RIOTTOOLS)/cc2538-bsl
+	@CC= CFLAGS= $(MAKE) -C $(RIOTTOOLS)/cc2538-bsl
 	@echo "[INFO] cc2538-bsl.py successfully fetched!"
 
 $(RIOTTOOLS)/edbg/edbg: $(RIOTTOOLS)/edbg/Makefile
@@ -44,3 +44,13 @@ $(RIOTTOOLS)/flatc/flatc: $(RIOTTOOLS)/flatc/Makefile
 	@echo "[INFO] flatc binary not found - building it from source now"
 	$(MAKE) -C $(RIOTTOOLS)/flatc
 	@echo "[INFO] flatc binary successfully built!"
+
+$(RIOTTOOLS)/lpc2k_pgm/bin/lpc2k_pgm: $(RIOTTOOLS)/lpc2k_pgm/Makefile
+	@echo "[INFO] lpc2k_pgm binary not found - building it from source now"
+	@$(MAKE) -C $(RIOTTOOLS)/lpc2k_pgm
+	@echo "[INFO] lpc2k_pgm binary successfully built!"
+
+$(RIOTTOOLS)/uf2/uf2conv.py: $(RIOTTOOLS)/uf2/Makefile
+	@echo "[INFO] uf2conv.py not found - fetching it from GitHub now"
+	CC= CFLAGS= $(MAKE) -C $(RIOTTOOLS)/uf2
+	@echo "[INFO] uf2conv.py successfully fetched!"

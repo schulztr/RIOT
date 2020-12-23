@@ -15,6 +15,7 @@
  * @author  Martine Lenders <mlenders@inf.fu-berlin.de>
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
@@ -86,8 +87,9 @@ int sock_ip_get_remote(sock_ip_t *sock, sock_ip_ep_t *remote)
     return 0;
 }
 
-ssize_t sock_ip_recv(sock_ip_t *sock, void *data, size_t max_len,
-                     uint32_t timeout, sock_ip_ep_t *remote)
+ssize_t sock_ip_recv_aux(sock_ip_t *sock, void *data, size_t max_len,
+                         uint32_t timeout, sock_ip_ep_t *remote,
+                         sock_ip_aux_rx_t *aux)
 {
     void *pkt = NULL, *ctx = NULL;
     uint8_t *ptr = data;
@@ -95,7 +97,7 @@ ssize_t sock_ip_recv(sock_ip_t *sock, void *data, size_t max_len,
     bool nobufs = false;
 
     assert((sock != NULL) && (data != NULL) && (max_len > 0));
-    while ((res = sock_ip_recv_buf(sock, &pkt, &ctx, timeout, remote)) > 0) {
+    while ((res = sock_ip_recv_buf_aux(sock, &pkt, &ctx, timeout, remote, aux)) > 0) {
         if (res > (ssize_t)max_len) {
             nobufs = true;
             continue;
@@ -107,12 +109,15 @@ ssize_t sock_ip_recv(sock_ip_t *sock, void *data, size_t max_len,
     return (nobufs) ? -ENOBUFS : ((res < 0) ? res : ret);
 }
 
-ssize_t sock_ip_recv_buf(sock_ip_t *sock, void **data, void **buf_ctx,
-                         uint32_t timeout, sock_ip_ep_t *remote)
+ssize_t sock_ip_recv_buf_aux(sock_ip_t *sock, void **data, void **buf_ctx,
+                             uint32_t timeout, sock_ip_ep_t *remote,
+                             sock_ip_aux_rx_t *aux)
 {
+    (void)aux;
     gnrc_pktsnip_t *pkt;
     sock_ip_ep_t tmp;
     int res;
+    gnrc_sock_recv_aux_t _aux = { 0 };
 
     assert((sock != NULL) && (data != NULL) && (buf_ctx != NULL));
     if (*buf_ctx != NULL) {
@@ -125,7 +130,17 @@ ssize_t sock_ip_recv_buf(sock_ip_t *sock, void **data, void **buf_ctx,
         return -EADDRNOTAVAIL;
     }
     tmp.family = sock->local.family;
-    res = gnrc_sock_recv((gnrc_sock_reg_t *)sock, &pkt, timeout, &tmp);
+#if IS_USED(MODULE_SOCK_AUX_LOCAL)
+    if ((aux != NULL) && (aux->flags & SOCK_AUX_GET_LOCAL)) {
+        _aux.local = &aux->local;
+    }
+#endif
+#if IS_USED(MODULE_SOCK_AUX_TIMESTAMP)
+    if ((aux != NULL) && (aux->flags & SOCK_AUX_GET_TIMESTAMP)) {
+        _aux.timestamp = &aux->timestamp;
+    }
+#endif
+    res = gnrc_sock_recv((gnrc_sock_reg_t *)sock, &pkt, timeout, &tmp, &_aux);
     if (res < 0) {
         return res;
     }
@@ -142,15 +157,32 @@ ssize_t sock_ip_recv_buf(sock_ip_t *sock, void **data, void **buf_ctx,
         gnrc_pktbuf_release(pkt);
         return -EPROTO;
     }
+#if IS_USED(MODULE_SOCK_AUX_LOCAL)
+    if ((aux != NULL) && (aux->flags & SOCK_AUX_GET_LOCAL)) {
+        aux->flags &= ~(SOCK_AUX_GET_LOCAL);
+    }
+#endif
+#if IS_USED(MODULE_SOCK_AUX_TIMESTAMP)
+    if ((aux != NULL) && (aux->flags & SOCK_AUX_GET_TIMESTAMP)) {
+        /* check if network interface did provide a timestamp; this depends on
+         * hardware support. A timestamp of zero is used to indicate a missing
+         * timestamp */
+        if (aux->timestamp > 0) {
+            aux->flags &= ~SOCK_AUX_GET_TIMESTAMP;
+        }
+    }
+#endif
     *data = pkt->data;
     *buf_ctx = pkt;
     res = (int)pkt->size;
     return res;
 }
 
-ssize_t sock_ip_send(sock_ip_t *sock, const void *data, size_t len,
-                     uint8_t proto, const sock_ip_ep_t *remote)
+ssize_t sock_ip_send_aux(sock_ip_t *sock, const void *data, size_t len,
+                         uint8_t proto, const sock_ip_ep_t *remote,
+                         sock_ip_aux_tx_t *aux)
 {
+    (void)aux;
     int res;
     gnrc_pktsnip_t *pkt;
     sock_ip_ep_t local;
@@ -194,7 +226,7 @@ ssize_t sock_ip_send(sock_ip_t *sock, const void *data, size_t len,
         gnrc_ep_set(&rem, remote, sizeof(rem));
     }
     if ((remote != NULL) && (remote->family == AF_UNSPEC) &&
-        (sock->remote.family != AF_UNSPEC)) {
+        (sock != NULL) && (sock->remote.family != AF_UNSPEC)) {
         /* remote was set on create so take its family */
         rem.family = sock->remote.family;
     }

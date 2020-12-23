@@ -28,12 +28,16 @@
 void saul_init_devs(void)
 {
     if (IS_USED(MODULE_SAUL_ADC)) {
-        extern void auto_init_adc(void);
-        auto_init_adc();
+        extern void auto_init_saul_adc(void);
+        auto_init_saul_adc();
     }
     if (IS_USED(MODULE_SAUL_GPIO)) {
         extern void auto_init_gpio(void);
         auto_init_gpio();
+    }
+    if (IS_USED(MODULE_SAUL_PWM)) {
+        extern void auto_init_saul_pwm(void);
+        auto_init_saul_pwm();
     }
     if (IS_USED(MODULE_SAUL_NRF_TEMPERATURE)) {
         extern void auto_init_nrf_temperature(void);
@@ -91,9 +95,17 @@ void saul_init_devs(void)
         extern void auto_init_ds75lx(void);
         auto_init_ds75lx();
     }
+    if (IS_USED(MODULE_EFM32_CORETEMP)) {
+        extern void auto_init_efm32_coretemp(void);
+        auto_init_efm32_coretemp();
+    }
     if (IS_USED(MODULE_FXOS8700)) {
         extern void auto_init_fxos8700(void);
         auto_init_fxos8700();
+    }
+    if (IS_USED(MODULE_GP2Y10XX)) {
+        extern void auto_init_gp2y10xx(void);
+        auto_init_gp2y10xx();
     }
     if (IS_USED(MODULE_GROVE_LEDBAR)) {
         extern void auto_init_grove_ledbar(void);
@@ -215,6 +227,10 @@ void saul_init_devs(void)
         extern void auto_init_qmc5883l(void);
         auto_init_qmc5883l();
     }
+    if (IS_USED(MODULE_SCD30)) {
+        extern void auto_init_scd30(void);
+        auto_init_scd30();
+    }
     if (IS_USED(MODULE_SHT2X)) {
         extern void auto_init_sht2x(void);
         auto_init_sht2x();
@@ -222,6 +238,10 @@ void saul_init_devs(void)
     if (IS_USED(MODULE_SDP3X)) {
         extern void auto_init_sdp3x(void);
         auto_init_sdp3x();
+    }
+    if (IS_USED(MODULE_SEESAW_SOIL)) {
+        extern void auto_init_seesaw_soil(void);
+        auto_init_seesaw_soil();
     }
     if (IS_USED(MODULE_SHT3X)) {
         extern void auto_init_sht3x(void);
@@ -234,6 +254,10 @@ void saul_init_devs(void)
     if (IS_USED(MODULE_SDS011)) {
         extern void auto_init_sds011(void);
         auto_init_sds011();
+    }
+    if (IS_USED(MODULE_SI1133)) {
+        extern void auto_init_si1133(void);
+        auto_init_si1133();
     }
     if (IS_USED(MODULE_SI114X)) {
         extern void auto_init_si114x(void);

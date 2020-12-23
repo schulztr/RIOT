@@ -1,5 +1,6 @@
 # Target architecture for the build. Use avr if you are unsure.
-TARGET_ARCH ?= avr
+TARGET_ARCH_AVR ?= avr
+TARGET_ARCH ?= $(TARGET_ARCH_AVR)
 
 CFLAGS_CPU   = -mmcu=$(CPU) $(CFLAGS_FPU)
 CFLAGS_LINK  = -ffunction-sections -fdata-sections -fno-builtin -fshort-enums
@@ -11,10 +12,6 @@ ASFLAGS   += $(CFLAGS_CPU) $(CFLAGS_DBG)
 LINKFLAGS += $(CFLAGS_CPU) $(CFLAGS_DBG) $(CFLAGS_OPT) -static -lgcc -e reset_handler -Wl,--gc-sections
 OFLAGS    += -j .text -j .data
 
-# explicitly tell the linker to link the syscalls and startup code.
-# without this the interrupt vectors will not be linked correctly!
-UNDEF += $(BINDIR)/atmega_common/startup.o
-
 # Use ROM_LEN and RAM_LEN during link
 $(if $(ROM_LEN),,$(error ROM_LEN is not defined))
 $(if $(RAM_LEN),,$(error RAM_LEN is not defined))
@@ -25,9 +22,6 @@ LINKFLAGS += $(LINKFLAGPREFIX)--defsym=__DATA_REGION_LENGTH__=$(RAM_LEN)
 LDSCRIPT_COMPAT = $(if $(shell $(TARGET_ARCH)-ld --verbose | grep __TEXT_REGION_LENGTH__),,\
                     -T$(RIOTCPU)/$(CPU)/ldscripts_compat/avr_2.26.ld)
 LINKFLAGS += $(LDSCRIPT_COMPAT)
-
-# use the wrapper functions for following avr-libc functions
-LINKFLAGS += -Wl,-wrap=malloc -Wl,-wrap=calloc -Wl,-wrap=realloc -Wl,-wrap=free
 
 ifeq ($(LTO),1)
   # avr-gcc <4.8.3 has a bug when using LTO which causes a warning to be printed always:

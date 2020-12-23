@@ -19,6 +19,8 @@
  * @}
  */
 
+#include <assert.h>
+
 #include "cpu.h"
 #include "irq.h"
 #include "periph/rtt.h"
@@ -52,7 +54,7 @@
 #if defined(CPU_FAM_STM32F4) || defined(CPU_FAM_STM32F7)
 #define CLOCK_SRC_REG       RCC->DCKCFGR2
 #define CLOCK_SRC_MASK      RCC_DCKCFGR2_LPTIM1SEL
-#if CLOCK_LSE
+#if IS_ACTIVE(CONFIG_BOARD_HAS_LSE)
 #define CLOCK_SRC_CFG       (RCC_DCKCFGR2_LPTIM1SEL_1 | RCC_DCKCFGR2_LPTIM1SEL_0)
 #else
 #define CLOCK_SRC_CFG       (RCC_DCKCFGR2_LPTIM1SEL_0)
@@ -60,16 +62,26 @@
 #else
 #define CLOCK_SRC_REG       RCC->CCIPR
 #define CLOCK_SRC_MASK      RCC_CCIPR_LPTIM1SEL
-#if CLOCK_LSE
+#if IS_ACTIVE(CONFIG_BOARD_HAS_LSE)
 #define CLOCK_SRC_CFG       (RCC_CCIPR_LPTIM1SEL_1 | RCC_CCIPR_LPTIM1SEL_0)
 #else
 #define CLOCK_SRC_CFG       (RCC_CCIPR_LPTIM1SEL_0)
 #endif
 #endif
 
+#if defined(CPU_FAM_STM32WB)
+/* IM32 is the interrupt line used to wakeup the CPU on WB but is not defined
+in the CMSIS. According to the reference manual, this is the first bit in the
+register. */
+#define EXTI_IMR2_IM32      (1 << 0)
+#endif
+
 #if defined(CPU_FAM_STM32L4) || defined(CPU_FAM_STM32WB)
 #define IMR_REG             IMR2
 #define EXTI_IMR_BIT        EXTI_IMR2_IM32
+#elif defined(CPU_FAM_STM32G0)
+#define IMR_REG             IMR1
+#define EXTI_IMR_BIT        EXTI_IMR1_IM29
 #elif defined(CPU_FAM_STM32G4)
 #define IMR_REG             IMR2
 #define EXTI_IMR_BIT        EXTI_IMR2_IM37
@@ -115,12 +127,17 @@ void rtt_init(void)
      * Needs to be configured to trigger on rising edges. */
     EXTI->IMR_REG |= EXTI_IMR_BIT;
 #if !defined(CPU_FAM_STM32L4) && !defined(CPU_FAM_STM32L0) && \
-    !defined(CPU_FAM_STM32WB) && !defined(CPU_FAM_STM32G4)
+    !defined(CPU_FAM_STM32WB) && !defined(CPU_FAM_STM32G4) && \
+    !defined(CPU_FAM_STM32G0)
     EXTI->FTSR_REG &= ~(EXTI_FTSR_BIT);
     EXTI->RTSR_REG |= EXTI_RTSR_BIT;
     EXTI->PR_REG = EXTI_PR_BIT;
 #endif
+#if defined(CPU_FAM_STM32G0)
+    NVIC_EnableIRQ(TIM6_DAC_LPTIM1_IRQn);
+#else
     NVIC_EnableIRQ(LPTIM1_IRQn);
+#endif
     /* enable timer */
     LPTIM1->CR = LPTIM_CR_ENABLE;
     /* set auto-reload value (timer needs to be enabled for this) */
@@ -177,6 +194,8 @@ void rtt_poweron(void)
 {
 #ifdef RCC_APB1ENR1_LPTIM1EN
     periph_clk_en(APB1, RCC_APB1ENR1_LPTIM1EN);
+#elif defined(RCC_APBENR1_LPTIM1EN)
+    periph_clk_en(APB1, RCC_APBENR1_LPTIM1EN);
 #else
     periph_clk_en(APB1, RCC_APB1ENR_LPTIM1EN);
 #endif
@@ -186,12 +205,18 @@ void rtt_poweroff(void)
 {
 #ifdef RCC_APB1ENR1_LPTIM1EN
     periph_clk_dis(APB1, RCC_APB1ENR1_LPTIM1EN);
+#elif defined(RCC_APBENR1_LPTIM1EN)
+    periph_clk_dis(APB1, RCC_APBENR1_LPTIM1EN);
 #else
     periph_clk_dis(APB1, RCC_APB1ENR_LPTIM1EN);
 #endif
 }
 
+#if defined(CPU_FAM_STM32G0)
+void isr_tim6_dac_lptim1(void)
+#else
 void isr_lptim1(void)
+#endif
 {
     if (LPTIM1->ISR & LPTIM_ISR_CMPM) {
         if (to_cb) {
@@ -208,7 +233,8 @@ void isr_lptim1(void)
     }
     LPTIM1->ICR = (LPTIM_ICR_ARRMCF | LPTIM_ICR_CMPMCF);
 #if !defined(CPU_FAM_STM32L4) && !defined(CPU_FAM_STM32L0) && \
-    !defined(CPU_FAM_STM32WB) && !defined(CPU_FAM_STM32G4)
+    !defined(CPU_FAM_STM32WB) && !defined(CPU_FAM_STM32G4) && \
+    !defined(CPU_FAM_STM32G0)
     EXTI->PR_REG = EXTI_PR_BIT; /* only clear the associated bit */
 #endif
 

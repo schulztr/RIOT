@@ -23,8 +23,7 @@ cd $RIOTBASE
 . "${RIOTTOOLS}"/ci/changed_files.sh
 
 FILEREGEX='\.([CcHh]|[ch]pp|sh|py|md|txt)$'
-EXCLUDE='^(.+/vendor/)'
-FILES=$(FILEREGEX=${FILEREGEX} EXCLUDE=${EXCLUDE} changed_files)
+FILES=$(FILEREGEX=${FILEREGEX} changed_files)
 
 if [ -z "${FILES}" ]; then
     exit 0
@@ -56,8 +55,8 @@ if [ -n "${ERRORS}" ]
 then
     printf "%sThere are typos in the following files:%s\n\n" "${CERROR}" "${CRESET}"
     printf "%s\n" "${ERRORS}"
-    # TODO: return 1 when all typos are fixed
-    exit 0
+    printf "If those are false positives, add them to %s\n" "${RIOTTOOLS}/codespell/ignored_words.txt"
+    exit 1
 else
     exit 0
 fi

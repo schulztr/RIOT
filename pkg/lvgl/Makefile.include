@@ -19,7 +19,7 @@ LVGL_MEM_SIZE           ?= 5U*1024U
 # Engine settings
 LVGL_INACTIVITY_PERIOD_MS   ?= 5*MS_PER_SEC   # 5s
 LVGL_TASK_HANDLER_DELAY_US  ?= 5*US_PER_MS    # 5ms
-LVGL_TASK_THREAD_PRIO       ?= THREAD_PRIORITY_MAIN-1
+LVGL_TASK_THREAD_PRIO       ?= THREAD_PRIORITY_MAIN+1
 
 # Set the CFLAGS variable accordingly
 CFLAGS += -DLV_COLOR_DEPTH=$(LVGL_COLOR_DEPTH)
@@ -31,3 +31,6 @@ CFLAGS += -DLVGL_TASK_THREAD_PRIO=$(LVGL_TASK_THREAD_PRIO)
 
 # lvgl module is not a concrete module, so declare it as a pseudomodule
 PSEUDOMODULES += lvgl
+
+# touch capabilities are available via a pseudomodule
+PSEUDOMODULES += lvgl_contrib_touch

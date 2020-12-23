@@ -27,6 +27,7 @@
 #include "net/gnrc/gomach/gomach.h"
 #endif
 #include "net/gnrc.h"
+#include "include/init_devs.h"
 
 #include "at86rf2xx.h"
 #include "at86rf2xx_params.h"
@@ -35,7 +36,7 @@
  * @brief   Define stack parameters for the MAC layer thread
  * @{
  */
-#define AT86RF2XX_MAC_STACKSIZE     (THREAD_STACKSIZE_DEFAULT)
+#define AT86RF2XX_MAC_STACKSIZE     (IEEE802154_STACKSIZE_DEFAULT)
 #ifndef AT86RF2XX_MAC_PRIO
 #define AT86RF2XX_MAC_PRIO          (GNRC_NETIF_PRIO)
 #endif
@@ -51,7 +52,7 @@ void auto_init_at86rf2xx(void)
     for (unsigned i = 0; i < AT86RF2XX_NUM; i++) {
         LOG_DEBUG("[auto_init_netif] initializing at86rf2xx #%u\n", i);
 
-        at86rf2xx_setup(&at86rf2xx_devs[i], &at86rf2xx_params[i]);
+        at86rf2xx_setup(&at86rf2xx_devs[i], &at86rf2xx_params[i], i);
 #if defined(MODULE_GNRC_GOMACH)
         gnrc_netif_gomach_create(&_netif[i], _at86rf2xx_stacks[i],
                                  AT86RF2XX_MAC_STACKSIZE,

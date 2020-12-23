@@ -60,6 +60,7 @@ enum {
     SAM0_GCLK_1MHZ,                     /**< 1 MHz clock for xTimer */
     SAM0_GCLK_32KHZ,                    /**< 32 kHz clock           */
     SAM0_GCLK_1KHZ,                     /**< 1 kHz clock            */
+    SAM0_GCLK_DISABLED = 0xF,           /**< disabled GCLK          */
 };
 /** @} */
 
@@ -69,24 +70,6 @@ enum {
  * As of now, we do not support HW CS, so we always set it to a fixed value
  */
 #define SPI_HWCS(x)     (UINT_MAX - 1)
-
-/**
- * @brief   PWM channel configuration data structure
- */
-typedef struct {
-    gpio_t pin;                 /**< GPIO pin */
-    gpio_mux_t mux;             /**< pin function multiplex value */
-    uint8_t chan;               /**< TCC channel to use */
-} pwm_conf_chan_t;
-
-/**
- * @brief   PWM device configuration data structure
- */
-typedef struct {
-    Tcc *dev;                   /**< TCC device to use */
-    const pwm_conf_chan_t *chan;/**< channel configuration */
-    const uint8_t chan_numof;   /**< number of channels */
-} pwm_conf_t;
 
 /**
  * @brief   Return the numeric id of a SERCOM device derived from its address
@@ -137,6 +120,33 @@ typedef enum {
 #define RTT_CLOCK_FREQUENCY (32768U)                      /* in Hz */
 #define RTT_MIN_FREQUENCY   (RTT_CLOCK_FREQUENCY / 1024U) /* in Hz */
 #define RTT_MAX_FREQUENCY   (RTT_CLOCK_FREQUENCY)         /* in Hz */
+/** @} */
+
+/**
+ * @brief   NVM User Row Mapping - Dedicated Entries
+ *          Config values will be applied at power-on.
+ * @{
+ */
+struct sam0_aux_cfg_mapping {
+    uint64_t bootloader_size            :  3; /**< BOOTPROT: Bootloader Size            */
+    uint64_t reserved_0                 :  1; /**< Factory settings - do not change.    */
+    uint64_t eeprom_size                :  3; /**< one of eight different EEPROM sizes  */
+    uint64_t reserved_1                 :  1; /**< Factory settings - do not change.    */
+    uint64_t bod33_level                :  6; /**< BOD33 threshold level at power-on.   */
+    uint64_t bod33_enable               :  1; /**< BOD33 Enable at power-on.            */
+    uint64_t bod33_action               :  2; /**< BOD33 Action at power-on.            */
+    uint64_t reserved_2                 :  8; /**< Factory settings - do not change.    */
+    uint64_t wdt_enable                 :  1; /**< WDT Enable at power-on.              */
+    uint64_t wdt_always_on              :  1; /**< WDT Always-On at power-on.           */
+    uint64_t wdt_period                 :  4; /**< WDT Period at power-on.              */
+    uint64_t wdt_window                 :  4; /**< WDT Window at power-on.              */
+    uint64_t wdt_ewoffset               :  4; /**< WDT Early Warning Interrupt Offset   */
+    uint64_t wdt_window_enable          :  1; /**< WDT Window mode enabled on power-on  */
+    uint64_t bod33_hysteresis           :  1; /**< BOD33 Hysteresis configuration       */
+    const uint64_t bod12_calibration    :  1; /**< Factory settings - do not change.    */
+    uint64_t reserved_3                 :  6; /**< Factory settings - do not change.    */
+    uint64_t nvm_locks                  : 16; /**< NVM Region Lock Bits.                */
+};
 /** @} */
 
 #ifdef __cplusplus

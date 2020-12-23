@@ -18,6 +18,8 @@
  * @}
  */
 
+#include <assert.h>
+
 #include "thread.h"
 #include "nimble_riot.h"
 
@@ -142,5 +144,10 @@ void nimble_riot_init(void)
     res = nimble_autoconn_init(&nimble_autoconn_params, NULL, 0);
     assert(res == NIMBLE_AUTOCONN_OK);
     nimble_autoconn_enable();
+#endif
+
+#ifdef MODULE_NIMBLE_AUTOADV
+    extern void nimble_autoadv_init(void);
+    nimble_autoadv_init();
 #endif
 }

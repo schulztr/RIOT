@@ -38,15 +38,6 @@ extern "C" {
 #define NETOPT_MAX_PACKET_SIZE NETOPT_MAX_PDU_SIZE
 
 /**
- * @brief       A deprecated alias for @ref NETOPT_LINK
- *
- * @deprecated  Please use @ref NETOPT_LINK instead of
- *              `NETOPT_LINK_CONNECTED`. It will be removed after the
- *              2020.07 release at the latest.
- */
-#define NETOPT_LINK_CONNECTED NETOPT_LINK
-
-/**
  * @brief   Global list of configuration options available throughout the
  *          network stack, e.g. by netdev and netapi
  *
@@ -195,6 +186,22 @@ typedef enum {
      * @brief   (uint16_t) maximum protocol data unit
      */
     NETOPT_MAX_PDU_SIZE,
+    /**
+     * @brief   (uint16_t) protocol data unit size
+     *
+     * When set, fixes the number of bytes to be received. This is required for
+     * MAC layers with implicit header mode (no packet length information in
+     * PDDU) and predictable packet length (e.g LoRaWAN beacons). The device
+     * driver implementation should attempt to read exactly the expected number
+     * of bytes (possibly filling it up with garbage data if the payload is
+     * smaller).
+     *
+     * When get, returns the number of expected bytes for the next reception.
+     *
+     * In some MAC layers it will only be effective if used in conjunction with
+     * @ref NETOPT_FIXED_HEADER
+     */
+    NETOPT_PDU_SIZE,
     /**
      * @brief   (@ref netopt_enable_t) frame preloading
      *
@@ -683,6 +690,26 @@ typedef enum {
     NETOPT_MR_OFDM_MCS,
 
     /**
+     * @brief   (uint8_t) MR-FSK PHY Modulation Index (x 64)
+     */
+    NETOPT_MR_FSK_MODULATION_INDEX,
+
+    /**
+     * @brief   (uint8_t) MR-FSK Modulation Order
+     */
+    NETOPT_MR_FSK_MODULATION_ORDER,
+
+    /**
+     * @brief   (uint8_t) MR-FSK PHY Symbol Rate (kHz)
+     */
+    NETOPT_MR_FSK_SRATE,
+
+    /**
+     * @brief   (uint8_t) MR-FSK PHY Forward Error Correction
+     */
+    NETOPT_MR_FSK_FEC,
+
+    /**
      * @brief   (uint8_t) PHY Channel Spacing (kHz)
      */
     NETOPT_CHANNEL_SPACING,
@@ -740,6 +767,31 @@ typedef enum {
      */
     NETOPT_RSSI,
 
+    /**
+     * @brief (uint16_t) Set the battery monitor voltage (in mV).
+     *
+     * When set, a @ref SYS_BUS_POWER_EVENT_LOW_VOLTAGE event is generated
+     * on the SYS_BUS_POWER bus if the supply voltage falls below the set value.
+     *
+     * Set to 0 to disable battery monitoring.
+     */
+    NETOPT_BATMON,
+
+    /**
+     * @brief   (array of byte array) get link layer multicast groups as array
+     *          of byte arrays (length of each byte array corresponds to the
+     *          length of @ref NETOPT_ADDRESS) or join a link layer multicast
+     *          group as byte array on an interface
+     *
+     * When getting the option you can pass an array of byte arrays of any
+     * length greater than 0 to the getter. The array will be filled up to to
+     * its maximum and the remaining addresses on the interface will be ignored
+     */
+    NETOPT_L2_GROUP,
+    /**
+     * @brief   (array of byte arrays) Leave an link layer multicast group
+     */
+    NETOPT_L2_GROUP_LEAVE,
     /**
      * @brief   maximum number of options defined here.
      *

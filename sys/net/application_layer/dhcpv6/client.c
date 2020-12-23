@@ -13,6 +13,7 @@
  * @author  Martine Lenders <m.lenders@fu-berlin.de>
  */
 
+#include <assert.h>
 #include <stdbool.h>
 
 #include "event.h"
@@ -25,7 +26,7 @@
 #include "xtimer.h"
 #include "xtimer/implementation.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG 0
 #include "debug.h"
 
 #include "_dhcpv6.h"
@@ -64,11 +65,11 @@ typedef struct {
     uint8_t duid_len;
 } server_t;
 
-static uint8_t send_buf[DHCPV6_CLIENT_BUFLEN];
+static uint8_t send_buf[DHCPV6_CLIENT_SEND_BUFLEN];
 static uint8_t recv_buf[DHCPV6_CLIENT_BUFLEN];
 static uint8_t best_adv[DHCPV6_CLIENT_BUFLEN];
 static uint8_t duid[DHCPV6_CLIENT_DUID_LEN];
-static pfx_lease_t pfx_leases[DHCPV6_CLIENT_PFX_LEASE_MAX];
+static pfx_lease_t pfx_leases[CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX];
 static server_t server;
 static xtimer_t timer, rebind_timer;
 static event_queue_t *event_queue;
@@ -149,7 +150,7 @@ void dhcpv6_client_req_ia_pd(unsigned netif, unsigned pfx_len)
     pfx_lease_t *lease = NULL;
 
     assert(pfx_len <= 128);
-    for (unsigned i = 0; i < DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
+    for (unsigned i = 0; i < CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
         if (pfx_leases[i].parent.ia_id.id == 0) {
             lease = &pfx_leases[i];
             lease->parent.ia_id.info.netif = netif;
@@ -246,6 +247,22 @@ static inline size_t _compose_elapsed_time_opt(dhcpv6_opt_elapsed_time_t *time)
     return len + sizeof(dhcpv6_opt_t);
 }
 
+static inline size_t _compose_mud_url_opt(dhcpv6_opt_mud_url_t *mud_url_opt,
+                                          const char *mud_url, size_t len_max)
+{
+    uint16_t len = strlen(mud_url);
+
+    if (len > len_max) {
+        assert(0);
+        return 0;
+    }
+
+    mud_url_opt->type = byteorder_htons(DHCPV6_OPT_MUD_URL);
+    mud_url_opt->len = byteorder_htons(len);
+    strncpy(mud_url_opt->mudString, mud_url, len_max);
+    return len + sizeof(dhcpv6_opt_mud_url_t);
+}
+
 static inline size_t _compose_oro_opt(dhcpv6_opt_oro_t *oro, uint16_t *opts,
                                         unsigned opts_num)
 {
@@ -272,11 +289,11 @@ static inline size_t _compose_ia_pd_opt(dhcpv6_opt_ia_pd_t *ia_pd,
     return len + sizeof(dhcpv6_opt_t);
 }
 
-static inline size_t _add_ia_pd_from_config(uint8_t *buf)
+static inline size_t _add_ia_pd_from_config(uint8_t *buf, size_t len_max)
 {
     size_t msg_len = 0;
 
-    for (unsigned i = 0; i < DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
+    for (unsigned i = 0; i < CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
         uint32_t ia_id = pfx_leases[i].parent.ia_id.id;
         if (ia_id != 0) {
             dhcpv6_opt_ia_pd_t *ia_pd = (dhcpv6_opt_ia_pd_t *)(&buf[msg_len]);
@@ -284,6 +301,12 @@ static inline size_t _add_ia_pd_from_config(uint8_t *buf)
             msg_len += _compose_ia_pd_opt(ia_pd, ia_id, 0U);
         }
     }
+
+    if (msg_len > len_max) {
+        assert(0);
+        return 0;
+    }
+
     return msg_len;
 }
 
@@ -331,40 +354,43 @@ static inline dhcpv6_opt_t *_opt_next(dhcpv6_opt_t *opt)
 
 static bool _check_status_opt(dhcpv6_opt_status_t *status)
 {
-    /* DHCPV6_STATUS_SUCCESS is 0, so we don't need to fix byte order */
-#if ENABLE_DEBUG
-    if ((status != NULL) && (status->code.u16 != DHCPV6_STATUS_SUCCESS)) {
-        size_t msg_len = byteorder_ntohs(status->len);
-        char msg[msg_len - 1];
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        if ((status != NULL) && (status->code.u16 != DHCPV6_STATUS_SUCCESS)) {
+            size_t msg_len = byteorder_ntohs(status->len);
+            char msg[msg_len - 1];
 
-        strncpy(msg, status->msg, msg_len - 2);
-        DEBUG("DHCPv6 client: server returned error (%u) \"%s\"\n",
-              byteorder_ntohs(status->code), msg);
+            strncpy(msg, status->msg, msg_len - 2);
+            DEBUG("DHCPv6 client: server returned error (%u) \"%s\"\n",
+                byteorder_ntohs(status->code), msg);
+        }
     }
-#endif
+
+    /* DHCPV6_STATUS_SUCCESS is 0, so we don't need to fix byte order */
     return (status == NULL) || (status->code.u16 == DHCPV6_STATUS_SUCCESS);
 }
 
 static bool _check_cid_opt(dhcpv6_opt_duid_t *cid)
 {
-#if ENABLE_DEBUG
-    if ((byteorder_ntohs(cid->len) != duid_len) ||
-        (memcmp(cid->duid, duid, duid_len) != 0)) {
-        DEBUG("DHCPv6 client: message is not for me\n");
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        if ((byteorder_ntohs(cid->len) != duid_len) ||
+            (memcmp(cid->duid, duid, duid_len) != 0)) {
+            DEBUG("DHCPv6 client: message is not for me\n");
+        }
     }
-#endif
+
     return ((byteorder_ntohs(cid->len) == duid_len) &&
             (memcmp(cid->duid, duid, duid_len) == 0));
 }
 
 static bool _check_sid_opt(dhcpv6_opt_duid_t *sid)
 {
-#if ENABLE_DEBUG
-    if ((byteorder_ntohs(sid->len) != server.duid_len) ||
-        (memcmp(sid->duid, server.duid.u8, server.duid_len) != 0)) {
-        DEBUG("DHCPv6 client: message is not from my server\n");
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        if ((byteorder_ntohs(sid->len) != server.duid_len) ||
+            (memcmp(sid->duid, server.duid.u8, server.duid_len) != 0)) {
+            DEBUG("DHCPv6 client: message is not from my server\n");
+        }
     }
-#endif
+
     return ((byteorder_ntohs(sid->len) == server.duid_len) &&
             (memcmp(sid->duid, server.duid.u8, server.duid_len) == 0));
 }
@@ -489,7 +515,7 @@ static void _parse_advertise(uint8_t *adv, size_t len)
          len > 0; len -= _opt_len(opt), opt = _opt_next(opt)) {
         switch (byteorder_ntohs(opt->type)) {
             case DHCPV6_OPT_IA_PD:
-                for (unsigned i = 0; i < DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
+                for (unsigned i = 0; i < CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
                     dhcpv6_opt_ia_pd_t *ia_pd = (dhcpv6_opt_ia_pd_t *)opt;
                     unsigned pd_t1, pd_t2;
                     uint32_t ia_id = byteorder_ntohl(ia_pd->ia_id);
@@ -602,7 +628,7 @@ static bool _parse_reply(uint8_t *rep, size_t len)
          len > 0; len -= _opt_len(opt), opt = _opt_next(opt)) {
         switch (byteorder_ntohs(opt->type)) {
             case DHCPV6_OPT_IA_PD:
-                for (unsigned i = 0; i < DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
+                for (unsigned i = 0; i < CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
                     dhcpv6_opt_iapfx_t *iapfx = NULL;
                     pfx_lease_t *lease = &pfx_leases[i];
                     ia_pd = (dhcpv6_opt_ia_pd_t *)opt;
@@ -703,7 +729,16 @@ static void _solicit_servers(event_t *event)
     msg_len += _compose_elapsed_time_opt(time);
     msg_len += _compose_oro_opt((dhcpv6_opt_oro_t *)&send_buf[msg_len], oro_opts,
                                 ARRAY_SIZE(oro_opts));
-    msg_len += _add_ia_pd_from_config(&send_buf[msg_len]);
+
+    if (IS_USED(MODULE_GNRC_DHCPV6_CLIENT_MUD_URL)) {
+        const char mud_url[] = CONFIG_DHCPV6_CLIENT_MUD_URL;
+        assert(strlen(mud_url) <= MAX_MUD_URL_LENGTH);
+        assert(strncmp(mud_url, "https://", 8) == 0);
+        msg_len += _compose_mud_url_opt((dhcpv6_opt_mud_url_t *)&send_buf[msg_len],
+                                        mud_url, sizeof(send_buf) - msg_len);
+    }
+
+    msg_len += _add_ia_pd_from_config(&send_buf[msg_len], sizeof(send_buf) - msg_len);
     DEBUG("DHCPv6 client: send SOLICIT\n");
     _flush_stale_replies(&sock);
     res = sock_udp_send(&sock, send_buf, msg_len, &remote);
@@ -777,7 +812,7 @@ static void _request_renew_rebind(uint8_t type)
             irt = DHCPV6_REB_TIMEOUT;
             mrt = DHCPV6_REB_MAX_RT;
             /* calculate MRD from prefix leases */
-            for (unsigned i = 0; i < DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
+            for (unsigned i = 0; i < CONFIG_DHCPV6_CLIENT_PFX_LEASE_MAX; i++) {
                 const pfx_lease_t *lease = &pfx_leases[i];
                 uint32_t valid_until = dhcpv6_client_prefix_valid_until(
                         lease->parent.ia_id.info.netif,
@@ -811,7 +846,7 @@ static void _request_renew_rebind(uint8_t type)
     msg_len += _compose_elapsed_time_opt(time);
     msg_len += _compose_oro_opt((dhcpv6_opt_oro_t *)&send_buf[msg_len], oro_opts,
                                 ARRAY_SIZE(oro_opts));
-    msg_len += _add_ia_pd_from_config(&send_buf[msg_len]);
+    msg_len += _add_ia_pd_from_config(&send_buf[msg_len], sizeof(send_buf) - msg_len);
     _flush_stale_replies(&sock);
     while (sock_udp_send(&sock, send_buf, msg_len, &remote) <= 0) {}
     while (((res = sock_udp_recv(&sock, recv_buf, sizeof(recv_buf),
