@@ -13,6 +13,7 @@ USEMODULE += wot_core
 USEMODULE += wot_coap
 USEMODULE += xtimer
 
+ifeq ($(BOARD),esp32-wroom-32)
 # ESP wifi configuration
 USEMODULE += esp_wifi
 WIFI_SSID?=\"Your\ SSID\"
@@ -23,6 +24,7 @@ CFLAGS += -DESP_WIFI_PASS=$(WIFI_PASS)
 # GPIO Bindings
 LED_GPIO = GPIO33
 CFLAGS += -DLED_GPIO=$(LED_GPIO)
+endif
 
 # Shell
 USEMODULE += shell
