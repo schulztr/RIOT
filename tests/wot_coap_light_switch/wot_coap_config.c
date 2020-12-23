@@ -93,14 +93,14 @@ static gcoap_listener_t _coap_listener_echo = {
 };
 
 static gcoap_listener_t _coap_listener_led_status = {
-        &_coap_resources[3],
+        &_coap_resources[1],
         sizeof(_coap_resources),
         NULL,
         NULL
 };
 
 static gcoap_listener_t _coap_listener_led_toggle = {
-        &_coap_resources[4],
+        &_coap_resources[2],
         sizeof(_coap_resources),
         NULL,
         NULL
