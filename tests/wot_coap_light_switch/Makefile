@@ -15,8 +15,8 @@ USEMODULE += xtimer
 
 # ESP wifi configuration
 USEMODULE += esp_wifi
-WIFI_SSID=\"Your SSID\"
-WIFI_PASS=\"Your password\"
+WIFI_SSID?=\"Your\ SSID\"
+WIFI_PASS?=\"Your\ password\"
 CFLAGS += -DESP_WIFI_SSID=$(WIFI_SSID)
 CFLAGS += -DESP_WIFI_PASS=$(WIFI_PASS)
 
