@@ -89,6 +89,7 @@ static gcoap_listener_t _coap_listener = {
         &_coap_resources[0],
         sizeof(_coap_resources),
         NULL,
+        NULL,
         NULL
 };
 

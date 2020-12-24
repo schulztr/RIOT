@@ -161,6 +161,7 @@ gcoap_listener_t _wot_td_gcoap_listener = {
         &_wot_td_coap_resources[0],
         sizeof(_wot_td_coap_resources) / sizeof(_wot_td_coap_resources[0]),
         _encode_link,
+        NULL,
         NULL
 };
 
