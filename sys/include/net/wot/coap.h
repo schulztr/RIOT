@@ -5,17 +5,17 @@
 #include "net/gcoap.h"
 
 typedef struct {
-    gcoap_listener_t *coap_resource;
+    const coap_resource_t *coap_resource;
     wot_td_prop_affordance_t *affordance;
 } wot_td_coap_prop_affordance_t;
 
 typedef struct {
-    gcoap_listener_t *coap_resource;
+    const coap_resource_t *coap_resource;
     wot_td_action_affordance_t *affordance;
 } wot_td_coap_action_affordance_t;
 
 typedef struct {
-    gcoap_listener_t *coap_resource;
+    const coap_resource_t *coap_resource;
     wot_td_event_affordance_t *affordance;
 } wot_td_coap_event_affordance_t;
 
