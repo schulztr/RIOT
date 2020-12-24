@@ -85,22 +85,8 @@ const coap_resource_t _coap_resources[] = {
         { "/led/toggle", COAP_POST, _led_toggle_handler, NULL },
 };
 
-static gcoap_listener_t _coap_listener_echo = {
+static gcoap_listener_t _coap_listener = {
         &_coap_resources[0],
-        sizeof(_coap_resources),
-        NULL,
-        NULL
-};
-
-static gcoap_listener_t _coap_listener_led_status = {
-        &_coap_resources[1],
-        sizeof(_coap_resources),
-        NULL,
-        NULL
-};
-
-static gcoap_listener_t _coap_listener_led_toggle = {
-        &_coap_resources[2],
         sizeof(_coap_resources),
         NULL,
         NULL
@@ -231,21 +217,22 @@ wot_td_action_affordance_t wot_led_toggle_affordance = {
 };
 
 wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
-        .coap_resource = &_coap_listener_echo,
+        .coap_resource = &_coap_resources[0],
         .affordance = &wot_echo_affordance,
 };
 
 wot_td_coap_prop_affordance_t wot_coap_led_status_affordance = {
-        .coap_resource = &_coap_listener_led_status,
+        .coap_resource = &_coap_resources[1],
         .affordance = &wot_led_status_affordance,
 };
 
 wot_td_coap_action_affordance_t wot_coap_led_toggle_affordance = {
-        .coap_resource = &_coap_listener_led_toggle,
+        .coap_resource = &_coap_resources[2],
         .affordance = &wot_led_toggle_affordance,
 };
 
 int wot_td_coap_config_init(wot_td_thing_t *thing){
+    gcoap_register_listener(&_coap_listener);
     wot_td_coap_prop_add(thing, &wot_coap_echo_affordance);
     wot_td_coap_prop_add(thing, &wot_coap_led_status_affordance);
     wot_td_coap_action_add(thing, &wot_coap_led_toggle_affordance);
