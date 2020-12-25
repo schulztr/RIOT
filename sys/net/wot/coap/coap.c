@@ -159,7 +159,7 @@ static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
 
 gcoap_listener_t _wot_td_gcoap_listener = {
         &_wot_td_coap_resources[0],
-        sizeof(_wot_td_coap_resources) / sizeof(_wot_td_coap_resources[0]),
+        ARRAY_SIZE(_wot_td_coap_resources),
         _encode_link,
         NULL,
         NULL
