@@ -23,22 +23,26 @@ coap_affordances = {
 
 parser = argparse.ArgumentParser(description='Web of Things helper script')
 parser.add_argument('--board', help='Define used board')
-parser.add_argument('--saul', action='store_true', help='Define if WoT TD SAUL is used')
+parser.add_argument('--saul', action='store_true',
+                    help='Define if WoT TD SAUL is used')
 parser.add_argument('--security', help='Define what security is used')
+
 
 def dict_raise_on_duplicates(ordered_pairs):
     """Reject duplicate keys."""
     d = {}
     for k, v in ordered_pairs:
         if k in d:
-           raise ValueError("duplicate key: %r" % (k,))
+            raise ValueError("duplicate key: %r" % (k,))
         else:
-           d[k] = v
+            d[k] = v
     return d
+
 
 def add_content(content):
     global result
     result += content
+
 
 def write_to_c_file(content):
     global result
@@ -46,11 +50,13 @@ def write_to_c_file(content):
     f.write(result)
     f.close()
 
+
 def validate_coap_json(coap_jsons):
     assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
     assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
     assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
     assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
+
 
 def validate_thing_json(thing_json):
     assert thing_json['titles'], "ERROR: name in thing.json missing"
@@ -138,7 +144,8 @@ if __name__ == '__main__':
     coap_affordances = f"{current_directory}/config/wot_td/.coap_affordances.json"
     try:
         f = open(coap_affordances)
-        coap_json = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
+        coap_json = json.loads(
+            f.read(), object_pairs_hook=dict_raise_on_duplicates)
         coap_jsons.append(coap_json)
     except IOError:
         print(f"INFO: Coap definition in {coap_affordances} not present")
