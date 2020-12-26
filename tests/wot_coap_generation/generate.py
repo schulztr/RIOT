@@ -56,39 +56,6 @@ def validate_thing_json(thing_json):
     assert thing_json['titles'], "ERROR: name in thing.json missing"
     assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
-def validate_unique_name(name, jsons, affordance_name):
-    count = 0
-    for j in jsons:
-        for affordance in j[affordance_name].values():
-            if affordance[name] == name:
-                count += 1
-            assert not(count > 1), "ERROR: Each coap affordance has to be unique"
-
-def validate_coap_affordances(coap_jsons):
-    # FIXME: Actual validation needs to be implemented
-    for coap_json in coap_jsons:
-        properties = coap_json['properties']
-        for prop in properties.values():
-            name = prop['name']
-            validate_unique_name(name, coap_jsons, 'properties')
-
-        events = coapJson['events']
-        for event in events.values():
-            name = event['name']
-            validate_unique_name(name, coap_jsons, 'events')
-
-        actions = coapJson['actions']
-        for action in actions.values():
-            name = action['name']
-            validate_unique_name(name, coap_jsons, 'actions')
-
-def find_all_coap_methods(handlerName, affordance_name, coap_jsons):
-    methods = []
-    for coapJson in coap_jsons:
-        for affordance in coapJson[affordance_name].values():
-            if affordance['handler']['name'] == handlerName:
-                methods.append(affordance['method'])
-    return methods
 
 def write_coap_resources(coap_resources):
     add_content("const coap_resource_t _coap_resources[] = {\n")
