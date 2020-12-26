@@ -3,17 +3,17 @@ import os
 import argparse
 import sys
 
-currentDirectory = os.getcwd()
-result_file = currentDirectory + "/result.c"
+current_directory = os.getcwd()
+result_file = current_directory + "/result.c"
 result = ""
-coapJsons = []
-thingJsons = []
-multipleUsage = {
+coap_jsons = []
+thing_jsons = []
+multiple_usage = {
     "properties": [],
     "actions": [],
     "events": []
 }
-coapAffordances = {
+coap_affordances = {
     "properties": [],
     "actions": [],
     "events": []
@@ -44,15 +44,15 @@ def write_to_c_file(content):
     f.write(result)
     f.close()
 
-def validate_coap_json(coapJson):
-    assert coapJson['name'], "ERROR: name in coap_affordances.json missing"
-    assert coapJson['url'], "ERROR: url in coap_affordances.json missing"
-    assert coapJson['handler'], "ERROR: handler in coap_affordances.json missing"
-    assert coapJson['method'], "ERROR: method in coap_affordances.json missing"
+def validate_coap_json(coap_jsons):
+    assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
+    assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
+    assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
+    assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
 
-def validate_thing_json(thingJson):
-    assert thingJson['titles'], "ERROR: name in thing.json missing"
-    assert thingJson['defaultLang'], "ERROR: name in thing.json missing"
+def validate_thing_json(thing_json):
+    assert thing_json['titles'], "ERROR: name in thing.json missing"
+    assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
 def validate_unique_name(name, jsons, affordance_name):
     count = 0
@@ -62,36 +62,36 @@ def validate_unique_name(name, jsons, affordance_name):
                 count += 1
             assert not(count > 1), "ERROR: Each coap affordance has to be unique"
 
-def validate_coap_affordances(coapJsons):
+def validate_coap_affordances(coap_jsons):
     # FIXME: Actual validation needs to be implemented
-    for coapJson in coapJsons:
-        properties = coapJson['properties']
+    for coap_json in coap_jsons:
+        properties = coap_json['properties']
         for prop in properties.values():
             name = prop['name']
-            validate_unique_name(name, coapJsons, 'properties')
+            validate_unique_name(name, coap_jsons, 'properties')
 
         events = coapJson['events']
         for event in events.values():
             name = event['name']
-            validate_unique_name(name, coapJsons, 'events')
+            validate_unique_name(name, coap_jsons, 'events')
 
         actions = coapJson['actions']
         for action in actions.values():
             name = action['name']
-            validate_unique_name(name, coapJsons, 'actions')
+            validate_unique_name(name, coap_jsons, 'actions')
 
-def find_all_coap_methods(handlerName, affName, coapJsons):
+def find_all_coap_methods(handlerName, affordance_name, coap_jsons):
     methods = []
-    for coapJson in coapJsons:
-        for affordance in coapJson[affName].values():
+    for coapJson in coap_jsons:
+        for affordance in coapJson[affordance_name].values():
             if affordance['handler']['name'] == handlerName:
                 methods.append(affordance['method'])
     return methods
 
-def write_coap_resources(coapResources):
+def write_coap_resources(coap_resources):
     add_content("const coap_resource_t _coap_resources[] = {\n")
     #Fixme: sort before
-    for resource in coapResources:
+    for resource in coap_resources:
         add_content("{ \"" + resource['url'] +  "\", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL }")
         i = len(resource['methods'])
         for method in resource['methods']:
@@ -105,15 +105,15 @@ def write_coap_resources(coapResources):
 
 def generate_coap_resources():
     coapRessources = []
-    for coapJson in coapJsons:
+    for coap_json in coap_jsons:
         affordance_types = ['properties', 'actions', 'events']
         for affordance_type in affordance_types:
-            affordances = coapJson[affordance_type].values()
+            affordances = coap_json[affordance_type].values()
             for affordance in affordances:
                 handler = affordance['handler']
                 # if 0 == len(filter(lambda x: handler == x, coapRessources)):
                 url = affordance['url']
-                methods = find_all_coap_methods(handler, affordance_type, coapJsons)
+                methods = find_all_coap_methods(handler, affordance_type, coap_jsons)
                 coapRessources.append({
                     'url': url,
                     'handler': handler,
@@ -128,28 +128,28 @@ if __name__ == '__main__':
     assert args.board, "ERROR: Argument board has to be defined"
     assert args.security, "ERROR: Argument security has to be defined"
 
-    thingDefiniton = currentDirectory + "/config/wot_td/.thing.json"
+    thing_definiton = current_directory + "/config/wot_td/.thing.json"
     try:
-        f = open(thingDefiniton)
+        f = open(thing_definiton)
         thingJson = json.loads(f.read())
     except IOError:
-        print("ERROR: Thing definition in " + thingDefiniton + " is missing")
+        print("ERROR: Thing definition in " + thing_definiton + " is missing")
         sys.exit(0)
     except json.decoder.JSONDecodeError:
-        print("ERROR: json in " + thingDefiniton + " is not valid")
+        print("ERROR: json in " + thing_definiton + " is not valid")
         sys.exit(0)
     finally:
         f.close()
     
-    coapAffordances = currentDirectory + "/config/wot_td/.coap_affordances.json"
+    coap_affordances = current_directory + "/config/wot_td/.coap_affordances.json"
     try:
-        f = open(coapAffordances)
-        coapJson = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
-        coapJsons.append(coapJson)
+        f = open(coap_affordances)
+        coap_json = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
+        coap_jsons.append(coap_json)
     except IOError:
-        print("INFO: Coap definition in " + coapAffordances + " not present")
+        print("INFO: Coap definition in " + coap_affordances + " not present")
     except json.decoder.JSONDecodeError:
-        print("ERROR: json in " + coapAffordances + " is not valid")
+        print("ERROR: json in " + coap_affordances + " is not valid")
         sys.exit(0)
     finally:
         f.close()
