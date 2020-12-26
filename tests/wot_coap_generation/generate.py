@@ -63,6 +63,7 @@ def validate_unique_name(name, jsons, affordance_name):
             assert not(count > 1), "ERROR: Each coap affordance has to be unique"
 
 def validate_coap_affordances(coapJsons):
+    # FIXME: Actual validation needs to be implemented
     for coapJson in coapJsons:
         properties = coapJson['properties']
         for prop in properties.values():
@@ -143,7 +144,6 @@ if __name__ == '__main__':
     coapAffordances = currentDirectory + "/config/wot_td/.coap_affordances.json"
     try:
         f = open(coapAffordances)
-        validate_coap_affordances(coapJsons)
         coapJson = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
         coapJsons.append(coapJson)
     except IOError:
