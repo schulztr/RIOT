@@ -24,6 +24,16 @@ parser.add_argument('--board', help='Define used board')
 parser.add_argument('--saul', action='store_true', help='Define if WoT TD SAUL is used')
 parser.add_argument('--security', help='Define what security is used')
 
+def dict_raise_on_duplicates(ordered_pairs):
+    """Reject duplicate keys."""
+    d = {}
+    for k, v in ordered_pairs:
+        if k in d:
+           raise ValueError("duplicate key: %r" % (k,))
+        else:
+           d[k] = v
+    return d
+
 def add_content(content):
     global result
     result += content
@@ -131,8 +141,8 @@ if __name__ == '__main__':
     coapAffordances = currentDirectory + "/config/wot_td/.coap_affordances.json"
     try:
         f = open(coapAffordances)
-        coapJson = json.loads(f.read())
         validate_coap_affordances(coapJsons)
+        coapJson = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
         coapJsons.append(coapJson)
     except IOError:
         print("INFO: Coap definition in " + coapAffordances + " not present")
