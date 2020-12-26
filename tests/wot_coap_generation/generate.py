@@ -131,7 +131,8 @@ if __name__ == '__main__':
     thing_definiton = f"{current_directory}/config/wot_td/.thing.json"
     try:
         f = open(thing_definiton)
-        thingJson = json.loads(f.read())
+        thing_json = json.loads(f.read())
+        validate_thing_json(thing_json)
     except IOError:
         print(f"ERROR: Thing definition in {thing_definiton} is missing")
         sys.exit(0)
