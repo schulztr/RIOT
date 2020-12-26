@@ -3,19 +3,17 @@ import os
 import argparse
 import sys
 
-AFFORDANCE_TYPES = ['properties', 'actions', 'events']
-
-current_directory = os.getcwd()
-result_file = current_directory + "/result.c"
+currentDirectory = os.getcwd()
+result_file = currentDirectory + "/result.c"
 result = ""
-coap_jsons = []
-thing_jsons = []
-multiple_usage = {
+coapJsons = []
+thingJsons = []
+multipleUsage = {
     "properties": [],
     "actions": [],
     "events": []
 }
-coap_affordances = {
+coapAffordances = {
     "properties": [],
     "actions": [],
     "events": []
@@ -23,26 +21,12 @@ coap_affordances = {
 
 parser = argparse.ArgumentParser(description='Web of Things helper script')
 parser.add_argument('--board', help='Define used board')
-parser.add_argument('--saul', action='store_true',
-                    help='Define if WoT TD SAUL is used')
+parser.add_argument('--saul', action='store_true', help='Define if WoT TD SAUL is used')
 parser.add_argument('--security', help='Define what security is used')
-
-
-def dict_raise_on_duplicates(ordered_pairs):
-    """Reject duplicate keys."""
-    d = {}
-    for k, v in ordered_pairs:
-        if k in d:
-            raise ValueError("duplicate key: %r" % (k,))
-        else:
-            d[k] = v
-    return d
-
 
 def add_content(content):
     global result
     result += content
-
 
 def write_to_c_file(content):
     global result
@@ -50,109 +34,112 @@ def write_to_c_file(content):
     f.write(result)
     f.close()
 
+def validate_coap_json(coapJson):
+    assert coapJson['name'], "ERROR: name in coap_affordances.json missing"
+    assert coapJson['url'], "ERROR: url in coap_affordances.json missing"
+    assert coapJson['handler'], "ERROR: handler in coap_affordances.json missing"
+    assert coapJson['method'], "ERROR: method in coap_affordances.json missing"
 
-def validate_coap_json(coap_jsons):
-    assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
-    assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
-    assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
-    assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
+def validate_thing_json(thingJson):
+    assert thingJson['titles'], "ERROR: name in thing.json missing"
+    assert thingJson['defaultLang'], "ERROR: name in thing.json missing"
 
+def validate_unique_name(name, jsons, propName):
+    count = 0
+    for j in jsons:
+        for aff in j[propName]:
+            if aff[name] == name:
+                count += 1
+            assert not(count > 1), "ERROR: Each coap affordance has to be unique"
 
-def validate_thing_json(thing_json):
-    assert thing_json['titles'], "ERROR: name in thing.json missing"
-    assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
+def validate_coap_affordances(coapJsons):
+    for coapJson in coapJsons:
+        properties = coapJson['properties']
+        for prop in properties:
+            name = prop['name']
+            validate_unique_name(name, coapJsons, 'properties')
 
+        events = coapJson['events']
+        for event in events:
+            name = event['name']
+            validate_unique_name(name, coapJsons, 'events')
+
+        actions = coapJson['actions']
+        for action in actions:
+            name = action['name']
+            validate_unique_name(name, coapJsons, 'actions')
+
+def find_all_coap_methods(handlerName, affName, coapJsons):
+    methods = []
+    for coapJson in coapJsons:
+        for aff in coapJson[affName]:
+            if aff['handler']['name'] == handlerName:
+                methods.append(aff['method'])
+    return methods
 
 def write_coap_resources(coap_resources):
     add_content("const coap_resource_t _coap_resources[] = {\n")
-    sorted_resources = sorted(coap_resources, key=lambda k: k['href'])
-    for resource in sorted_resources:
-        add_content(f'    {{"{resource["href"]}", ')
-        for index, method in enumerate(resource['methods']):
-            if index > 0:
-                add_content(" | ")
-            add_content(method)
-        add_content(", " + resource['handler'] + ", NULL},\n")
-
-    add_content("};")
-
-
-def generate_coap_resources():
-    coap_resources = []
-    for coap_json in coap_jsons:
-        for affordance_type in AFFORDANCE_TYPES:
-            for affordance_name, affordance in coap_json[affordance_type].items():
-                assert affordance_name not in multiple_usage[
-                    affordance_type], "ERROR: Each coap affordance has to be unique"
-                multiple_usage[affordance_type].append(affordance_name)
-                forms = affordance["forms"]
-                resources = extract_coap_resources(forms)
-                coap_resources.extend(resources)
-    write_coap_resources(coap_resources)
-
-
-def extract_coap_resources(resources: list) -> list:
-    hrefs = []
-    handlers = []
-    methods = []
+    resources = sorted(coap_resources, key=lambda k: k['url'])
     for resource in resources:
-        href = resource['href']
-        handler_function = resource['handler_function']
-        method_name = resource['cov:methodName']
-        if href not in hrefs:
-            hrefs.append(href)
-            handlers.append(handler_function)
-            methods.append([f"COAP_{method_name}"])
-        else:
-            index = hrefs.index(href)
-            assert handlers[
-                index] == handler_function, f"ERROR: Different handler function for {href}"
-            assert method_name not in methods[
-                index], f"ERROR: Method {method_name} already used for href {href}"
-            methods[index].append(f"COAP_{method_name}")
+        add_content("{ \"" + resource['url'] +  "\", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL }")
+        i = len(resource['methods'])
+        for method in resource['methods']:
+            add_content(method)
+            if i > 0:
+                add_content(" | ")
+        add_content(", " + resource['handler']['name'] + ", NULL }")
+    
 
-    resource_list = []
+    add_content("\n};")
 
-    for index, href in enumerate(hrefs):
-        dictionary = {}
-        dictionary["href"] = href
-        dictionary["handler"] = handlers[index]
-        dictionary["methods"] = methods[index]
-        resource_list.append(dictionary)
-
-    return resource_list
-
+def generate_coap_resouces():
+    coapRessources = []
+    for coapJson in coapJsons:
+        properties = coapJson['properties']
+        for prop in properties:
+            handler = prop['handler']
+            if 0 == len(filter(lambda x: handler == x, coapRessources)):
+                url = prop['url']
+                methods = find_all_coap_methods(handler, 'properties', coapJsons)
+                coapRessources.append({
+                    'url': url,
+                    'handler': handler,
+                    'methods': methods
+                })
+    print(coapRessources)
+    write_coap_resources(coapRessources)
+     
 
 if __name__ == '__main__':
     args = parser.parse_args()
     assert args.board, "ERROR: Argument board has to be defined"
     assert args.security, "ERROR: Argument security has to be defined"
 
-    thing_definiton = f"{current_directory}/config/wot_td/.thing.json"
+    thingDefiniton = currentDirectory + "/config/wot_td/.thing.json"
     try:
-        f = open(thing_definiton)
+        f = open(thingDefiniton)
         thingJson = json.loads(f.read())
     except IOError:
-        print(f"ERROR: Thing definition in {thing_definiton} is missing")
+        print("ERROR: Thing definition in " + thingDefiniton + " is missing")
         sys.exit(0)
     except json.decoder.JSONDecodeError:
-        print(f"ERROR: json in {thing_definiton} is not valid")
+        print("ERROR: json in " + thingDefiniton + " is not valid")
         sys.exit(0)
     finally:
         f.close()
-
-    coap_affordances = f"{current_directory}/config/wot_td/.coap_affordances.json"
+    
+    coapAffordances = currentDirectory + "/config/wot_td/.coap_affordances.json"
     try:
-        f = open(coap_affordances)
-        coap_json = json.loads(
-            f.read(), object_pairs_hook=dict_raise_on_duplicates)
-        coap_jsons.append(coap_json)
+        f = open(coapAffordances)
+        coapJson = json.loads(f.read())
+        validate_coap_affordances(coapJsons)
+        coapJsons.append(coapJson)
     except IOError:
-        print(f"INFO: Coap definition in {coap_affordances} not present")
+        print("INFO: Coap definition in " + coapAffordances + " not present")
     except json.decoder.JSONDecodeError:
-        print(f"ERROR: json in {coap_affordances} is not valid")
+        print("ERROR: json in " + coapAffordances + " is not valid")
         sys.exit(0)
     finally:
         f.close()
-    generate_coap_resources()
+    generate_coap_resouces()
     print(result)
