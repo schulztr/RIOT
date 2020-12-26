@@ -102,7 +102,7 @@ def write_coap_resources(coapResources):
 
     add_content("\n};")
 
-def generate_coap_resouces():
+def generate_coap_resources():
     coapRessources = []
     for coapJson in coapJsons:
         properties = coapJson['properties']
@@ -151,5 +151,5 @@ if __name__ == '__main__':
         sys.exit(0)
     finally:
         f.close()
-    generate_coap_resouces()
+    generate_coap_resources()
     print(result)
