@@ -54,37 +54,37 @@ def validate_thing_json(thingJson):
     assert thingJson['titles'], "ERROR: name in thing.json missing"
     assert thingJson['defaultLang'], "ERROR: name in thing.json missing"
 
-def validate_unique_name(name, jsons, propName):
+def validate_unique_name(name, jsons, affordance_name):
     count = 0
     for j in jsons:
-        for aff in j[propName]:
-            if aff[name] == name:
+        for affordance in j[affordance_name].values():
+            if affordance[name] == name:
                 count += 1
             assert not(count > 1), "ERROR: Each coap affordance has to be unique"
 
 def validate_coap_affordances(coapJsons):
     for coapJson in coapJsons:
         properties = coapJson['properties']
-        for prop in properties:
+        for prop in properties.values():
             name = prop['name']
             validate_unique_name(name, coapJsons, 'properties')
 
         events = coapJson['events']
-        for event in events:
+        for event in events.values():
             name = event['name']
             validate_unique_name(name, coapJsons, 'events')
 
         actions = coapJson['actions']
-        for action in actions:
+        for action in actions.values():
             name = action['name']
             validate_unique_name(name, coapJsons, 'actions')
 
 def find_all_coap_methods(handlerName, affName, coapJsons):
     methods = []
     for coapJson in coapJsons:
-        for aff in coapJson[affName]:
-            if aff['handler']['name'] == handlerName:
-                methods.append(aff['method'])
+        for affordance in coapJson[affName].values():
+            if affordance['handler']['name'] == handlerName:
+                methods.append(affordance['method'])
     return methods
 
 def write_coap_resources(coapResources):
@@ -105,12 +105,14 @@ def write_coap_resources(coapResources):
 def generate_coap_resources():
     coapRessources = []
     for coapJson in coapJsons:
-        properties = coapJson['properties']
-        for prop in properties:
-            handler = prop['handler']
-            if 0 == len(filter(lambda x: handler == x, coapRessources)):
-                url = prop['url']
-                methods = find_all_coap_methods(handler, 'properties', coapJsons)
+        affordance_types = ['properties', 'actions', 'events']
+        for affordance_type in affordance_types:
+            affordances = coapJson[affordance_type].values()
+            for affordance in affordances:
+                handler = affordance['handler']
+                # if 0 == len(filter(lambda x: handler == x, coapRessources)):
+                url = affordance['url']
+                methods = find_all_coap_methods(handler, affordance_type, coapJsons)
                 coapRessources.append({
                     'url': url,
                     'handler': handler,
