@@ -3,9 +3,8 @@
     },
     "events": {
     },
-    "actions": [
-        {
-            "name": "toggle",
+    "actions": {
+        "toggle": {
             "url": "/led/toggle",
             "handler": {
                 "file": "toggle.c",
@@ -44,5 +43,5 @@
                 }
             }
         }
-    ]
+    }
 }
