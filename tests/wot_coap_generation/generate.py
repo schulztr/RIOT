@@ -52,6 +52,7 @@ def write_to_c_file(content):
 
 
 def validate_coap_json(coap_jsons):
+    # TODO: Add actual validator for (different types of) affordances
     assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
     assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
     assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
@@ -59,6 +60,7 @@ def validate_coap_json(coap_jsons):
 
 
 def validate_thing_json(thing_json):
+    # TODO: Expand thing validation
     assert thing_json['titles'], "ERROR: name in thing.json missing"
     assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
