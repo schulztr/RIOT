@@ -77,10 +77,10 @@ def find_all_coap_methods(handlerName, affName, coapJsons):
                 methods.append(aff['method'])
     return methods
 
-def write_coap_resources(coapResources):
+def write_coap_resources(coap_resources):
     add_content("const coap_resource_t _coap_resources[] = {\n")
-    #Fixme: sort before
-    for resource in coapResources:
+    resources = sorted(coap_resources, key=lambda k: k['url'])
+    for resource in resources:
         add_content("{ \"" + resource['url'] +  "\", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL }")
         i = len(resource['methods'])
         for method in resource['methods']:
