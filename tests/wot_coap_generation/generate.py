@@ -3,6 +3,8 @@ import os
 import argparse
 import sys
 
+AFFORDANCE_TYPES = ['properties', 'actions', 'events']
+
 current_directory = os.getcwd()
 result_file = current_directory + "/result.c"
 result = ""
@@ -90,38 +92,63 @@ def find_all_coap_methods(handlerName, affordance_name, coap_jsons):
 
 def write_coap_resources(coap_resources):
     add_content("const coap_resource_t _coap_resources[] = {\n")
-    #Fixme: sort before
-    for resource in coap_resources:
-        add_content("{ \"" + resource['url'] +  "\", COAP_GET | COAP_MATCH_SUBTREE, _echo_handler, NULL }")
-        i = len(resource['methods'])
-        for method in resource['methods']:
-            add_content(method)
-            if i > 0:
+    sorted_resources = sorted(coap_resources, key=lambda k: k['href'])
+    for resource in sorted_resources:
+        add_content(f'    {{"{resource["href"]}", ')
+        for index, method in enumerate(resource['methods']):
+            if index > 0:
                 add_content(" | ")
-        add_content(", " + resource['handler']['name'] + ", NULL }")
-    
+            add_content(method)
+        add_content(", " + resource['handler'] + ", NULL},\n")
 
-    add_content("\n};")
+    add_content("};")
+
 
 def generate_coap_resources():
-    coapRessources = []
+    coap_resources = []
     for coap_json in coap_jsons:
-        affordance_types = ['properties', 'actions', 'events']
-        for affordance_type in affordance_types:
-            affordances = coap_json[affordance_type].values()
-            for affordance in affordances:
-                handler = affordance['handler']
-                # if 0 == len(filter(lambda x: handler == x, coapRessources)):
-                url = affordance['url']
-                methods = find_all_coap_methods(handler, affordance_type, coap_jsons)
-                coapRessources.append({
-                    'url': url,
-                    'handler': handler,
-                    'methods': methods
-                })
-    print(coapRessources)
-    write_coap_resources(coapRessources)
-     
+        for affordance_type in AFFORDANCE_TYPES:
+            for affordance_name, affordance in coap_json[affordance_type].items():
+                assert affordance_name not in multiple_usage[
+                    affordance_type], "ERROR: Each coap affordance has to be unique"
+                multiple_usage[affordance_type].append(affordance_name)
+                forms = affordance["forms"]
+                resources = extract_coap_resources(forms)
+                coap_resources.extend(resources)
+    write_coap_resources(coap_resources)
+
+
+def extract_coap_resources(resources: list) -> list:
+    hrefs = []
+    handlers = []
+    methods = []
+    for resource in resources:
+        href = resource['href']
+        handler_function = resource['handler_function']
+        method_name = resource['cov:methodName']
+        if href not in hrefs:
+            hrefs.append(href)
+            handlers.append(handler_function)
+            methods.append([f"COAP_{method_name}"])
+        else:
+            index = hrefs.index(href)
+            assert handlers[
+                index] == handler_function, f"ERROR: Different handler function for {href}"
+            assert method_name not in methods[
+                index], f"ERROR: Method {method_name} already used for href {href}"
+            methods[index].append(f"COAP_{method_name}")
+
+    resource_list = []
+
+    for index, href in enumerate(hrefs):
+        dictionary = {}
+        dictionary["href"] = href
+        dictionary["handler"] = handlers[index]
+        dictionary["methods"] = methods[index]
+        resource_list.append(dictionary)
+
+    return resource_list
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
