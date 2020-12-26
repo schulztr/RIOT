@@ -84,13 +84,17 @@ def generate_coap_resources():
     for coap_json in coap_jsons:
         for affordance_type in AFFORDANCE_TYPES:
             for affordance_name, affordance in coap_json[affordance_type].items():
-                for defined_affordances in multiple_usage.values():
-                    assert affordance_name not in defined_affordances, "ERROR: Each coap affordance has to be unique"
+                assert_unique_affordance(affordance_name)
                 multiple_usage[affordance_type].append(affordance_name)
                 forms = affordance["forms"]
                 resources = extract_coap_resources(forms)
                 coap_resources.extend(resources)
     write_coap_resources(coap_resources)
+
+
+def assert_unique_affordance(affordance_name: str):
+    for defined_affordances in multiple_usage.values():
+        assert affordance_name not in defined_affordances, "ERROR: Each coap affordance has to be unique"
 
 
 def extract_coap_resources(resources: list) -> list:
