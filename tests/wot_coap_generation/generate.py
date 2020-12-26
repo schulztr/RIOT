@@ -128,28 +128,28 @@ if __name__ == '__main__':
     assert args.board, "ERROR: Argument board has to be defined"
     assert args.security, "ERROR: Argument security has to be defined"
 
-    thing_definiton = current_directory + "/config/wot_td/.thing.json"
+    thing_definiton = f"{current_directory}/config/wot_td/.thing.json"
     try:
         f = open(thing_definiton)
         thingJson = json.loads(f.read())
     except IOError:
-        print("ERROR: Thing definition in " + thing_definiton + " is missing")
+        print(f"ERROR: Thing definition in {thing_definiton} is missing")
         sys.exit(0)
     except json.decoder.JSONDecodeError:
-        print("ERROR: json in " + thing_definiton + " is not valid")
+        print(f"ERROR: json in {thing_definiton} is not valid")
         sys.exit(0)
     finally:
         f.close()
-    
-    coap_affordances = current_directory + "/config/wot_td/.coap_affordances.json"
+
+    coap_affordances = f"{current_directory}/config/wot_td/.coap_affordances.json"
     try:
         f = open(coap_affordances)
         coap_json = json.loads(f.read(), object_pairs_hook=dict_raise_on_duplicates)
         coap_jsons.append(coap_json)
     except IOError:
-        print("INFO: Coap definition in " + coap_affordances + " not present")
+        print(f"INFO: Coap definition in {coap_affordances} not present")
     except json.decoder.JSONDecodeError:
-        print("ERROR: json in " + coap_affordances + " is not valid")
+        print(f"ERROR: json in {coap_affordances} is not valid")
         sys.exit(0)
     finally:
         f.close()
