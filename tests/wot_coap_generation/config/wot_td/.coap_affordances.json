@@ -5,13 +5,14 @@
     },
     "actions": {
         "toggle": {
-            "url": "/led/toggle",
-            "handler": {
-                "file": "toggle.c",
-                "name": "_led_toggle_handler",
-                "multipleUsage": false
-            },
-            "method": "POST",
+            "forms": [
+                {
+                    "handler_file": "toggle.c",
+                    "handler_function": "_led_toggle_handler",
+                    "href": "/led/toggle", 
+                    "cov:methodName": "POST"
+                }
+            ],
             "titles": {
                 "de": "Deutscher Titel",
                 "en": "English title"
