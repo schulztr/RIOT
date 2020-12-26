@@ -1,0 +1,48 @@
+{
+    "properties": {
+    },
+    "events": {
+    },
+    "actions": [
+        {
+            "name": "toggle",
+            "url": "/led/toggle",
+            "handler": {
+                "file": "toggle.c",
+                "name": "_led_toggle_handler",
+                "multipleUsage": false
+            },
+            "method": "POST",
+            "titles": {
+                "de": "Deutscher Titel",
+                "en": "English title"
+            },
+            "descriptions": {
+                "de": "Deutsche Beschreibung",
+                "en": "English description"
+            },
+            "input": {
+                "type": "string",
+                "titles": {
+                    "de": "Deutsche Beschreibung",
+                    "en": "English description"
+                },
+                "descriptions": {
+                    "de": "Deutsche Beschreibung",
+                    "en": "English description"
+                }
+            },
+            "output": {
+                "type": "string",
+                "titles": {
+                    "de": "Deutsche Beschreibung",
+                    "en": "English description"
+                },
+                "descriptions": {
+                    "de": "Deutsche Beschreibung",
+                    "en": "English description"
+                }
+            }
+        }
+    ]
+}
