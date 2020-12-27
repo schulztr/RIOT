@@ -13,6 +13,7 @@ THING_FILES = [".thing.json", ]
 SEPERATOR = "\n\n"
 INDENT = "    "
 COAP_LISTENER_NAME = "_coap_listener"
+COAP_LINK_PARAMS_NAME = "_wot_link_params"
 
 DEFAULT_DEPENDENCIES = ['<stdint.h>', '<stdio.h>', '<stdlib.h>',
                         '<string.h>', '"net/gcoap.h"', '"od.h"', '"fmt.h"', ]
@@ -199,6 +200,22 @@ def generate_coap_handlers(coap_resources: list) -> str:
     return SEPERATOR.join(handlers)
 
 
+def generate_coap_link_param(coap_resource):
+    return "NULL"
+
+
+def generate_coap_link_params(coap_resources: list):
+    result = f"static const char *{COAP_LINK_PARAMS_NAME}[] = {{\n"
+
+    link_params = []
+    for coap_resource in coap_resources:
+        link_params.append(INDENT + generate_coap_link_param(coap_resource))
+
+    result += ",\n".join(link_params)
+    result += "\n}"
+    return result
+
+
 def generate_init_function() -> str:
     result = "void wot_td_coap_config_init(void)\n"
     result += "{\n"
@@ -215,6 +232,7 @@ def assemble_results(coap_jsons: list, thing_jsons: list) -> list:
     result_elements.append(generate_includes(coap_resources))
     result_elements.append(generate_coap_handlers(coap_resources))
     result_elements.append(write_coap_resources(coap_resources))
+    result_elements.append(generate_coap_link_params(coap_resources))
     result_elements.append(generate_coap_listener())
     result_elements.append(generate_init_function())
 
