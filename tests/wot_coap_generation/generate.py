@@ -204,9 +204,9 @@ def generate_coap_handlers(coap_resources: list) -> str:
             handler += f'if (method_flag == {method})\n'
             handler += INDENT
             handler += "{\n"
-            handler += INDENT + INDENT
+            handler += INDENT * 2
             handler += 'puts("Hi.");\n'
-            handler += INDENT + INDENT
+            handler += INDENT * 2
             handler += 'return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);\n'
             handler += INDENT
             handler += "}\n"
