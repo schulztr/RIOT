@@ -237,7 +237,7 @@ def generate_coap_link_params(coap_resources: list):
 
 
 def generate_init_function() -> str:
-    result = "void wot_td_coap_config_init(void)\n"
+    result = "void wot_td_coap_init(void)\n"
     result += "{\n"
     result += INDENT + f"gcoap_register_listener(&{COAP_LISTENER_NAME});\n"
     result += "}\n"
