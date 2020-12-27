@@ -14,9 +14,28 @@ SEPERATOR = "\n\n"
 INDENT = "    "
 COAP_LISTENER_NAME = "_coap_listener"
 COAP_LINK_PARAMS_NAME = "_wot_link_params"
+COAP_LINK_ENCODER_NAME = "_wot_encode_link"
 
 DEFAULT_DEPENDENCIES = ['<stdint.h>', '<stdio.h>', '<stdlib.h>',
                         '<string.h>', '"net/gcoap.h"', '"od.h"', '"fmt.h"', ]
+
+COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resource_t *resource, char *buf,
+                            size_t maxlen, coap_link_encoder_ctx_t *context) {{
+    ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
+    if (res > 0) {{
+        if ({COAP_LINK_PARAMS_NAME}[context->link_pos]
+                && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res))) {{
+            if (buf) {{
+                memcpy(buf+res, {COAP_LINK_PARAMS_NAME}[context->link_pos],
+                       strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]));
+            }}
+            return res + strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]);
+        }}
+    }}
+
+    return res;
+}}'''
+
 
 used_affordance_keys = []
 
@@ -158,7 +177,7 @@ def generate_coap_listener() -> str:
     result = f"static gcoap_listener_t {COAP_LISTENER_NAME} = {{\n"
     result += INDENT + "&_coap_resources[0],\n"
     result += INDENT + "ARRAY_SIZE(_coap_resources),\n"
-    result += INDENT + "NULL,\n"
+    result += INDENT + f"{COAP_LINK_ENCODER_NAME},\n"
     result += INDENT + "NULL,\n"
     result += INDENT + "NULL\n"
     result += "};"
@@ -234,6 +253,7 @@ def assemble_results(coap_jsons: list, thing_jsons: list) -> list:
     result_elements.append(write_coap_resources(coap_resources))
     result_elements.append(generate_coap_link_params(coap_resources))
     result_elements.append(generate_coap_listener())
+    result_elements.append(COAP_LINK_ENCODER)
     result_elements.append(generate_init_function())
 
     return result_elements
