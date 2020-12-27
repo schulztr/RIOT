@@ -13,6 +13,7 @@ THING_FILES = [".thing.json", ]
 SEPERATOR = "\n\n"
 INDENT = "    "
 COAP_LISTENER_NAME = "_coap_listener"
+COAP_RESOURCES_NAME = "_wot_coap_resources"
 COAP_LINK_PARAMS_NAME = "_wot_link_params"
 COAP_LINK_ENCODER_NAME = "_wot_encode_link"
 
@@ -74,7 +75,7 @@ def validate_thing_json(thing_json):
 def write_coap_resources(coap_resources: list) -> str:
     sorted_resources = sorted(coap_resources, key=lambda k: k['href'])
 
-    result = "const coap_resource_t _coap_resources[] = {\n"
+    result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
     for resource in sorted_resources:
         result += f'    {{"{resource["href"]}", '
         result += " | ".join(resource['methods'])
@@ -175,8 +176,8 @@ def generate_includes(coap_resources: list) -> str:
 
 def generate_coap_listener() -> str:
     result = f"static gcoap_listener_t {COAP_LISTENER_NAME} = {{\n"
-    result += INDENT + "&_coap_resources[0],\n"
-    result += INDENT + "ARRAY_SIZE(_coap_resources),\n"
+    result += INDENT + f"&{COAP_RESOURCES_NAME}[0],\n"
+    result += INDENT + f"ARRAY_SIZE({COAP_RESOURCES_NAME}),\n"
     result += INDENT + f"{COAP_LINK_ENCODER_NAME},\n"
     result += INDENT + "NULL,\n"
     result += INDENT + "NULL\n"
