@@ -12,8 +12,8 @@ AFFORDANCES_FILES = [".coap_affordances.json", ]
 THING_FILES = [".thing.json", ]
 SEPERATOR = "\n\n"
 INDENT = "    "
-COAP_LISTENER_NAME = "_coap_listener"
 COAP_RESOURCES_NAME = "_wot_coap_resources"
+COAP_LISTENER_NAME = "_wot_coap_listener"
 COAP_LINK_PARAMS_NAME = "_wot_link_params"
 COAP_LINK_ENCODER_NAME = "_wot_encode_link"
 
