@@ -263,8 +263,8 @@ def assemble_results(coap_jsons: list, thing_jsons: list) -> list:
 def get_result():
     coap_jsons = [get_wot_json(affordance_file)
                   for affordance_file in AFFORDANCES_FILES]
-    thing_jsons = [get_wot_json(
-        thing_file, validation_function=validate_thing_json) for thing_file in THING_FILES]
+    thing_jsons = [get_wot_json(thing_file, validation_function=validate_thing_json)
+                   for thing_file in THING_FILES]
 
     result_elements = assemble_results(coap_jsons, thing_jsons)
 
