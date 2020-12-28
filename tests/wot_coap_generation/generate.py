@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+from typing import List, TypedDict, IO, Any
 
 AFFORDANCE_TYPES = ['properties', 'actions', 'events']
 CURRENT_DIRECTORY = os.getcwd()
@@ -42,6 +43,9 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
 
 used_affordance_keys = []
 
+ResourceDict = TypedDict(
+    'ResourceDict', {'href': str, 'handler': str, "methods": List[str]})
+
 
 def dict_raise_on_duplicates(ordered_pairs):
     """Reject duplicate keys."""
@@ -54,13 +58,13 @@ def dict_raise_on_duplicates(ordered_pairs):
     return d
 
 
-def write_to_c_file(result):
-    f = open(RESULT_FILE, "w")
+def write_to_c_file(result) -> None:
+    f: IO[Any] = open(RESULT_FILE, "w")
     f.write(result)
     f.close()
 
 
-def validate_coap_json(coap_jsons):
+def validate_coap_json(coap_jsons: dict) -> None:
     # TODO: Add actual validator for (different types of) affordances
     assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
     assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
@@ -68,7 +72,7 @@ def validate_coap_json(coap_jsons):
     assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
 
 
-def validate_thing_json(thing_json):
+def validate_thing_json(thing_json: dict) -> None:
     # TODO: Expand thing validation
     assert thing_json['titles'], "ERROR: name in thing.json missing"
     assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
@@ -87,7 +91,7 @@ def write_coap_resources(coap_resources: list) -> str:
     return result
 
 
-def generate_coap_resources(coap_jsons: list) -> str:
+def generate_coap_resources(coap_jsons: list) -> List[ResourceDict]:
     coap_resources = []
     for coap_json in coap_jsons:
         for affordance_type in AFFORDANCE_TYPES:
@@ -100,47 +104,47 @@ def generate_coap_resources(coap_jsons: list) -> str:
     return coap_resources
 
 
-def assert_unique_affordance(affordance_name: str):
+def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(resources: list) -> list:
-    hrefs = []
-    handlers = []
-    methods = []
+def extract_coap_resources(resources: list) -> List[ResourceDict]:
+    hrefs: List[str] = []
+    handlers: List[str] = []
+    methods: List[List[str]] = []
     for resource in resources:
-        href = resource['href']
-        handler_function = resource['handler_function']
-        method_name = resource['cov:methodName']
+        href: str = resource['href']
+        handler_function: str = resource['handler_function']
+        method_name: str = resource['cov:methodName']
         if href not in hrefs:
             hrefs.append(href)
             handlers.append(handler_function)
             methods.append([f"COAP_{method_name}"])
         else:
-            index = hrefs.index(href)
+            index: int = hrefs.index(href)
             assert handlers[
                 index] == handler_function, f"ERROR: Different handler function for {href}"
             assert method_name not in methods[
                 index], f"ERROR: Method {method_name} already used for href {href}"
             methods[index].append(f"COAP_{method_name}")
 
-    resource_list = []
+    resource_list: List[ResourceDict] = []
 
     for index, href in enumerate(hrefs):
-        dictionary = {}
-        dictionary["href"] = href
-        dictionary["handler"] = handlers[index]
-        dictionary["methods"] = methods[index]
+        dictionary = {'href': href,
+                      "handler": handlers[index],
+                      "methods": methods[index]
+                      }  # type: ResourceDict
         resource_list.append(dictionary)
 
     return resource_list
 
 
-def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_function=None) -> str:
+def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_function=None) -> dict:
     path = f'{directory}/{file}'
     try:
-        f = open(path)
-        wot_json = json.loads(f.read())
+        f: IO[Any] = open(path)
+        wot_json: dict = json.loads(f.read())
         if validation_function is not None:
             validation_function(wot_json)
     except IOError:
@@ -155,7 +159,7 @@ def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_fu
     return wot_json
 
 
-def parse_command_line_arguments() -> list:
+def parse_command_line_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Web of Things helper script')
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
@@ -164,7 +168,7 @@ def parse_command_line_arguments() -> list:
     return parser.parse_args()
 
 
-def assert_command_line_arguments(args):
+def assert_command_line_arguments(args: argparse.Namespace) -> None:
     assert args.board, "ERROR: Argument board has to be defined"
     assert args.security, "ERROR: Argument security has to be defined"
 
@@ -189,7 +193,7 @@ def generate_coap_listener() -> str:
 
 
 def generate_coap_handlers(coap_resources: list) -> str:
-    handlers = []
+    handlers: List[str] = []
 
     for resource in coap_resources:
         handler = f"static ssize_t {resource['handler']}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)\n"
@@ -222,11 +226,11 @@ def generate_coap_handlers(coap_resources: list) -> str:
     return SEPERATOR.join(handlers)
 
 
-def generate_coap_link_param(coap_resource):
+def generate_coap_link_param(coap_resource: ResourceDict) -> str:
     return "NULL"
 
 
-def generate_coap_link_params(coap_resources: list):
+def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
     result = f"static const char *{COAP_LINK_PARAMS_NAME}[] = {{\n"
 
     link_params = []
@@ -247,7 +251,7 @@ def generate_init_function() -> str:
     return result
 
 
-def assemble_results(coap_jsons: list, thing_jsons: list) -> list:
+def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[str]:
     coap_resources = generate_coap_resources(coap_jsons)
 
     result_elements = []
@@ -262,22 +266,22 @@ def assemble_results(coap_jsons: list, thing_jsons: list) -> list:
     return result_elements
 
 
-def get_result():
-    coap_jsons = [get_wot_json(affordance_file)
-                  for affordance_file in AFFORDANCES_FILES]
-    thing_jsons = [get_wot_json(thing_file, validation_function=validate_thing_json)
-                   for thing_file in THING_FILES]
+def get_result() -> str:
+    coap_jsons: List[dict] = [get_wot_json(affordance_file)
+                              for affordance_file in AFFORDANCES_FILES]
+    thing_jsons: List[dict] = [get_wot_json(thing_file, validation_function=validate_thing_json)
+                               for thing_file in THING_FILES]
 
-    result_elements = assemble_results(coap_jsons, thing_jsons)
+    result_elements: List[str] = assemble_results(coap_jsons, thing_jsons)
 
     return SEPERATOR.join(result_elements)
 
 
-def main():
+def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
 
-    result = get_result()
+    result: str = get_result()
     write_to_c_file(result)
     print(result)
 
