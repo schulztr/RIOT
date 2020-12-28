@@ -5,6 +5,9 @@
 #include "net/gcoap.h"
 #include "od.h"
 #include "fmt.h"
+#include "net/wot.h"
+#include "net/wot/coap.h"
+#include "net/wot/coap/config.h"
 
 static ssize_t _led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)
 {
