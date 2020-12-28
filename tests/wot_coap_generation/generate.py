@@ -18,7 +18,9 @@ COAP_LINK_PARAMS_NAME = "_wot_link_params"
 COAP_LINK_ENCODER_NAME = "_wot_encode_link"
 
 DEFAULT_DEPENDENCIES = ['<stdint.h>', '<stdio.h>', '<stdlib.h>',
-                        '<string.h>', '"net/gcoap.h"', '"od.h"', '"fmt.h"', ]
+                        '<string.h>', '"net/gcoap.h"', '"od.h"', '"fmt.h"',
+                        '"net/wot.h"', '"net/wot/coap.h"', '"net/wot/coap/config.h"', ]
+
 
 COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resource_t *resource, char *buf,
                             size_t maxlen, coap_link_encoder_ctx_t *context) {{
