@@ -1,6 +1,6 @@
+import argparse
 import json
 import os
-import argparse
 import sys
 
 AFFORDANCE_TYPES = ['properties', 'actions', 'events']
