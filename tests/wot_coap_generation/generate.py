@@ -187,8 +187,9 @@ def assert_command_line_arguments(args: argparse.Namespace) -> None:
     assert args.security, "ERROR: Argument security has to be defined"
 
 
-def generate_includes(coap_resources: list) -> str:
-    dependencies = DEFAULT_DEPENDENCIES
+def generate_includes() -> str:
+    dependencies = DEFAULT_DEPENDENCIES + \
+        [f'"{header_file}"' for header_file in header_files]
 
     dependencies = [f'#include {dependency}' for dependency in dependencies]
     return "\n".join(dependencies)
@@ -279,13 +280,13 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     coap_resources = generate_coap_resources(coap_jsons)
 
     result_elements = []
-    result_elements.append(generate_includes(coap_resources))
     result_elements.append(generate_coap_handlers(coap_resources))
     result_elements.append(write_coap_resources(coap_resources))
     result_elements.append(generate_coap_link_params(coap_resources))
     result_elements.append(generate_coap_listener())
     result_elements.append(COAP_LINK_ENCODER)
     result_elements.append(generate_init_function())
+    add_to_result(generate_includes(), result_elements)
 
     return result_elements
 
