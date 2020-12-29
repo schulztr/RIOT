@@ -23,13 +23,16 @@ DEFAULT_DEPENDENCIES = ['<stdint.h>', '<stdio.h>', '<stdlib.h>',
                         '"net/wot.h"', '"net/wot/coap.h"', '"net/wot/coap/config.h"', ]
 
 COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resource_t *resource, char *buf,
-                            size_t maxlen, coap_link_encoder_ctx_t *context) {{
+                                size_t maxlen, coap_link_encoder_ctx_t *context)
+{{
     ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
-    if (res > 0) {{
-        if ({COAP_LINK_PARAMS_NAME}[context->link_pos]
-                && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res))) {{
-            if (buf) {{
-                memcpy(buf+res, {COAP_LINK_PARAMS_NAME}[context->link_pos],
+    if (res > 0)
+    {{
+        if ({COAP_LINK_PARAMS_NAME}[context->link_pos] && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
+        {{
+            if (buf)
+            {{
+                memcpy(buf + res, {COAP_LINK_PARAMS_NAME}[context->link_pos],
                        strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]));
             }}
             return res + strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]);
@@ -78,7 +81,7 @@ def get_handler_name_for_href(href: str) -> str:
 
 
 def get_handler_function_header(handler_name: str) -> str:
-    return f'extern ssize_t {handler_name}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);'
+    return f'extern ssize_t {handler_name}(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);'
 
 
 def validate_thing_json(thing_json: dict) -> None:
@@ -213,7 +216,7 @@ def generate_coap_listener() -> str:
     result += INDENT + f"ARRAY_SIZE({COAP_RESOURCES_NAME}),\n"
     result += INDENT + f"{COAP_LINK_ENCODER_NAME},\n"
     result += INDENT + "NULL,\n"
-    result += INDENT + "NULL\n"
+    result += INDENT + "NULL,\n"
     result += "};"
 
     return result
@@ -262,7 +265,7 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
 
 
 def generate_coap_link_param(coap_resource: ResourceDict) -> str:
-    return "NULL"
+    return "NULL,"
 
 
 def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
@@ -272,7 +275,7 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
     for coap_resource in coap_resources:
         link_params.append(INDENT + generate_coap_link_param(coap_resource))
 
-    result += ",\n".join(link_params)
+    result += "\n".join(link_params)
     result += "\n}"
     return result
 
