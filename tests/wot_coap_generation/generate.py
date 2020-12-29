@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import sys
-from typing import List, TypedDict, IO, Any
+from typing import List, Tuple, TypedDict, IO, Any
 
 PROPERTIES_NAME = 'properties'
 ACTIONS_NAME = 'actions'
@@ -50,6 +50,26 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
     return res;
 }}'''
 
+
+OPERATION_TYPES = {
+    "readproperty": "FORM_OP_READ_PROPERTY",
+    "writeproperty": "FORM_OP_WRITE_PROPERTY",
+    "observeproperty": "FORM_OP_OBSERVE_PROPERTY",
+    "unobserveproperty": "FORM_OP_UNOBSERVE_PROPERTY",
+    "invokeaction": "FORM_OP_INVOKE_ACTION",
+    "subscribeevent": "FORM_OP_SUBSCRIBE_EVENT",
+    "unsubscribeevent": "FORM_OP_UNSUBSCRIBE_EVENT",
+    "readallproperties": "FORM_OP_READ_ALL_PROPERTIES",
+    "writeallproperties": "FORM_OP_WRITE_ALL_PROPERTIES",
+    "readmultipleproperties": "FORM_OP_READ_MULTIPLE_PROPERTIES",
+    "writemultipleproperties": "FORM_OP_WRITE_MULTIPLE_PROPERTIES"
+}
+
+ALLOWED_OPERATIONS_BY_TYPE = {
+    PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
+    ACTIONS_NAME: ["invokeaction", ],
+    EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
+}
 
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
@@ -296,15 +316,52 @@ def get_affordance_struct_name(affordance_name: str) -> str:
     return f'wot_coap_{affordance_name}_affordance'
 
 
+def add_operations_struct(structs: List[str], form_index: int, has_next: bool, op_type: str, affordance_name: str, affordance_type: str, op_index=0) -> None:
+    assert op_type in ALLOWED_OPERATIONS_BY_TYPE[
+        affordance_type], f"Operation {op_type} not allowed for affordance type {affordance_type}"
+
+    op = f"wot_td_form_op_t wot_td_{affordance_name}_form_{form_index}_op_{op_index} = {{\n"
+    op += INDENT + f".op_type = {OPERATION_TYPES[op_type]},\n"
+    op += INDENT + ".next = "
+    if has_next:
+        op += f"wot_td_{affordance_name}_form_{form_index}_op_{op_index + 1}"
+    else:
+        op += "NULL"
+    op += ",\n};"
+
+    structs.insert(0, op)
+
+
+def generate_operations(structs: List[str], form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> Tuple[str, int]:
+    operations_line = ""
+    number_of_generated_structs = 0
+    if "op" in form:
+        operations = form["op"]
+        if isinstance(operations, str):
+            operations = [operations]
+        for op_index, operation in enumerate(operations):
+            has_next = len(operations) < op_index + 1
+            add_operations_struct(structs, index, has_next,
+                                  operation, affordance_name, affordance_type)
+            number_of_generated_structs += 1
+        operations_line = INDENT + \
+            f'.op = &wot_td_{affordance_name}_form_{index}_op_{op_index},\n'
+
+    return operations_line, number_of_generated_structs
+
+
 def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  affordance_name: str, affordance: dict) -> None:
     forms = affordance['forms']
     number_of_forms = len(forms)
 
     for index, form in enumerate(forms):
+        number_of_generated_structs = 0
         print(form)
         struct = f'wot_td_form_t wot_td_{affordance_name}_aff_form_{index} = {{\n'
-        struct += INDENT
-        struct += f'.op = &wot_td_{affordance_name}_form_op_{index},\n'
+        operations_line, number_of_structs = generate_operations(structs, form, index, affordance_type,
+                                                                 affordance_name, affordance)
+        struct += operations_line
+        number_of_generated_structs += number_of_structs
         struct += INDENT
         struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
         struct += INDENT
@@ -319,7 +376,7 @@ def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  
             struct += "NULL,\n"
         struct += "};"
 
-        structs.insert(0, struct)
+        structs.insert(number_of_generated_structs, struct)
 
 
 def add_interaction_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
