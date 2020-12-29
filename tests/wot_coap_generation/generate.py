@@ -4,7 +4,10 @@ import os
 import sys
 from typing import List, TypedDict, IO, Any
 
-AFFORDANCE_TYPES = ['properties', 'actions', 'events']
+PROPERTIES_NAME = 'properties'
+ACTIONS_NAME = 'actions'
+EVENTS_NAME = 'events'
+AFFORDANCE_TYPES = [PROPERTIES_NAME, ACTIONS_NAME, EVENTS_NAME]
 CURRENT_DIRECTORY = os.getcwd()
 CONFIG_DIRECTORY = f"{CURRENT_DIRECTORY}/config"
 THING_DESCRIPTION_DIRECTORY = f"{CONFIG_DIRECTORY}/wot_td"
