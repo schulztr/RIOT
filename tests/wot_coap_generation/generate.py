@@ -280,10 +280,42 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
     return result
 
 
-def generate_init_function() -> str:
-    result = "void wot_td_coap_init(void)\n"
+def get_affordance_struct_name(affordance_name: str) -> str:
+    return f'wot_coap_{affordance_name}_affordance'
+
+
+def get_affordance_function_name(affordance_type: str) -> str:
+    if affordance_type == "properties":
+        return "wot_td_coap_prop_add"
+    elif affordance_type == "actions":
+        return "wot_td_coap_action_add"
+    elif affordance_type == "events":
+        return "wot_td_coap_event_add"
+
+    raise ValueError(f"Unknown affordance type {affordance_type}")
+
+
+def generate_affordance_entries(affordance_type: str, affordance_type_json: dict) -> str:
+    result = ""
+    function_name = get_affordance_function_name(affordance_type)
+    for affordance_name in affordance_type_json:
+        struct_name: str = get_affordance_struct_name(affordance_name)
+        result += INDENT
+        result += f'{function_name}(thing, &{struct_name});\n'
+
+    return result
+
+
+def generate_init_function(coap_jsons: List[dict]) -> str:
+    result = "int wot_td_coap_config_init(wot_td_thing_t *thing)\n"
     result += "{\n"
     result += INDENT + f"gcoap_register_listener(&{COAP_LISTENER_NAME});\n"
+    for coap_json in coap_jsons:
+        for affordance_type in AFFORDANCE_TYPES:
+            result += generate_affordance_entries(
+                affordance_type, coap_json[affordance_type])
+
+    result += INDENT + "return 0;\n"
     result += "}\n"
 
     return result
@@ -305,7 +337,7 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     add_to_result(generate_coap_link_params(coap_resources), result_elements)
     add_to_result(generate_coap_listener(), result_elements)
     add_to_result(COAP_LINK_ENCODER, result_elements)
-    add_to_result(generate_init_function(), result_elements)
+    add_to_result(generate_init_function(coap_jsons), result_elements)
 
     return result_elements
 
