@@ -74,6 +74,10 @@ def validate_coap_json(coap_jsons: dict) -> None:
     assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
 
 
+def get_handler_function_header(handler_name: str) -> str:
+    return f'extern ssize_t {handler_name}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);'
+
+
 def validate_thing_json(thing_json: dict) -> None:
     # TODO: Expand thing validation
     assert thing_json['titles'], "ERROR: name in thing.json missing"
@@ -188,6 +192,11 @@ def generate_includes(coap_resources: list) -> str:
 
     dependencies = [f'#include {dependency}' for dependency in dependencies]
     return "\n".join(dependencies)
+
+
+def generate_extern_functions() -> str:
+    functions = [get_handler_function_header(x) for x in extern_functions]
+    return "\n".join(functions)
 
 
 def generate_coap_listener() -> str:
