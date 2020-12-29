@@ -60,7 +60,59 @@ static ssize_t _wot_encode_link(const coap_resource_t *resource, char *buf,
     return res;
 }
 
-int wot_td_coap_init(wot_td_thing_t *thing)
+wot_td_form_t wot_td_brightness_aff_form_1 = {
+    .op = &wot_td_brightness_form_op_1,
+    .content_type = &wot_td_brightness_content_type_1,
+    .href = &wot_td_brightness_aff_form_href_1,
+    .extensions = &wot_td_brightness_form_coap_1,
+    .next = NULL,
+};
+
+wot_td_form_t wot_td_brightness_aff_form_0 = {
+    .op = &wot_td_brightness_form_op_0,
+    .content_type = &wot_td_brightness_content_type_0,
+    .href = &wot_td_brightness_aff_form_href_0,
+    .extensions = &wot_td_brightness_form_coap_0,
+    .next = &wot_td_brightness_aff_form_1,
+};
+
+wot_td_int_affordance_t wot_brightness_int_affordance = {
+    .forms = &wot_td_brightness_aff_form_0,
+};
+
+wot_td_prop_affordance_t wot_brightness_affordance = {
+    .key = "brightness",
+    .int_affordance = &wot_brightness_int_affordance,
+    .next = NULL,
+};
+
+wot_td_coap_prop_affordance_t wot_coap_brightness_affordance = {
+    .affordance = &wot_brightness_affordance,
+};
+
+wot_td_form_t wot_td_toggle_aff_form_0 = {
+    .op = &wot_td_toggle_form_op_0,
+    .content_type = &wot_td_toggle_content_type_0,
+    .href = &wot_td_toggle_aff_form_href_0,
+    .extensions = &wot_td_toggle_form_coap_0,
+    .next = NULL,
+};
+
+wot_td_int_affordance_t wot_toggle_int_affordance = {
+    .forms = &wot_td_toggle_aff_form_0,
+};
+
+wot_td_action_affordance_t wot_toggle_affordance = {
+    .key = "toggle",
+    .int_affordance = &wot_toggle_int_affordance,
+    .next = NULL,
+};
+
+wot_td_coap_action_affordance_t wot_coap_toggle_affordance = {
+    .affordance = &wot_toggle_affordance,
+};
+
+int wot_td_coap_config_init(wot_td_thing_t *thing)
 {
     gcoap_register_listener(&_wot_coap_listener);
     wot_td_coap_prop_add(thing, &wot_coap_brightness_affordance);
