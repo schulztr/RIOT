@@ -60,7 +60,10 @@ static ssize_t _wot_encode_link(const coap_resource_t *resource, char *buf,
     return res;
 }
 
-void wot_td_coap_init(void)
+int wot_td_coap_init(wot_td_thing_t *thing)
 {
     gcoap_register_listener(&_wot_coap_listener);
+    wot_td_coap_prop_add(thing, &wot_coap_brightness_affordance);
+    wot_td_coap_action_add(thing, &wot_coap_toggle_affordance);
+    return 0;
 }
