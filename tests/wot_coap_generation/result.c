@@ -29,9 +29,16 @@ const coap_resource_t _wot_coap_resources[] = {
 
 static const char *_wot_link_params[] = {
     NULL,
-    NULL}
+    NULL,
+}
 
-static gcoap_listener_t _wot_coap_listener = {&_wot_coap_resources[0], ARRAY_SIZE(_wot_coap_resources), _wot_encode_link, NULL, NULL};
+static gcoap_listener_t _wot_coap_listener = {
+    &_wot_coap_resources[0],
+    ARRAY_SIZE(_wot_coap_resources),
+    _wot_encode_link,
+    NULL,
+    NULL,
+};
 
 static ssize_t _wot_encode_link(const coap_resource_t *resource, char *buf,
                                 size_t maxlen, coap_link_encoder_ctx_t *context)
