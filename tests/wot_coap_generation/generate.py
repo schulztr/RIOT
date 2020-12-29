@@ -22,7 +22,6 @@ DEFAULT_DEPENDENCIES = ['<stdint.h>', '<stdio.h>', '<stdlib.h>',
                         '<string.h>', '"net/gcoap.h"', '"od.h"', '"fmt.h"',
                         '"net/wot.h"', '"net/wot/coap.h"', '"net/wot/coap/config.h"', ]
 
-
 COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resource_t *resource, char *buf,
                             size_t maxlen, coap_link_encoder_ctx_t *context) {{
     ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
