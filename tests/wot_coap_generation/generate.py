@@ -295,14 +295,15 @@ def add_to_result(result_element: str, result_elements: List[str]):
 def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[str]:
     coap_resources = generate_coap_resources(coap_jsons)
 
-    result_elements = []
-    result_elements.append(generate_coap_handlers(coap_resources))
-    result_elements.append(write_coap_resources(coap_resources))
-    result_elements.append(generate_coap_link_params(coap_resources))
-    result_elements.append(generate_coap_listener())
-    result_elements.append(COAP_LINK_ENCODER)
-    result_elements.append(generate_init_function())
+    result_elements: List[str] = []
     add_to_result(generate_includes(), result_elements)
+    add_to_result(generate_extern_functions(), result_elements)
+    add_to_result(generate_coap_handlers(coap_resources), result_elements)
+    add_to_result(write_coap_resources(coap_resources), result_elements)
+    add_to_result(generate_coap_link_params(coap_resources), result_elements)
+    add_to_result(generate_coap_listener(), result_elements)
+    add_to_result(COAP_LINK_ENCODER, result_elements)
+    add_to_result(generate_init_function(), result_elements)
 
     return result_elements
 
