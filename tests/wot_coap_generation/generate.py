@@ -237,7 +237,7 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
         wot_handler: str = get_handler_name_for_href(resource['href'])
         actual_handler: str = resource['handler']
 
-        handler = f"static ssize_t {wot_handler}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)\n"
+        handler = f"static ssize_t {wot_handler}(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)\n"
         handler += "{\n"
         handler += INDENT
         handler += f"return {actual_handler}(&pdu, &buf, len, &ctx);\n"
