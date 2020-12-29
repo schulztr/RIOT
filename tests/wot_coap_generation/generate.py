@@ -41,7 +41,7 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
 }}'''
 
 
-used_affordance_keys = []
+used_affordance_keys: List[str] = []
 
 ResourceDict = TypedDict(
     'ResourceDict', {'href': str, 'handler': str, "methods": List[str]})
@@ -78,8 +78,9 @@ def validate_thing_json(thing_json: dict) -> None:
     assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
 
-def write_coap_resources(coap_resources: list) -> str:
-    sorted_resources = sorted(coap_resources, key=lambda k: k['href'])
+def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
+    sorted_resources: List[ResourceDict] = sorted(
+        coap_resources, key=lambda k: k['href'])
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
     for resource in sorted_resources:
@@ -92,14 +93,14 @@ def write_coap_resources(coap_resources: list) -> str:
 
 
 def generate_coap_resources(coap_jsons: list) -> List[ResourceDict]:
-    coap_resources = []
+    coap_resources: List[ResourceDict] = []
     for coap_json in coap_jsons:
         for affordance_type in AFFORDANCE_TYPES:
             for affordance_name, affordance in coap_json[affordance_type].items():
                 assert_unique_affordance(affordance_name)
                 used_affordance_keys.append(affordance_name)
-                forms = affordance["forms"]
-                resources = extract_coap_resources(forms)
+                forms: List[dict] = affordance["forms"]
+                resources: List[ResourceDict] = extract_coap_resources(forms)
                 coap_resources.extend(resources)
     return coap_resources
 
@@ -108,7 +109,7 @@ def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(resources: list) -> List[ResourceDict]:
+def extract_coap_resources(resources: List[dict]) -> List[ResourceDict]:
     hrefs: List[str] = []
     handlers: List[str] = []
     methods: List[List[str]] = []
@@ -192,7 +193,7 @@ def generate_coap_listener() -> str:
     return result
 
 
-def generate_coap_handlers(coap_resources: list) -> str:
+def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
     handlers: List[str] = []
 
     for resource in coap_resources:
