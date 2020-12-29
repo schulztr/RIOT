@@ -8,8 +8,8 @@
 #include "net/wot.h"
 #include "net/wot/coap.h"
 #include "net/wot/coap/config.h"
+#include "led_controller.h"
 
-extern ssize_t _led_brightness_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
 extern ssize_t _led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
 
 static ssize_t wot_led_brightness_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
