@@ -296,6 +296,59 @@ def get_affordance_struct_name(affordance_name: str) -> str:
     return f'wot_coap_{affordance_name}_affordance'
 
 
+def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  affordance_name: str, affordance: dict) -> None:
+    forms = affordance['forms']
+    number_of_forms = len(forms)
+
+    for index, form in enumerate(forms):
+        print(form)
+        struct = f'wot_td_form_t wot_td_{affordance_name}_aff_form_{index} = {{\n'
+        struct += INDENT
+        struct += f'.op = &wot_td_{affordance_name}_form_op_{index},\n'
+        struct += INDENT
+        struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
+        struct += INDENT
+        struct += f'.href = &wot_td_{affordance_name}_aff_form_href_{index},\n'
+        struct += INDENT
+        struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
+        struct += INDENT
+        struct += ".next = "
+        if index + 1 < number_of_forms:
+            struct += f'&wot_td_{affordance_name}_aff_form_{index + 1},\n'
+        else:
+            struct += "NULL,\n"
+        struct += "};"
+
+        structs.insert(0, struct)
+
+
+def add_interaction_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
+    struct = f'wot_td_int_affordance_t wot_{affordance_name}_int_affordance = {{\n'
+    struct += INDENT
+    struct += f'.forms = &wot_td_{affordance_name}_aff_form_0,\n'
+    struct += "};"
+
+    structs.insert(0, struct)
+    add_interaction_affordance_forms(
+        structs, affordance_type, affordance_name, affordance)
+
+
+def add_specific_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
+    specifier = get_affordance_type_specifier(affordance_type)
+    struct = f'wot_td_{specifier}_affordance_t wot_{affordance_name}_affordance = {{\n'
+    struct += INDENT
+    struct += f'.key = "{affordance_name}",\n'
+    struct += INDENT
+    struct += f'.int_affordance = &wot_{affordance_name}_int_affordance,\n'
+    struct += INDENT
+    struct += f'.next = NULL,\n'
+    struct += "};"
+
+    structs.insert(0, struct)
+    add_interaction_affordance(
+        structs, affordance_type, affordance_name, affordance)
+
+
 def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
     structs = []
     struct_specifier = get_affordance_type_specifier(affordance_type)
@@ -304,6 +357,9 @@ def generate_affordance_struct(affordance_type: str, affordance_name: str, affor
     struct += INDENT + f".affordance = &wot_{affordance_name}_affordance,\n"
     struct += "};"
     structs.append(struct)
+
+    add_specific_affordance(structs, affordance_type,
+                            affordance_name, affordance)
 
     return SEPERATOR.join(structs)
 
