@@ -309,11 +309,11 @@ def get_affordance_function_name(affordance_type: str) -> str:
 
 def generate_affordance_entries(affordance_type: str, affordance_type_json: dict) -> str:
     result = ""
-    function_name = get_affordance_function_name(affordance_type)
+    specifier = get_affordance_type_specifier(affordance_type)
     for affordance_name in affordance_type_json:
         struct_name: str = get_affordance_struct_name(affordance_name)
         result += INDENT
-        result += f'{function_name}(thing, &{struct_name});\n'
+        result += f'wot_td_coap_{specifier}_add(thing, &{struct_name});\n'
 
     return result
 
