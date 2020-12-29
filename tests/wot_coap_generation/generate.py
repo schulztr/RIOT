@@ -74,6 +74,10 @@ def validate_coap_json(coap_jsons: dict) -> None:
     assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
 
 
+def get_handler_name_for_href(href: str) -> str:
+    return f'wot{href.replace("/", "_")}_handler'
+
+
 def get_handler_function_header(handler_name: str) -> str:
     return f'extern ssize_t {handler_name}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);'
 
@@ -90,9 +94,13 @@ def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
     for resource in sorted_resources:
-        result += f'    {{"{resource["href"]}", '
-        result += " | ".join(resource['methods'])
-        result += ", " + resource['handler'] + ", NULL},\n"
+        href: str = resource["href"]
+        methods: List[str] = resource['methods']
+        handler_name: str = get_handler_name_for_href(href)
+
+        result += f'    {{"{href}", '
+        result += " | ".join(methods)
+        result += f", {handler_name}, NULL}},\n"
     result += "};"
 
     return result
@@ -216,9 +224,17 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
     handlers: List[str] = []
 
     for resource in coap_resources:
-        handler = f"static ssize_t {resource['handler']}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)\n"
+        wot_handler: str = get_handler_name_for_href(resource['href'])
+        actual_handler: str = resource['handler']
+
+        handler = f"static ssize_t {wot_handler}(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)\n"
         handler += "{\n"
         handler += INDENT
+        handler += f"return {actual_handler}(&pdu, &buf, len, &ctx);\n"
+        handler += "}"
+
+        continue
+
         handler += "(void)ctx;\n"
         handler += INDENT
         handler += 'unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));\n\n'
