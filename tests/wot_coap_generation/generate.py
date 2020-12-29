@@ -296,15 +296,26 @@ def get_affordance_struct_name(affordance_name: str) -> str:
     return f'wot_coap_{affordance_name}_affordance'
 
 
-def get_affordance_function_name(affordance_type: str) -> str:
-    if affordance_type == "properties":
-        return "wot_td_coap_prop_add"
-    elif affordance_type == "actions":
-        return "wot_td_coap_action_add"
-    elif affordance_type == "events":
-        return "wot_td_coap_event_add"
+def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
+    structs = []
+    struct_specifier = get_affordance_type_specifier(affordance_type)
+    struct_name = get_affordance_struct_name(affordance_name)
+    struct = f"wot_td_coap_{struct_specifier}_affordance_t {struct_name} = {{\n"
+    struct += INDENT + f".affordance = &wot_{affordance_name}_affordance,\n"
+    struct += "};"
+    structs.append(struct)
 
-    raise ValueError(f"Unknown affordance type {affordance_type}")
+    return SEPERATOR.join(structs)
+
+
+def generate_json_serialization(coap_jsons: List[dict]) -> str:
+    result_elements = []
+    for coap_json in coap_jsons:
+        for affordance_type in AFFORDANCE_TYPES:
+            for affordance in coap_json[affordance_type].items():
+                result_elements.append(
+                    generate_affordance_struct(affordance_type, affordance[0], affordance[1]))
+    return SEPERATOR.join(result_elements)
 
 
 def generate_affordance_entries(affordance_type: str, affordance_type_json: dict) -> str:
@@ -349,6 +360,7 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     add_to_result(generate_coap_link_params(coap_resources), result_elements)
     add_to_result(generate_coap_listener(), result_elements)
     add_to_result(COAP_LINK_ENCODER, result_elements)
+    add_to_result(generate_json_serialization(coap_jsons), result_elements)
     add_to_result(generate_init_function(coap_jsons), result_elements)
 
     return result_elements
