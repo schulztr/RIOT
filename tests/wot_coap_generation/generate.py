@@ -42,6 +42,8 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
 
 
 used_affordance_keys: List[str] = []
+header_files: List[str] = []
+extern_functions: List[str] = []
 
 ResourceDict = TypedDict(
     'ResourceDict', {'href': str, 'handler': str, "methods": List[str]})
@@ -128,6 +130,13 @@ def extract_coap_resources(resources: List[dict]) -> List[ResourceDict]:
             assert method_name not in methods[
                 index], f"ERROR: Method {method_name} already used for href {href}"
             methods[index].append(f"COAP_{method_name}")
+
+        header_file: str = resource.get("header_file", None)
+
+        if header_file is not None and header_file not in header_files:
+            header_files.append(header_file)
+        elif header_file is None and handler_function not in extern_functions:
+            extern_functions.append(handler_function)
 
     resource_list: List[ResourceDict] = []
 
