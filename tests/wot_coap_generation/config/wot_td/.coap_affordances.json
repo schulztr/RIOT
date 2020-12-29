@@ -7,10 +7,14 @@
         "toggle": {
             "forms": [
                 {
-                    "handler_file": "toggle.c",
                     "handler_function": "_led_toggle_handler",
                     "href": "/led/toggle", 
                     "cov:methodName": "POST"
+                },
+                {
+                    "handler_function": "_led_toggle_handler",
+                    "href": "/led/toggle", 
+                    "cov:methodName": "GET",
                 }
             ],
             "titles": {
