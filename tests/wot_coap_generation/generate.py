@@ -252,6 +252,11 @@ def generate_init_function() -> str:
     return result
 
 
+def add_to_result(result_element: str, result_elements: List[str]):
+    if result_element:
+        result_elements.append(result_element)
+
+
 def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[str]:
     coap_resources = generate_coap_resources(coap_jsons)
 
