@@ -232,6 +232,8 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
         handler += f"return {actual_handler}(&pdu, &buf, len, &ctx);\n"
         handler += "}"
 
+        handlers.append(handler)
+
         continue  # TODO: Add validation
 
         handler += "(void)ctx;\n"
@@ -255,8 +257,6 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
         handler += "\n" + INDENT
         handler += "return 0;\n"
         handler += "}"
-
-    handlers.append(handler)
 
     return SEPERATOR.join(handlers)
 
