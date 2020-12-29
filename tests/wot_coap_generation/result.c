@@ -9,22 +9,15 @@
 #include "net/wot/coap.h"
 #include "net/wot/coap/config.h"
 
-static ssize_t _led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)
+extern ssize_t _led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
+
+static ssize_t wot_led_toggle_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)
 {
-    (void)ctx;
-    unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));
-
-    if (method_flag == COAP_POST)
-    {
-        puts("Hi.");
-        return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);
-    }
-
-    return 0;
+    return _led_toggle_handler(&pdu, &buf, len, &ctx);
 }
 
 const coap_resource_t _wot_coap_resources[] = {
-    {"/led/toggle", COAP_POST, _led_toggle_handler, NULL},
+    {"/led/toggle", COAP_POST | COAP_GET, wot_led_toggle_handler, NULL},
 };
 
 static const char *_wot_link_params[] = {
