@@ -6,11 +6,13 @@
             "minimum": -64,
             "maximum": 64,
             "forms": [{
+                "header_file": "led_controller.h",
                 "handler_function": "_led_brightness_handler",
                 "op": "readproperty",
                 "href": "/led/brightness",
                 "cov:methodName": "GET"
             }, {
+                "header_file": "led_controller.h",
                 "handler_function": "_led_brightness_handler",
                 "op": "writeproperty",
                 "href": "/led/brightness",
