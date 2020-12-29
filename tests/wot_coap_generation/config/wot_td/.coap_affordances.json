@@ -1,5 +1,22 @@
 {
     "properties": {
+        "brightness": {
+            "description": "The current brightness setting",
+            "type": "integer",
+            "minimum": -64,
+            "maximum": 64,
+            "forms": [{
+                "handler_function": "_led_brightness_handler",
+                "op": "readproperty",
+                "href": "/led/brightness",
+                "cov:methodName": "GET"
+            }, {
+                "handler_function": "_led_brightness_handler",
+                "op": "writeproperty",
+                "href": "/led/brightness",
+                "cov:methodName": "POST"
+            }]
+        }
     },
     "events": {
     },
@@ -10,11 +27,6 @@
                     "handler_function": "_led_toggle_handler",
                     "href": "/led/toggle", 
                     "cov:methodName": "POST"
-                },
-                {
-                    "handler_function": "_led_toggle_handler",
-                    "href": "/led/toggle", 
-                    "cov:methodName": "GET"
                 }
             ],
             "titles": {
