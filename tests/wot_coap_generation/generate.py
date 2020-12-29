@@ -8,6 +8,11 @@ PROPERTIES_NAME = 'properties'
 ACTIONS_NAME = 'actions'
 EVENTS_NAME = 'events'
 AFFORDANCE_TYPES = [PROPERTIES_NAME, ACTIONS_NAME, EVENTS_NAME]
+AFFORDANCE_TYPE_SPECIFIERS = {
+    PROPERTIES_NAME: 'prop',
+    ACTIONS_NAME: 'action',
+    EVENTS_NAME: 'event'
+}
 CURRENT_DIRECTORY = os.getcwd()
 CONFIG_DIRECTORY = f"{CURRENT_DIRECTORY}/config"
 THING_DESCRIPTION_DIRECTORY = f"{CONFIG_DIRECTORY}/wot_td"
@@ -281,6 +286,10 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
     result += "\n".join(link_params)
     result += "\n}"
     return result
+
+
+def get_affordance_type_specifier(affordance_type: str) -> str:
+    return AFFORDANCE_TYPE_SPECIFIERS[affordance_type]
 
 
 def get_affordance_struct_name(affordance_name: str) -> str:
