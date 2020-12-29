@@ -232,7 +232,7 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
         handler += f"return {actual_handler}(&pdu, &buf, len, &ctx);\n"
         handler += "}"
 
-        continue
+        continue  # TODO: Add validation
 
         handler += "(void)ctx;\n"
         handler += INDENT
