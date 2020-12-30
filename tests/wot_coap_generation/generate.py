@@ -324,6 +324,11 @@ def add_href_struct(structs: List[str], index: int, affordance_name: str) -> Non
     structs.insert(0, struct)
 
 
+def add_extension_struct(structs: List[str], index: int, affordance_name: str) -> None:
+    struct = f"wot_td_extension_t wot_td_{affordance_name}_form_coap_{index} = {{0}};"
+    structs.insert(0, struct)
+
+
 def generate_operations(structs: List[str], form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> None:
     if "op" in form:
         operations = form["op"]
@@ -345,11 +350,11 @@ def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  
         if "contentType" in form:
             struct += INDENT
             struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
-        # struct += INDENT
-        # struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
         assert "href" in form, f'ERROR: "href" is mandatory in "form" elements! ({affordance_name})'
         struct += INDENT
         struct += f'.href = &wot_td_{affordance_name}_aff_form_href_{index},\n'
+        struct += INDENT
+        struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
         struct += INDENT
         struct += ".next = "
         if index + 1 < len(forms):
@@ -363,6 +368,7 @@ def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  
             generate_operations(structs, form, index,
                                 affordance_type, affordance_name, affordance)
         add_href_struct(structs, index, affordance_name)
+        add_extension_struct(structs, index, affordance_name)
 
 
 def add_interaction_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
