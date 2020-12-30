@@ -370,6 +370,13 @@ def add_interaction_affordance(structs: List[str], affordance_type: str, afforda
         structs, affordance_type, affordance_name, affordance)
 
 
+def get_c_boolean(boolean: bool) -> str:
+    if boolean:
+        return "true"
+    else:
+        return "false"
+
+
 def add_specific_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
     specifier = get_affordance_type_specifier(affordance_type)
     struct = f'wot_td_{specifier}_affordance_t wot_{affordance_name}_affordance = {{\n'
