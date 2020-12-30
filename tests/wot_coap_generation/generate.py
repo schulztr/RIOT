@@ -320,9 +320,7 @@ def add_operations_struct(structs: List[str], form_index: int, has_next: bool, o
     structs.insert(0, op)
 
 
-def generate_operations(structs: List[str], form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> Tuple[str, int]:
-    operations_line = ""
-    number_of_generated_structs = 0
+def generate_operations(structs: List[str], form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> None:
     if "op" in form:
         operations = form["op"]
         if isinstance(operations, str):
@@ -331,40 +329,34 @@ def generate_operations(structs: List[str], form: dict, index: int, affordance_t
             has_next = len(operations) < op_index + 1
             add_operations_struct(structs, index, has_next,
                                   operation, affordance_name, affordance_type)
-            number_of_generated_structs += 1
-        operations_line = INDENT + \
-            f'.op = &wot_td_{affordance_name}_form_{index}_op_{op_index},\n'
-
-    return operations_line, number_of_generated_structs
 
 
 def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  affordance_name: str, affordance: dict) -> None:
     forms = affordance['forms']
-    number_of_forms = len(forms)
-
     for index, form in enumerate(forms):
-        number_of_generated_structs = 0
-        print(form)
         struct = f'wot_td_form_t wot_td_{affordance_name}_aff_form_{index} = {{\n'
-        operations_line, number_of_structs = generate_operations(structs, form, index, affordance_type,
-                                                                 affordance_name, affordance)
-        struct += operations_line
-        number_of_generated_structs += number_of_structs
-        struct += INDENT
-        struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
+        if "op" in form:
+            struct += INDENT
+            struct += f'.op = &wot_td_{affordance_name}_form_{index}_op_0,\n'
+        if "contentType" in form:
+            struct += INDENT
+            struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
         struct += INDENT
         struct += f'.href = &wot_td_{affordance_name}_aff_form_href_{index},\n'
         struct += INDENT
         struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
         struct += INDENT
         struct += ".next = "
-        if index + 1 < number_of_forms:
+        if index + 1 < len(forms):
             struct += f'&wot_td_{affordance_name}_aff_form_{index + 1},\n'
         else:
             struct += "NULL,\n"
         struct += "};"
 
-        structs.insert(number_of_generated_structs, struct)
+        structs.insert(0, struct)
+        if "op" in form:
+            generate_operations(structs, form, index,
+                                affordance_type, affordance_name, affordance)
 
 
 def add_interaction_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
