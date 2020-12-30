@@ -84,9 +84,10 @@ ALLOWED_OPERATIONS_BY_TYPE = {
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
 extern_functions: List[str] = []
+resource_affordance_list: List[str] = []
 
 ResourceDict = TypedDict(
-    'ResourceDict', {'href': str, 'handler': str, "methods": List[str]})
+    'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
 
 def dict_raise_on_duplicates(ordered_pairs):
@@ -134,6 +135,7 @@ def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
     for resource in sorted_resources:
+        resource_affordance_list.append(resource['affordance_name'])
         href: str = resource["href"]
         methods: List[str] = resource['methods']
         handler_name: str = get_handler_name_for_href(href)
@@ -154,7 +156,8 @@ def generate_coap_resources(coap_jsons: list) -> List[ResourceDict]:
                 assert_unique_affordance(affordance_name)
                 used_affordance_keys.append(affordance_name)
                 forms: List[dict] = affordance["forms"]
-                resources: List[ResourceDict] = extract_coap_resources(forms)
+                resources: List[ResourceDict] = extract_coap_resources(
+                    affordance_name, forms)
                 coap_resources.extend(resources)
     return coap_resources
 
@@ -163,7 +166,7 @@ def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(resources: List[dict]) -> List[ResourceDict]:
+def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[ResourceDict]:
     hrefs: List[str] = []
     handlers: List[str] = []
     methods: List[List[str]] = []
@@ -193,7 +196,8 @@ def extract_coap_resources(resources: List[dict]) -> List[ResourceDict]:
     resource_list: List[ResourceDict] = []
 
     for index, href in enumerate(hrefs):
-        dictionary = {'href': href,
+        dictionary = {'affordance_name': affordance_name,
+                      'href': href,
                       "handler": handlers[index],
                       "methods": methods[index]
                       }  # type: ResourceDict
@@ -494,10 +498,14 @@ def add_specific_affordance(structs: List[str], affordance_type: str, affordance
 
 
 def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
+    resource_index = resource_affordance_list.index(affordance_name)
+
     structs = []
     struct_specifier = get_affordance_type_specifier(affordance_type)
     struct_name = get_affordance_struct_name(affordance_name)
     struct = f"wot_td_coap_{struct_specifier}_affordance_t {struct_name} = {{\n"
+    struct += INDENT
+    struct += f".coap_resource_t = &{COAP_RESOURCES_NAME}[{resource_index}],\n"
     struct += INDENT + f".affordance = &wot_{affordance_name}_affordance,\n"
     struct += "};"
     structs.append(struct)
