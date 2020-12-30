@@ -273,32 +273,9 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
         handler += INDENT
         handler += f"return {actual_handler}(&pdu, &buf, len, &ctx);\n"
         handler += "}"
-
         handlers.append(handler)
 
-        continue  # TODO: Add validation
-
-        handler += "(void)ctx;\n"
-        handler += INDENT
-        handler += 'unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));\n\n'
-
-        for index, method in enumerate(resource['methods']):
-            handler += INDENT
-            if index > 0:
-                handler += 'else '
-            handler += f'if (method_flag == {method})\n'
-            handler += INDENT
-            handler += "{\n"
-            handler += INDENT * 2
-            handler += 'puts("Hi.");\n'
-            handler += INDENT * 2
-            handler += 'return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);\n'
-            handler += INDENT
-            handler += "}\n"
-
-        handler += "\n" + INDENT
-        handler += "return 0;\n"
-        handler += "}"
+        # TODO: Add validation
 
     return SEPERATOR.join(handlers)
 
