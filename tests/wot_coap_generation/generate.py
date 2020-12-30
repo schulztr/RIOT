@@ -390,7 +390,7 @@ def get_c_boolean(boolean: bool) -> str:
 
 def add_requirements(structs: List[str], schema_name: str, requirements: List[str]) -> None:
     for requirement in requirements:
-        struct = f"wot_td_data_schema_map_t wot_{schema_name}_{requirement}_required = {{\n"
+        struct = f"wot_td_object_required_t wot_{schema_name}_{requirement}_required = {{\n"
         struct += INDENT
         struct += f'.value = "{requirement}",\n'
         struct += "};"
