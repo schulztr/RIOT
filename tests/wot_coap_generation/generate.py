@@ -66,7 +66,6 @@ OPERATION_TYPES = {
 }
 
 JSON_TYPES = {
-    "none": "JSON_TYPE_NONE",  # FIXME: does not appear in specification
     "object": "JSON_TYPE_OBJECT",
     "array": "JSON_TYPE_ARRAY",
     "string": "JSON_TYPE_STRING",
