@@ -444,7 +444,7 @@ def generate_data_schema(structs: List[str], schema_name: str, schema: dict) -> 
         struct += f'.json_type = {JSON_TYPES[json_type]},\n'
     if "readOnly" in schema:
         struct += INDENT
-        struct += f'.read_only  = {get_c_boolean(schema["readOnly"])},\n'
+        struct += f'.read_only = {get_c_boolean(schema["readOnly"])},\n'
     if "writeOnly" in schema:
         struct += INDENT
         struct += f'.write_only = {get_c_boolean(schema["writeOnly"])},\n'
