@@ -297,6 +297,18 @@ wot_td_multi_lang_t * wot_td_affordance_title_find_value(wot_td_int_affordance_t
     WOT_TD_FIND_x(affordance, titles, wot_td_multi_lang_t, value);
 }
 
+int wot_td_affordance_form_add(wot_td_int_affordance_t *affordance, wot_td_form_t *form){
+    WOT_TD_ADD_CONTENT(affordance, forms, form, wot_td_form_t);
+}
+
+int wot_td_affordance_form_rm(wot_td_int_affordance_t *affordance, wot_td_form_t *form){
+    WOT_TD_RM_CONTENT(affordance, forms, form, wot_td_form_t);
+}
+
+wot_td_form_t * wot_td_affordance_form_find_nth(wot_td_int_affordance_t *affordance, uint8_t pos){
+    WOT_TD_NTH_CONTENT(affordance, forms, wot_td_form_t);
+}
+
 int wot_td_security_desc_add(wot_td_sec_scheme_t *security, wot_td_multi_lang_t *desc){
     WOT_TD_ADD_CONTENT(security, descriptions, desc, wot_td_multi_lang_t);
 }
