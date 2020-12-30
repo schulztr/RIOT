@@ -377,6 +377,88 @@ def get_c_boolean(boolean: bool) -> str:
         return "false"
 
 
+def add_requirements(structs: List[str], schema_name: str, requirements: List[str]) -> None:
+    for requirement in requirements:
+        struct = f"wot_td_data_schema_map_t wot_{schema_name}_{requirement}_required = {{\n"
+        struct += INDENT
+        struct += f'.value = "{requirement}",\n'
+        struct += "};"
+        structs.insert(0, struct)
+
+
+def add_data_schema_maps(structs: List[str], schema_name: str, properties: dict) -> None:
+    for property_name, property in properties.items():
+        struct = f"wot_td_data_schema_map_t wot_{schema_name}_{property_name}_data_map = {{\n"
+        struct += INDENT
+        struct += f'.key = "{property_name}",\n'
+        struct += INDENT
+        struct += f".value = &wot_{schema_name}_{property_name}_data_schema,\n"
+        struct += "};"
+
+        structs.insert(0, struct)
+
+        generate_data_schema(
+            structs, f'{schema_name}_{property_name}', property)
+
+
+def get_required_properties(schema: dict) -> List[str]:
+    required_properties = schema['required']
+    if isinstance(required_properties, str):
+        required_properties = [required_properties]
+    for property in required_properties:
+        assert property in schema['properties']
+
+    return required_properties
+
+
+def add_schema_object(structs: List[str], schema_name: str, schema: dict) -> None:
+    properties = schema['properties']
+    first_property = list(properties.keys())[0]
+    required_properties: List[str] = get_required_properties(schema)
+
+    struct = f"wot_td_object_schema_t wot_{schema_name}_data_schema_obj = {{\n"
+    struct += INDENT + \
+        f".properties = &wot_{schema_name}_{first_property}_data_map,\n"
+
+    if required_properties:
+        struct += INDENT
+        struct += f".required = &wot_{schema_name}_{required_properties[0]}_required,\n"
+
+    struct += "};"
+    structs.insert(0, struct)
+
+    add_data_schema_maps(structs, schema_name, properties)
+    if required_properties:
+        add_requirements(structs, schema_name, required_properties)
+
+
+def generate_data_schema(structs: List[str], schema_name: str, schema: dict) -> None:
+    json_type = None
+    if "properties" in schema:
+        json_type = "object"
+    elif "type" in schema:
+        json_type = schema["type"]
+
+    struct = f"wot_td_data_schema_t wot_{schema_name}_data_schema = {{\n"
+    struct += INDENT
+    if json_type is not None:
+        struct += f'.json_type = {JSON_TYPES[json_type]},\n'
+    if "readOnly" in schema:
+        struct += INDENT
+        struct += f'.read_only  = {get_c_boolean(schema["readOnly"])},\n'
+    if "writeOnly" in schema:
+        struct += INDENT
+        struct += f'.write_only = {get_c_boolean(schema["writeOnly"])},\n'
+    if json_type == "object":
+        struct += INDENT
+        struct += f".schema = &wot_{schema_name}_data_schema_obj,\n"
+    struct += f"}};"
+    structs.insert(0, struct)
+
+    if json_type == "object":
+        add_schema_object(structs, schema_name, schema)
+
+
 def add_specific_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
     specifier = get_affordance_type_specifier(affordance_type)
     struct = f'wot_td_{specifier}_affordance_t wot_{affordance_name}_affordance = {{\n'
@@ -384,11 +466,18 @@ def add_specific_affordance(structs: List[str], affordance_type: str, affordance
     struct += f'.key = "{affordance_name}",\n'
     struct += INDENT
     struct += f'.int_affordance = &wot_{affordance_name}_int_affordance,\n'
+    if PROPERTIES_NAME in affordance:
+        assert affordance_type == PROPERTIES_NAME
+        struct += INDENT + \
+            f".data_schema = &wot_{affordance_name}_data_schema,\n"
     struct += INDENT
     struct += f'.next = NULL,\n'
     struct += "};"
 
     structs.insert(0, struct)
+
+    if PROPERTIES_NAME in affordance:
+        generate_data_schema(structs, affordance_name, affordance)
     add_interaction_affordance(
         structs, affordance_type, affordance_name, affordance)
 
