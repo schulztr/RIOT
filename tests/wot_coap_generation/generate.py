@@ -65,6 +65,17 @@ OPERATION_TYPES = {
     "writemultipleproperties": "FORM_OP_WRITE_MULTIPLE_PROPERTIES"
 }
 
+JSON_TYPES = {
+    "none": "JSON_TYPE_NONE",  # FIXME: does not appear in specification
+    "object": "JSON_TYPE_OBJECT",
+    "array": "JSON_TYPE_ARRAY",
+    "string": "JSON_TYPE_STRING",
+    "number": "JSON_TYPE_NUMBER",
+    "integer": "JSON_TYPE_INTEGER",
+    "boolean": "JSON_TYPE_BOOLEAN",
+    "null": "JSON_TYPE_NULL"
+}
+
 ALLOWED_OPERATIONS_BY_TYPE = {
     PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
     ACTIONS_NAME: ["invokeaction", ],
