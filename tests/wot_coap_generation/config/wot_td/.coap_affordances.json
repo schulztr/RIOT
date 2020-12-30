@@ -43,6 +43,7 @@
         "toggle": {
             "forms": [
                 {
+                    "op": "invokeaction",
                     "handler_function": "_led_toggle_handler",
                     "href": "/led/toggle",
                     "cov:methodName": "POST"

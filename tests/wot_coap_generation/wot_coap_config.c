@@ -160,7 +160,13 @@ wot_td_extension_t wot_td_toggle_form_coap_0 = {0};
 
 wot_td_uri_t wot_td_toggle_aff_form_href_0 = {0};
 
+wot_td_form_op_t wot_td_toggle_form_0_op_0 = {
+    .op_type = FORM_OP_INVOKE_ACTION,
+    .next = NULL,
+};
+
 wot_td_form_t wot_td_toggle_aff_form_0 = {
+    .op = &wot_td_toggle_form_0_op_0,
     .href = &wot_td_toggle_aff_form_href_0,
     .extensions = &wot_td_toggle_form_coap_0,
     .next = NULL,
