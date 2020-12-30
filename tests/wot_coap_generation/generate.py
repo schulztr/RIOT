@@ -330,14 +330,13 @@ def add_extension_struct(structs: List[str], index: int, affordance_name: str) -
 
 
 def generate_operations(structs: List[str], form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> None:
-    if "op" in form:
-        operations = form["op"]
-        if isinstance(operations, str):
-            operations = [operations]
-        for op_index, operation in enumerate(operations):
-            has_next = len(operations) < op_index + 1
-            add_operations_struct(structs, index, has_next,
-                                  operation, affordance_name, affordance_type)
+    operations = form["op"]
+    if isinstance(operations, str):
+        operations = [operations]
+    for op_index, operation in enumerate(operations):
+        has_next = len(operations) < op_index + 1
+        add_operations_struct(structs, index, has_next,
+                              operation, affordance_name, affordance_type)
 
 
 def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  affordance_name: str, affordance: dict) -> None:
