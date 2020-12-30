@@ -505,7 +505,7 @@ def generate_affordance_struct(affordance_type: str, affordance_name: str, affor
     struct_name = get_affordance_struct_name(affordance_name)
     struct = f"wot_td_coap_{struct_specifier}_affordance_t {struct_name} = {{\n"
     struct += INDENT
-    struct += f".coap_resource_t = &{COAP_RESOURCES_NAME}[{resource_index}],\n"
+    struct += f".coap_resource = &{COAP_RESOURCES_NAME}[{resource_index}],\n"
     struct += INDENT + f".affordance = &wot_{affordance_name}_affordance,\n"
     struct += "};"
     structs.append(struct)
