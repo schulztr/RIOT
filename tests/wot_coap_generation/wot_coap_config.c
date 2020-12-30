@@ -15,23 +15,29 @@ extern ssize_t _led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 
 static ssize_t wot_echo_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
-    return _echo_handler(&pdu, &buf, len, &ctx);
+    return _echo_handler(pdu, buf, len, ctx);
 }
 
 static ssize_t wot_led_status_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
-    return _led_status_handler(&pdu, &buf, len, &ctx);
+    return _led_status_handler(pdu, buf, len, ctx);
 }
 
 static ssize_t wot_led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
-    return _led_toggle_handler(&pdu, &buf, len, &ctx);
+    return _led_toggle_handler(pdu, buf, len, ctx);
 }
 
 const coap_resource_t _wot_coap_resources[] = {
     {"/echo", COAP_GET, wot_echo_handler, NULL},
     {"/led/status", COAP_GET, wot_led_status_handler, NULL},
     {"/led/toggle", COAP_POST, wot_led_toggle_handler, NULL},
+};
+
+static const char *_wot_link_params[] = {
+    NULL,
+    NULL,
+    NULL,
 };
 
 static ssize_t _wot_encode_link(const coap_resource_t *resource, char *buf,
@@ -53,12 +59,6 @@ static ssize_t _wot_encode_link(const coap_resource_t *resource, char *buf,
 
     return res;
 }
-
-static const char *_wot_link_params[] = {
-    NULL,
-    NULL,
-    NULL,
-};
 
 static gcoap_listener_t _wot_coap_listener = {
     &_wot_coap_resources[0],
@@ -88,7 +88,7 @@ wot_td_int_affordance_t wot_echo_int_affordance = {
     .forms = &wot_td_echo_aff_form_0,
 };
 
-wot_td_data_schema_map_t wot_echo_hello_required = {
+wot_td_object_required_t wot_echo_hello_required = {
     .value = "hello",
 };
 
