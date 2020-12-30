@@ -2,7 +2,7 @@
 APPLICATION = wot_coap
 
 # If no BOARD is found in the environment, use this default:
-BOARD ?= nrf52dk
+BOARD ?= native
 
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../..
@@ -11,6 +11,23 @@ RIOTBASE ?= $(CURDIR)/../..
 USEMODULE += wot_core
 USEMODULE += wot_coap
 USEMODULE += xtimer
+
+ifeq ($(BOARD),esp32-wroom-32)
+# ESP wifi configuration
+USEMODULE += esp_wifi
+WIFI_SSID?=\"Your\ SSID"
+WIFI_PASS?=\"Your\ Password\"
+CFLAGS += -DESP_WIFI_SSID=$(WIFI_SSID)
+CFLAGS += -DESP_WIFI_PASS=$(WIFI_PASS)
+
+# GPIO Bindings
+LED_GPIO = GPIO33
+CFLAGS += -DLED_GPIO=$(LED_GPIO)
+endif
+
+ifeq ($(BOARD),native)
+CFLAGS += -DIS_NATIVE
+endif
 
 # Shell
 USEMODULE += shell
