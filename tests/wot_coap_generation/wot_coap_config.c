@@ -75,8 +75,6 @@ wot_td_form_op_t wot_td_echo_form_0_op_0 = {
 
 wot_td_form_t wot_td_echo_aff_form_0 = {
     .op = &wot_td_echo_form_0_op_0,
-    .href = &wot_td_echo_aff_form_href_0,
-    .extensions = &wot_td_echo_form_coap_0,
     .next = NULL,
 };
 
@@ -129,8 +127,6 @@ wot_td_form_op_t wot_td_status_form_0_op_0 = {
 
 wot_td_form_t wot_td_status_aff_form_0 = {
     .op = &wot_td_status_form_0_op_0,
-    .href = &wot_td_status_aff_form_href_0,
-    .extensions = &wot_td_status_form_coap_0,
     .next = NULL,
 };
 
@@ -149,8 +145,6 @@ wot_td_coap_prop_affordance_t wot_coap_status_affordance = {
 };
 
 wot_td_form_t wot_td_toggle_aff_form_0 = {
-    .href = &wot_td_toggle_aff_form_href_0,
-    .extensions = &wot_td_toggle_form_coap_0,
     .next = NULL,
 };
 
