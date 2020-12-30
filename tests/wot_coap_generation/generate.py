@@ -340,10 +340,10 @@ def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  
         if "contentType" in form:
             struct += INDENT
             struct += f'.content_type = &wot_td_{affordance_name}_content_type_{index},\n'
-        struct += INDENT
-        struct += f'.href = &wot_td_{affordance_name}_aff_form_href_{index},\n'
-        struct += INDENT
-        struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
+        # struct += INDENT
+        # struct += f'.href = &wot_td_{affordance_name}_aff_form_href_{index},\n'
+        # struct += INDENT
+        # struct += f'.extensions = &wot_td_{affordance_name}_form_coap_{index},\n'
         struct += INDENT
         struct += ".next = "
         if index + 1 < len(forms):
