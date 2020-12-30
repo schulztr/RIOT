@@ -483,7 +483,6 @@ def main() -> None:
 
     result: str = get_result()
     write_to_c_file(result)
-    print(result)
 
 
 if __name__ == '__main__':
