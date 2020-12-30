@@ -123,6 +123,7 @@ wot_td_prop_affordance_t wot_echo_affordance = {
 };
 
 wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
+    .coap_resource_t = &_wot_coap_resources[0],
     .affordance = &wot_echo_affordance,
 };
 
@@ -153,6 +154,7 @@ wot_td_prop_affordance_t wot_status_affordance = {
 };
 
 wot_td_coap_prop_affordance_t wot_coap_status_affordance = {
+    .coap_resource_t = &_wot_coap_resources[1],
     .affordance = &wot_status_affordance,
 };
 
@@ -183,6 +185,7 @@ wot_td_action_affordance_t wot_toggle_affordance = {
 };
 
 wot_td_coap_action_affordance_t wot_coap_toggle_affordance = {
+    .coap_resource_t = &_wot_coap_resources[2],
     .affordance = &wot_toggle_affordance,
 };
 
