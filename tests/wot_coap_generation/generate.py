@@ -457,9 +457,9 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     add_to_result(generate_extern_functions(), result_elements)
     add_to_result(generate_coap_handlers(coap_resources), result_elements)
     add_to_result(write_coap_resources(coap_resources), result_elements)
+    add_to_result(COAP_LINK_ENCODER, result_elements)
     add_to_result(generate_coap_link_params(coap_resources), result_elements)
     add_to_result(generate_coap_listener(), result_elements)
-    add_to_result(COAP_LINK_ENCODER, result_elements)
     add_to_result(generate_json_serialization(coap_jsons), result_elements)
     add_to_result(generate_init_function(coap_jsons), result_elements)
 
