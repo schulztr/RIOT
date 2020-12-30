@@ -292,7 +292,7 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
         link_params.append(INDENT + generate_coap_link_param(coap_resource))
 
     result += "\n".join(link_params)
-    result += "\n}"
+    result += "\n};"
     return result
 
 
