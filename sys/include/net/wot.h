@@ -404,6 +404,9 @@ wot_td_multi_lang_t * wot_td_affordance_title_find_nth(wot_td_int_affordance_t *
 wot_td_multi_lang_t * wot_td_affordance_title_find_tag(wot_td_int_affordance_t *affordance, char *tag);
 wot_td_multi_lang_t * wot_td_affordance_title_find_value(wot_td_int_affordance_t *affordance, char *value);
 
+int wot_td_affordance_form_add(wot_td_int_affordance_t *affordance, wot_td_form_t *form);
+int wot_td_affordance_form_rm(wot_td_int_affordance_t *affordance, wot_td_form_t *form);
+wot_td_form_t * wot_td_affordance_form_find_nth(wot_td_int_affordance_t *affordance, uint8_t pos);
 
 int wot_td_security_desc_add(wot_td_sec_scheme_t *security, wot_td_multi_lang_t *desc);
 int wot_td_security_desc_rm(wot_td_sec_scheme_t *security, wot_td_multi_lang_t *desc);
