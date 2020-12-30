@@ -1,33 +1,50 @@
 {
     "properties": {
-        "brightness": {
-            "description": "The current brightness setting",
-            "type": "integer",
-            "minimum": -64,
-            "maximum": 64,
-            "forms": [{
-                "header_file": "led_controller.h",
-                "handler_function": "_led_brightness_handler",
-                "op": "readproperty",
-                "href": "/led/brightness",
-                "cov:methodName": "GET"
-            }, {
-                "header_file": "led_controller.h",
-                "handler_function": "_led_brightness_handler",
-                "op": "writeproperty",
-                "href": "/led/brightness",
-                "cov:methodName": "POST"
-            }]
+        "echo": {
+            "description": "English description",
+            "descriptions": {
+                "de": "Deutsche Beschreibung",
+                "en": "English description"
+            },
+            "forms": [
+                {
+                    "handler_function": "_echo_handler",
+                    "op": "readproperty",
+                    "href": "/echo",
+                    "cov:methodName": "GET"
+                }
+            ],
+            "properties": {
+                "hello": {
+                    "type": "string",
+                    "readOnly": true,
+                    "writeOnly": false
+                }
+            },
+            "required": ["hello"],
+            "readOnly": true,
+            "writeOnly": false
+        },
+        "status": {
+            "description": "The current LED status",
+            "type": "string",
+            "forms": [
+                {
+                    "handler_function": "_led_status_handler",
+                    "op": "readproperty",
+                    "href": "/led/status",
+                    "cov:methodName": "GET"
+                }
+            ]
         }
     },
-    "events": {
-    },
+    "events": {},
     "actions": {
         "toggle": {
             "forms": [
                 {
                     "handler_function": "_led_toggle_handler",
-                    "href": "/led/toggle", 
+                    "href": "/led/toggle",
                     "cov:methodName": "POST"
                 }
             ],
