@@ -32,7 +32,7 @@ char *get_led_status(void)
 }
 #endif
 
-static ssize_t _echo_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, void *context)
+ssize_t _echo_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, void *context)
 {
     (void)context;
     char uri[CONFIG_NANOCOAP_URI_MAX];
@@ -48,7 +48,7 @@ static ssize_t _echo_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len, void *co
                              (uint8_t *)sub_uri, sub_uri_len);
 }
 
-static ssize_t _led_status_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+ssize_t _led_status_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
     (void)ctx;
     char *led_status = get_led_status();
@@ -68,7 +68,7 @@ static ssize_t _led_status_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
     }
 }
 
-static ssize_t _led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+ssize_t _led_toggle_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
     (void)ctx;
 
