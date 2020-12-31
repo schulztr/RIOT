@@ -10,11 +10,11 @@
 #include "msg.h"
 
 #define WOT_TD_COAP_AFF_ADD(ptr, aff, func_name) \
-    func_name(thing, aff);                        \
-    _add_endpoint_to_form(                           \
-        ptr->form, ptr->coap_resource);                \
-    _add_method_to_form(                          \
-        ptr->form, ptr->coap_resource);                \
+    func_name(thing, aff);                       \
+    _add_endpoint_to_form(                       \
+        ptr->form, ptr->coap_resource);          \
+    _add_method_to_form(                         \
+        ptr->form, ptr->coap_resource);          \
     return 0;
 
 
