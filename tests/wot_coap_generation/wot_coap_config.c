@@ -125,7 +125,7 @@ wot_td_prop_affordance_t wot_echo_affordance = {
 wot_td_coap_prop_affordance_t wot_coap_echo_affordance = {
     .coap_resource = &_wot_coap_resources[0],
     .affordance = &wot_echo_affordance,
-    .form =  &wot_td_echo_aff_form_0,
+    .form = &wot_td_echo_aff_form_0,
 };
 
 wot_td_extension_t wot_td_status_form_coap_0 = {0};
@@ -157,7 +157,7 @@ wot_td_prop_affordance_t wot_status_affordance = {
 wot_td_coap_prop_affordance_t wot_coap_status_affordance = {
     .coap_resource = &_wot_coap_resources[1],
     .affordance = &wot_status_affordance,
-    .form =  &wot_td_status_aff_form_0,
+    .form = &wot_td_status_aff_form_0,
 };
 
 wot_td_extension_t wot_td_toggle_form_coap_0 = {0};
@@ -189,7 +189,7 @@ wot_td_action_affordance_t wot_toggle_affordance = {
 wot_td_coap_action_affordance_t wot_coap_toggle_affordance = {
     .coap_resource = &_wot_coap_resources[2],
     .affordance = &wot_toggle_affordance,
-    .form =  &wot_td_toggle_aff_form_0,
+    .form = &wot_td_toggle_aff_form_0,
 };
 
 int wot_td_coap_config_init(wot_td_thing_t *thing)
