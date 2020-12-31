@@ -130,8 +130,12 @@ def validate_thing_json(thing_json: dict) -> None:
 
 
 class c_struct:
-    def __init__(self, struct_type:str, struct_name: str, keywords: List[str]=[]):
-        self.elements = [f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"]
+    def __init__(self, struct_type: str, struct_name: str, keywords: List[str] = []):
+        first_line = self.__get_first_line(struct_type, struct_name, keywords)
+        self.elements = [first_line]
+
+    def __get_first_line(self, struct_type: str, struct_name: str, keywords: List[str]) -> str:
+        return f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"
 
     def __generate_keywords(self, keywords: List[str]) -> str:
         return ' '.join(keywords) + ' ' if keywords else ''
