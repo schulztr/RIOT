@@ -150,6 +150,9 @@ class c_struct:
         field = self.__generate_field(field_name, field_value)
         self.elements.append(field)
 
+    def add_unordered_field(self, field: str) -> None:
+        self.elements.append(f"{field},")
+
     def insert_into(self, structs: List[str]) -> None:
         struct = self.generate_struct()
         structs.insert(0, struct)
@@ -279,15 +282,14 @@ def generate_extern_functions() -> str:
 
 
 def generate_coap_listener() -> str:
-    # struct()
-    struct_elements = [f"static gcoap_listener_t {COAP_LISTENER_NAME} = {{"]
-    struct_elements.append(f"&{COAP_RESOURCES_NAME}[0],")
-    struct_elements.append(f"ARRAY_SIZE({COAP_RESOURCES_NAME}),")
-    struct_elements.append(f"{COAP_LINK_ENCODER_NAME},")
-    struct_elements.append(f"NULL,")
-    struct_elements.append(f"NULL,")
+    struct = c_struct("gcoap_listener_t", COAP_LISTENER_NAME, ["static"])
+    struct.add_unordered_field(f"&{COAP_RESOURCES_NAME}[0]")
+    struct.add_unordered_field(f"ARRAY_SIZE({COAP_RESOURCES_NAME})")
+    struct.add_unordered_field(f"{COAP_LINK_ENCODER_NAME}")
+    struct.add_unordered_field("NULL")
+    struct.add_unordered_field("NULL")
 
-    return generate_struct(struct_elements)
+    return struct.generate_struct()
 
 
 def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
