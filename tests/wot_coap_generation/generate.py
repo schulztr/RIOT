@@ -134,10 +134,7 @@ class c_struct:
         self.elements = [f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"]
 
     def __generate_keywords(self, keywords: List[str]) -> str:
-        if keywords:
-            return ' '.join(keywords) + ' '
-        else:
-            return ''
+        return ' '.join(keywords) + ' ' if keywords else ''
 
     def generate_struct(self):
         return f'\n{INDENT}'.join(self.elements) + "\n};"
