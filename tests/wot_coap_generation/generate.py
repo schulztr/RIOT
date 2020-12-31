@@ -139,7 +139,7 @@ class c_struct:
         else:
             return ''
 
-    def __generate_struct(self):
+    def generate_struct(self):
         return f'\n{INDENT}'.join(self.elements) + "\n};"
 
     def __generate_field(self, field_name: str, field_value: str) -> str:
@@ -150,7 +150,7 @@ class c_struct:
         self.elements.append(field)
 
     def insert_into(self, structs: List[str]) -> None:
-        struct = self.__generate_struct()
+        struct = self.generate_struct()
         structs.insert(0, struct)
 
 
