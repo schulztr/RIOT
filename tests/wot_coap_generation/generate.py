@@ -128,6 +128,7 @@ def validate_thing_json(thing_json: dict) -> None:
     assert thing_json['titles'], "ERROR: name in thing.json missing"
     assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
+
 class c_struct:
     def __init__(self, struct_type:str, struct_name: str, keywords: List[str]=[]):
         self.elements = [f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"]
@@ -316,7 +317,7 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
 
     for coap_resource in coap_resources:
         struct_elements.append(generate_coap_link_param(coap_resource))
-    
+
     return generate_struct(struct_elements)
 
 
@@ -327,25 +328,31 @@ def get_affordance_type_specifier(affordance_type: str) -> str:
 def get_affordance_struct_name(affordance_name: str) -> str:
     return f'wot_coap_{affordance_name}_affordance'
 
+
 def generate_struct(struct_elements: List[str]) -> str:
     return f'\n{INDENT}'.join(struct_elements) + "\n};"
+
 
 def insert_struct(structs: List[str], struct_elements: List[str]) -> None:
     struct = generate_struct(struct_elements)
     structs.insert(0, struct)
 
+
 def generate_struct_field(field_name: str, field_value: str) -> str:
     return f".{field_name} = {field_value},"
+
 
 def add_struct_field(struct_elements: List[str], field_name: str, field_value: str) -> None:
     struct_field = generate_struct_field(field_name, field_value)
     struct_elements.append(struct_field)
 
+
 def add_operations_struct(structs: List[str], form_index: int, has_next: bool, op_type: str, affordance_name: str, affordance_type: str, op_index=0) -> None:
     assert op_type in ALLOWED_OPERATIONS_BY_TYPE[
         affordance_type], f"Operation {op_type} not allowed for affordance type {affordance_type}"
 
-    op = c_struct("wot_td_form_op_t", f"wot_td_{affordance_name}_form_{form_index}_op_{op_index}")
+    op = c_struct("wot_td_form_op_t",
+                  f"wot_td_{affordance_name}_form_{form_index}_op_{op_index}")
     op.add_field("op_type", OPERATION_TYPES[op_type])
     if has_next:
         next_op = f"wot_td_{affordance_name}_form_{form_index}_op_{op_index + 1}"
@@ -379,8 +386,8 @@ def generate_operations(structs: List[str], form: dict, index: int, affordance_t
 def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  affordance_name: str, affordance: dict) -> None:
     forms = affordance['forms']
     for index, form in enumerate(forms):
-        struct = c_struct('wot_td_form_t', f'wot_td_{affordance_name}_aff_form_{index}')
-        # struct = [f'wot_td_form_t wot_td_{affordance_name}_aff_form_{index} = {{']
+        struct = c_struct('wot_td_form_t',
+                          f'wot_td_{affordance_name}_aff_form_{index}')
         if "op" in form:
             op = f'&wot_td_{affordance_name}_form_{index}_op_0'
             struct.add_field("op", op)
@@ -407,7 +414,8 @@ def add_interaction_affordance_forms(structs: List[str], affordance_type: str,  
 
 
 def add_interaction_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
-    struct = c_struct("wot_td_int_affordance_t", f'wot_{affordance_name}_int_affordance')
+    struct = c_struct("wot_td_int_affordance_t",
+                      f'wot_{affordance_name}_int_affordance')
     struct.add_field("forms", f"&wot_td_{affordance_name}_aff_form_0")
     struct.insert_into(structs)
     add_interaction_affordance_forms(
@@ -423,14 +431,16 @@ def get_c_boolean(boolean: bool) -> str:
 
 def add_requirements(structs: List[str], schema_name: str, requirements: List[str]) -> None:
     for requirement in requirements:
-        struct = c_struct("wot_td_object_required_t", f"wot_{schema_name}_{requirement}_required")
+        struct = c_struct("wot_td_object_required_t",
+                          f"wot_{schema_name}_{requirement}_required")
         struct.add_field("value", f'"{requirement}"')
         struct.insert_into(structs)
 
 
 def add_data_schema_maps(structs: List[str], schema_name: str, properties: dict) -> None:
     for property_name, property in properties.items():
-        struct = c_struct("wot_td_data_schema_map_t", f"wot_{schema_name}_{property_name}_data_map")
+        struct = c_struct("wot_td_data_schema_map_t",
+                          f"wot_{schema_name}_{property_name}_data_map")
         struct.add_field("key", f'"{property_name}"')
         data_schema = f'&wot_{schema_name}_{property_name}_data_schema'
         struct.add_field("value", data_schema)
@@ -455,7 +465,8 @@ def add_schema_object(structs: List[str], schema_name: str, schema: dict) -> Non
     first_property = list(properties.keys())[0]
     required_properties: List[str] = get_required_properties(schema)
 
-    struct = c_struct("wot_td_object_schema_t", f"wot_{schema_name}_data_schema_obj")
+    struct = c_struct("wot_td_object_schema_t",
+                      f"wot_{schema_name}_data_schema_obj")
     data_map = f'&wot_{schema_name}_{first_property}_data_map'
     struct.add_field('properties', data_map)
 
@@ -494,9 +505,11 @@ def generate_data_schema(structs: List[str], schema_name: str, schema: dict) -> 
 
 def add_specific_affordance(structs: List[str], affordance_type: str, affordance_name: str, affordance: dict) -> None:
     specifier = get_affordance_type_specifier(affordance_type)
-    struct = c_struct(f'wot_td_{specifier}_affordance_t', f'wot_{affordance_name}_affordance')
+    struct = c_struct(f'wot_td_{specifier}_affordance_t',
+                      f'wot_{affordance_name}_affordance')
     struct.add_field("key", f'"{affordance_name}"')
-    struct.add_field("int_affordance", f'&wot_{affordance_name}_int_affordance')
+    struct.add_field("int_affordance",
+                     f'&wot_{affordance_name}_int_affordance')
     if PROPERTIES_NAME in affordance:
         assert affordance_type == PROPERTIES_NAME
         struct.add_field("data_schema", f'&wot_{affordance_name}_data_schema')
@@ -513,11 +526,13 @@ def add_specific_affordance(structs: List[str], affordance_type: str, affordance
 def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
     resource_index = resource_affordance_list.index(affordance_name)
 
-    structs = []
+    structs: List[str] = []
     struct_specifier = get_affordance_type_specifier(affordance_type)
     struct_name = get_affordance_struct_name(affordance_name)
-    struct = c_struct(f"wot_td_coap_{struct_specifier}_affordance_t", struct_name)
-    struct.add_field("coap_resource", f"&{COAP_RESOURCES_NAME}[{resource_index}]")
+    struct = c_struct(f"wot_td_coap_{struct_specifier}_affordance_t",
+                      struct_name)
+    struct.add_field("coap_resource",
+                     f"&{COAP_RESOURCES_NAME}[{resource_index}]")
     struct.add_field("affordance", f"&wot_{affordance_name}_affordance")
     struct.add_field("form", f"&wot_td_{affordance_name}_aff_form_0")
     struct.insert_into(structs)
@@ -533,8 +548,8 @@ def generate_json_serialization(coap_jsons: List[dict]) -> str:
     for coap_json in coap_jsons:
         for affordance_type in AFFORDANCE_TYPES:
             for affordance in coap_json[affordance_type].items():
-                result_elements.append(
-                    generate_affordance_struct(affordance_type, affordance[0], affordance[1]))
+                result_elements.append(generate_affordance_struct(affordance_type, affordance[0],
+                                                                  affordance[1]))
     return SEPERATOR.join(result_elements)
 
 
