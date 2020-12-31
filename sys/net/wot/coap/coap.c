@@ -9,12 +9,12 @@
 #include "net/wot/coap/config.h"
 #include "msg.h"
 
-#define WOT_TD_COAP_AFF_ADD(ptr, func_name)                             \
-    func_name(thing, ptr->affordance);                                  \
-    _add_endpoint_to_int_affordance(                                    \
-        ptr->affordance->int_affordance, ptr->coap_resource);           \
-    _add_method_to_int_affordance(                                      \
-        ptr->affordance->int_affordance, ptr->coap_resource);           \
+#define WOT_TD_COAP_AFF_ADD(ptr, aff, func_name) \
+    func_name(thing, aff);                        \
+    _add_endpoint_to_form(                           \
+        ptr->form, ptr->coap_resource);                \
+    _add_method_to_form(                          \
+        ptr->form, ptr->coap_resource);                \
     return 0;
 
 
@@ -175,37 +175,28 @@ gcoap_listener_t * _find_last_gcoap_listener(void){
 
 //Todo: Add COAP_MATCH_SUBTREE to href.
 //Todo: Possible problem when other module needs to add an additional extension to it. Think about an elegant solution for this.
-void _add_method_to_int_affordance(wot_td_int_affordance_t * affordance, const coap_resource_t * resource){
-    wot_td_form_t *form = affordance->forms;
+void _add_method_to_form(wot_td_form_t * form, const coap_resource_t * resource){
     wot_td_extension_t *extension;
-    while(form != NULL){
-        extension = form->extensions;
-        extension->name = wot_td_coap_binding_context.key;
-        extension->data = &(resource->methods);
-        extension->parser = (wot_td_ser_parser_t) &_wot_td_coap_method_ser;
-        form = form->next;
-    }
+    extension = form->extensions;
+    extension->name = wot_td_coap_binding_context.key;
+    extension->data = &(resource->methods);
+    extension->parser = (wot_td_ser_parser_t) &_wot_td_coap_method_ser;
 }
 
-void _add_endpoint_to_int_affordance(wot_td_int_affordance_t * affordance, const coap_resource_t * resource){
-    wot_td_form_t *form = affordance->forms;
-    while(form != NULL){
-        wot_td_uri_t *href = form->href;
-        href->value = resource->path;
-        form = form->next;
-    }
+void _add_endpoint_to_form(wot_td_form_t * form, const coap_resource_t * resource){
+    form->href->value = resource->path;
 }
 
-int wot_td_coap_prop_add(wot_td_thing_t *thing, wot_td_coap_prop_affordance_t *property){
-    WOT_TD_COAP_AFF_ADD(property, wot_td_thing_prop_add);
+int wot_td_coap_prop_add(wot_td_thing_t *thing, wot_td_coap_prop_affordance_t *coap_aff){
+    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_prop_add);
 }
 
-int wot_td_coap_action_add(wot_td_thing_t *thing, wot_td_coap_action_affordance_t *action){
-    WOT_TD_COAP_AFF_ADD(action, wot_td_thing_action_add);
+int wot_td_coap_action_add(wot_td_thing_t *thing, wot_td_coap_action_affordance_t *coap_aff){
+    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_action_add);
 }
 
-int wot_td_coap_event_add(wot_td_thing_t *thing, wot_td_coap_event_affordance_t *event){
-    WOT_TD_COAP_AFF_ADD(event, wot_td_thing_event_add);
+int wot_td_coap_event_add(wot_td_thing_t *thing, wot_td_coap_event_affordance_t *coap_aff){
+    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_event_add);
 }
 
 void wot_td_coap_server_init(void)
