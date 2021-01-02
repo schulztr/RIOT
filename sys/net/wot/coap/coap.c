@@ -100,6 +100,48 @@ void _wot_td_coap_ser_receiver(const char *c){
     _wot_td_coap_plen += coap_blockwise_put_char(&_wot_td_coap_slicer, _wot_td_coap_buf+_wot_td_coap_plen, (char) *c);
 }
 
+static int get_base_ip_address(char *address_as_string){
+    const int MAX_ADRESSES = 5;
+    netif_t* interface = netif_iter(NULL);
+    ipv6_addr_t* local_address = NULL;
+    ipv6_addr_t* ula_address = NULL;
+
+    while(interface != NULL) {
+        ipv6_addr_t adresses[MAX_ADRESSES];
+        netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, adresses, sizeof(adresses));
+        for (int i = 0; i < MAX_ADRESSES; i++)
+        {
+            ipv6_addr_t* current_address = &adresses[i];
+
+            if (current_address == NULL) {
+                break;
+            }
+            if (ipv6_addr_is_global(current_address)) {
+                ipv6_addr_to_str(address_as_string, current_address, IPV6_ADDR_MAX_STR_LEN);
+                return 0;
+            }
+            else if (ipv6_addr_is_unique_local_unicast(current_address)) {
+                ula_address = current_address;
+            }
+            else if (ipv6_addr_is_unique_local_unicast(current_address)) {
+                local_address = current_address;
+            }
+        }
+        interface = netif_iter(interface);
+    }
+
+    if (ula_address != NULL) {
+        ipv6_addr_to_str(address_as_string, ula_address, IPV6_ADDR_MAX_STR_LEN);
+        return 0;
+    }
+    else if (local_address != NULL) {
+        ipv6_addr_to_str(address_as_string, local_address, IPV6_ADDR_MAX_STR_LEN);
+        return 0;
+    }
+    address_as_string = "example.org";
+    return -1;
+}
+
 static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx){
     (void)ctx;
 
@@ -117,10 +159,14 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .end = _wot_td_coap_slicer.end,
     };
 
+    char address_as_string[IPV6_ADDR_MAX_STR_LEN];
+    get_base_ip_address(address_as_string);
+    puts(address_as_string); // For Debugging
+
     wot_td_uri_t _wot_thing_base = {
             .schema = wot_td_coap_schema,
-            .value = "example.org", // TODO: Get URI from CoAP packet (or somewhere else)
-    };
+            .value = address_as_string,
+    };    
 
     wot_thing.base = &_wot_thing_base;
 
