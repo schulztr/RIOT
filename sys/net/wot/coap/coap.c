@@ -119,7 +119,7 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
 
     wot_td_uri_t _wot_thing_base = {
             .schema = wot_td_coap_schema,
-            .value = "example.org", // TODO: Get URI from CoAP packet
+            .value = "example.org", // TODO: Get URI from CoAP packet (or somewhere else)
     };
 
     wot_thing.base = &_wot_thing_base;
