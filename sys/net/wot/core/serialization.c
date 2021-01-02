@@ -1157,7 +1157,7 @@ void _serialize_link_array(wot_td_serialize_receiver_t receiver, wot_td_link_t *
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
 
-int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t *thing, wot_td_uri_t *base, wot_td_ser_slicer_t *slicer){
+int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t *thing, wot_td_ser_slicer_t *slicer){
     //Todo: Check for all necessary properties, before continue processing
 
     bool has_previous_prop = false;
@@ -1239,10 +1239,10 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
         _serialize_link_array(receiver, thing->links, slicer);
     }
 
-    assert(base != NULL);
+    assert(thing->support != NULL);
     _previous_prop_check(receiver, has_previous_prop, slicer);
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_base_obj_key, sizeof(wot_td_ser_base_obj_key)-1, slicer);
-    _wot_td_fill_json_uri(receiver, base, slicer);
+    _wot_td_fill_json_uri(receiver, thing->base, slicer);
 
     if(thing->support != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);

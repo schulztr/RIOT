@@ -122,7 +122,9 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .value = "example.org", // TODO: Get URI from CoAP packet
     };
 
-    wot_td_serialize_thing((wot_td_serialize_receiver_t) &_wot_td_coap_ser_receiver, &wot_thing, &_wot_thing_base, &_wot_td_slicer);
+    wot_thing.base = &_wot_thing_base;
+
+    wot_td_serialize_thing((wot_td_serialize_receiver_t) &_wot_td_coap_ser_receiver, &wot_thing, &_wot_td_slicer);
 
     coap_block2_finish(&_wot_td_coap_slicer);
 
