@@ -138,7 +138,6 @@ static int get_base_ip_address(char *address_as_string){
         ipv6_addr_to_str(address_as_string, local_address, IPV6_ADDR_MAX_STR_LEN);
         return 0;
     }
-    address_as_string = "example.org";
     return -1;
 }
 
@@ -160,7 +159,7 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
     };
 
     char address_as_string[IPV6_ADDR_MAX_STR_LEN];
-    get_base_ip_address(address_as_string);
+    get_base_ip_address(address_as_string); // TODO: Check return value
     puts(address_as_string); // For Debugging
 
     wot_td_uri_t _wot_thing_base = {
