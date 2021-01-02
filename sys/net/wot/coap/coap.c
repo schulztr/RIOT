@@ -28,14 +28,9 @@ static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
 
 wot_td_thing_t wot_thing;
 
-static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
+// static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
 
 const char wot_td_coap_schema[] = "coap://";
-
-wot_td_uri_t _wot_thing_id = {
-        .schema = wot_td_coap_schema,
-        .value = wot_thing_addr,
-};
 
 //Todo: Implement CoAP RDF bindings.
 //See: https://github.com/w3c/wot-binding-templates/issues/97
@@ -122,7 +117,12 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .end = _wot_td_coap_slicer.end,
     };
 
-    wot_td_serialize_thing((wot_td_serialize_receiver_t) &_wot_td_coap_ser_receiver, &wot_thing, &_wot_td_slicer);
+    wot_td_uri_t _wot_thing_base = {
+            .schema = wot_td_coap_schema,
+            .value = "example.org", // TODO: Get URI from CoAP packet
+    };
+
+    wot_td_serialize_thing((wot_td_serialize_receiver_t) &_wot_td_coap_ser_receiver, &wot_thing, &_wot_thing_base, &_wot_td_slicer);
 
     coap_block2_finish(&_wot_td_coap_slicer);
 

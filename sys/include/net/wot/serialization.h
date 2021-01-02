@@ -11,6 +11,6 @@ typedef struct {
 
 int wot_td_serialize_thing(
         wot_td_serialize_receiver_t receiver, wot_td_thing_t *thing,
-        wot_td_ser_slicer_t *slicer);
+        wot_td_uri_t *base, wot_td_ser_slicer_t *slicer);
 
 #endif //WOT_SERIALIZATION_H
