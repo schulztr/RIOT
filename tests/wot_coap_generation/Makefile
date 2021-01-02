@@ -15,7 +15,7 @@ USEMODULE += xtimer
 ifeq ($(BOARD),esp32-wroom-32)
 # ESP wifi configuration
 USEMODULE += esp_wifi
-WIFI_SSID?=\"Your\ SSID"
+WIFI_SSID?=\"Your\ SSID\"
 WIFI_PASS?=\"Your\ Password\"
 CFLAGS += -DESP_WIFI_SSID=$(WIFI_SSID)
 CFLAGS += -DESP_WIFI_PASS=$(WIFI_PASS)
