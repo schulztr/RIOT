@@ -1,9 +1,10 @@
-#include "net/wot.h"
-#include "net/wot/serialization.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "net/wot.h"
+#include "net/wot/serialization.h"
 
 const char wot_td_ser_obj_context_key[] = "@context";
 const char wot_td_ser_w3c_context_value[] = "https://www.w3.org/2019/wot/td/v1";
