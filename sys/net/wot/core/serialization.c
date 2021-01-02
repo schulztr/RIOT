@@ -1239,7 +1239,7 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
         _serialize_link_array(receiver, thing->links, slicer);
     }
 
-    assert(thing->support != NULL);
+    assert(thing->base != NULL);
     _previous_prop_check(receiver, has_previous_prop, slicer);
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_base_obj_key, sizeof(wot_td_ser_base_obj_key)-1, slicer);
     _wot_td_fill_json_uri(receiver, thing->base, slicer);
