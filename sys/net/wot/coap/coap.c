@@ -123,7 +123,7 @@ static int get_base_ip_address(char *address_as_string){
             else if (ipv6_addr_is_unique_local_unicast(current_address)) {
                 ula_address = current_address;
             }
-            else if (ipv6_addr_is_unique_local_unicast(current_address)) {
+            else if (ipv6_addr_is_link_local(current_address)) {
                 local_address = current_address;
             }
         }
