@@ -101,8 +101,8 @@ void _wot_td_coap_ser_receiver(const char *c){
 static int get_base_ip_address(ipv6_addr_t *res) {
     const int MAX_ADRESSES_TO_CHECK = 5;
     netif_t* interface = NULL;
-    ipv6_addr_t local_address = {{0}};
-    ipv6_addr_t ula_address = {{0}};
+    ipv6_addr_t local_address = {0};
+    ipv6_addr_t ula_address = {0};
     bool link_local_found = false;
     bool ula_found = false;
 
