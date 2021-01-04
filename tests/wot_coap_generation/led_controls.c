@@ -24,17 +24,23 @@ char* get_led_status(void) {
 
 void turn_on_led(void) {
     led_on = true;
+    #ifdef LED_GPIO
     gpio_set(LED_GPIO);
+    #endif
 }
 
 void turn_off_led(void) {
     led_on = false;
+    #ifdef LED_GPIO
     gpio_clear(LED_GPIO);
+    #endif
 }
 
 void toggle_led(void) {
     led_on = !led_on;
+    #ifdef LED_GPIO
     gpio_toggle(LED_GPIO);
+    #endif
 }
 
 // Toggle LED (default GPIO: 33, cf. Makefile)
@@ -69,8 +75,10 @@ int led_cmd(int argc, char **argv) {
 }
 
 void led_cmd_init(void) {
+    #ifdef LED_GPIO
     gpio_init(LED_GPIO, GPIO_OUT);
     gpio_set(LED_GPIO);
+    #endif
     led_on = true;
 }
 
