@@ -105,11 +105,12 @@ static int get_base_ip_address(ipv6_addr_t *res) {
     ipv6_addr_t ula_address = {0};
     bool link_local_found = false;
     bool ula_found = false;
+    int netres;
 
     while ((interface = netif_iter(interface)) != NULL) {
         ipv6_addr_t adresses[MAX_ADRESSES_TO_CHECK];
-        netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, adresses, sizeof(adresses));
-        for (int i = 0; i < MAX_ADRESSES_TO_CHECK; i++)
+        netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, adresses, sizeof(adresses));
+        for (unsigned i = 0; i < (netres / sizeof(ipv6_addr_t)); i++)
         {
             ipv6_addr_t* current_address = &adresses[i];
 
