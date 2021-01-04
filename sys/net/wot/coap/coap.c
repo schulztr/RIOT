@@ -28,8 +28,6 @@ static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
 
 wot_td_thing_t wot_thing;
 
-// static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
-
 const char wot_td_coap_schema[] = "coap://";
 
 //Todo: Implement CoAP RDF bindings.
