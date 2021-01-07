@@ -1,7 +1,11 @@
 {
     "properties": {
         "echo": {
-            "description": "English description",
+            "@type": "Type",
+            "titles": {
+                "de": "Deutscher Titel",
+                "en": "English Title"
+            },
             "descriptions": {
                 "de": "Deutsche Beschreibung",
                 "en": "English description"
@@ -23,7 +27,21 @@
             },
             "required": ["hello"],
             "readOnly": true,
-            "writeOnly": false
+            "writeOnly": false,
+            "uriVariables": {
+                "p": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 16,
+                    "@type": "eg:SomeKindOfAngle"
+                },
+                "d": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "@type": "eg:Direction"
+                }
+            }
         },
         "status": {
             "description": "The current LED status",
