@@ -2,6 +2,7 @@
     "properties": {
         "echo": {
             "@type": "Type",
+            "observable": false,
             "titles": {
                 "de": "Deutscher Titel",
                 "en": "English Title"
@@ -22,7 +23,9 @@
                 "hello": {
                     "type": "string",
                     "readOnly": true,
-                    "writeOnly": false
+                    "writeOnly": false,
+                    "const": "world",
+                    "format": "email"
                 }
             },
             "required": ["hello"],
