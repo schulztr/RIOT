@@ -513,8 +513,8 @@ def add_data_schema_maps(parent: CStruct, schema_name: str, properties: dict) ->
         struct = CStruct(f"{NAMESPACE}_data_schema_map_t",
                          f"{schema_name}_{property_name}_data_map")
         struct.add_field("key", f'"{property_name}"')
-        data_schema = f'&{schema_name}_{property_name}_data_map_data_schema'
-        struct.add_field("value", data_schema)
+        data_schema_name = f'{schema_name}_{property_name}_data_schema'
+        struct.add_field("value", f"&{data_schema_name}")
         if index >= len(properties) - 1:
             struct.add_field("next", "NULL")
         else:
@@ -524,7 +524,7 @@ def add_data_schema_maps(parent: CStruct, schema_name: str, properties: dict) ->
                 "next", f"&{schema_name}_{next_item}_data_map")
         parent.add_child(struct)
 
-        generate_data_schema(struct,  property)
+        generate_data_schema(struct,  property, data_schema_name)
 
 
 def get_required_properties(schema: dict) -> List[str]:
@@ -557,8 +557,7 @@ def add_schema_object(parent: CStruct, schema_name: str, schema: dict) -> None:
     parent.add_child(struct)
 
 
-def generate_data_schema(parent: CStruct, schema: dict) -> None:
-    schema_name = f'{parent.struct_name}_data_schema'
+def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> None:
     json_type = None
     if "properties" in schema:
         json_type = "object"
@@ -568,6 +567,21 @@ def generate_data_schema(parent: CStruct, schema: dict) -> None:
     struct = CStruct(f"{NAMESPACE}_data_schema_t",
                      f"{schema_name}")
     add_type(struct, schema)
+    add_multi_lang(struct, "descriptions", "description",
+                   "descriptions", schema)
+    add_multi_lang(struct, "titles", "title",
+                   "titles", schema)
+    if "const" in schema:
+        struct.add_field("constant", f'"{schema["const"]}"')
+    if "unit" in schema:
+        struct.add_field("unit", f'"{schema["unit"]}"')
+    if "format" in schema:
+        struct.add_field("format", f'"{schema["format"]}"')
+    if "enum" in schema:
+        # TODO: Add wot_td_data_enums_t
+        struct.add_field("enumeration", f'"{schema["enum"]}"')
+    if "oneOf" in schema:
+        struct.add_field("oneOf", 'Test.')  # TODO: Add wot_td_data_schemas
     if json_type is not None:
         struct.add_field("json_type", JSON_TYPES[json_type])
     if "readOnly" in schema:
@@ -578,6 +592,7 @@ def generate_data_schema(parent: CStruct, schema: dict) -> None:
         add_schema_object(struct, schema_name, schema)
     elif json_type == "array":
         pass
+        # TODO: Add other schema types
         # struct.add_field("schema", f'&{schema_name}_array')
     elif json_type == "string":
         pass
@@ -607,9 +622,47 @@ def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_na
                      f'&{schema_name}_int_affordance')
     if PROPERTIES_NAME in affordance:
         assert affordance_type == PROPERTIES_NAME
+        data_schema_name = f'{schema_name}_data_schema'
         struct.add_field(
-            "data_schema", f'&{schema_name}_affordance_data_schema')
-        generate_data_schema(struct, affordance)
+            "data_schema", f'&{data_schema_name}')
+        generate_data_schema(struct, affordance, data_schema_name)
+    if affordance_type == PROPERTIES_NAME and "observable" in affordance:
+        observable: bool = affordance["observable"]
+        assert isinstance(observable, bool)
+        struct.add_field("observable", f'{get_c_boolean(observable)}')
+    elif affordance_type == ACTIONS_NAME:
+        # TODO: Refactor adding fields
+        if "safe" in affordance:
+            safe: bool = affordance["safe"]
+            assert isinstance(safe, bool)
+            struct.add_field("safe", f'{get_c_boolean(safe)}')
+        if "idempotent" in affordance:
+            idempotent: bool = affordance["idempotent"]
+            assert isinstance(idempotent, bool)
+            struct.add_field("idempotent", f'{get_c_boolean(idempotent)}')
+        if "input" in affordance:
+            input_schema_name = f'{schema_name}_input_data_schema'
+            struct.add_field("input", f'&{input_schema_name}')
+            generate_data_schema(struct, affordance, input_schema_name)
+        if "output" in affordance:
+            output_schema_name = f'{schema_name}_output_data_schema'
+            struct.add_field("output", f'&{input_schema_name}')
+            generate_data_schema(struct, affordance, output_schema_name)
+    elif affordance_type == EVENTS_NAME:
+        # TODO: Refactor adding fields
+        if "subscription" in affordance:
+            subscription_schema_name = f'{schema_name}_subscription_data_schema'
+            struct.add_field("subscription", f'&{subscription_schema_name}')
+            generate_data_schema(struct, affordance, subscription_schema_name)
+        if "data" in affordance:
+            data_schema_name = f'{schema_name}_data_data_schema'
+            struct.add_field("data", f'&{data_schema_name}')
+            generate_data_schema(struct, affordance, data_schema_name)
+        if "cancellation" in affordance:
+            cancellation_schema_name = f'{schema_name}_cancellation_data_schema'
+            struct.add_field("cancellation", f'&{input_schema_name}')
+            generate_data_schema(struct, affordance, cancellation_schema_name)
+
     add_interaction_affordance(
         struct, affordance_type, affordance_name, affordance)
     struct.add_field("next", "NULL")
