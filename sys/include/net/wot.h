@@ -246,7 +246,7 @@ typedef struct {
 } wot_td_object_schema_t;
 
 typedef struct {
-    const char *type;
+    wot_td_type_t *type; /** (@)type in specs **/
     wot_td_multi_lang_t *titles;
     wot_td_multi_lang_t *descriptions;
     wot_td_form_t *forms;
