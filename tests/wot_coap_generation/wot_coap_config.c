@@ -84,35 +84,35 @@ wot_td_form_t wot_td_echo_aff_form_0 = {
     .next = NULL,
 };
 
-wot_td_type_t wot_td_echo_uri_variable_d_data_map_data_schema_type_0 = {
+wot_td_type_t wot_td_echo_uri_variable_d_data_schema_type_0 = {
     .value = "eg:Direction",
     .next = NULL,
 };
 
-wot_td_data_schema_t wot_td_echo_uri_variable_d_data_map_data_schema = {
-    .type = &wot_td_echo_uri_variable_d_data_map_data_schema_type_0,
+wot_td_data_schema_t wot_td_echo_uri_variable_d_data_schema = {
+    .type = &wot_td_echo_uri_variable_d_data_schema_type_0,
     .json_type = JSON_TYPE_INTEGER,
 };
 
 wot_td_data_schema_map_t wot_td_echo_uri_variable_d_data_map = {
     .key = "d",
-    .value = &wot_td_echo_uri_variable_d_data_map_data_schema,
+    .value = &wot_td_echo_uri_variable_d_data_schema,
     .next = NULL,
 };
 
-wot_td_type_t wot_td_echo_uri_variable_p_data_map_data_schema_type_0 = {
+wot_td_type_t wot_td_echo_uri_variable_p_data_schema_type_0 = {
     .value = "eg:SomeKindOfAngle",
     .next = NULL,
 };
 
-wot_td_data_schema_t wot_td_echo_uri_variable_p_data_map_data_schema = {
-    .type = &wot_td_echo_uri_variable_p_data_map_data_schema_type_0,
+wot_td_data_schema_t wot_td_echo_uri_variable_p_data_schema = {
+    .type = &wot_td_echo_uri_variable_p_data_schema_type_0,
     .json_type = JSON_TYPE_INTEGER,
 };
 
 wot_td_data_schema_map_t wot_td_echo_uri_variable_p_data_map = {
     .key = "p",
-    .value = &wot_td_echo_uri_variable_p_data_map_data_schema,
+    .value = &wot_td_echo_uri_variable_p_data_schema,
     .next = &wot_td_echo_uri_variable_d_data_map,
 };
 
@@ -153,44 +153,73 @@ wot_td_int_affordance_t wot_td_echo_int_affordance = {
     .forms = &wot_td_echo_aff_form_0,
 };
 
-wot_td_object_required_t wot_td_echo_affordance_data_schema_hello_required = {
+wot_td_object_required_t wot_td_echo_data_schema_hello_required = {
     .value = "hello",
 };
 
-wot_td_data_schema_t wot_td_echo_affordance_data_schema_hello_data_map_data_schema = {
+wot_td_data_schema_t wot_td_echo_data_schema_hello_data_schema = {
+    .constant = "world",
+    .format = "email",
     .json_type = JSON_TYPE_STRING,
     .read_only = true,
     .write_only = false,
 };
 
-wot_td_data_schema_map_t wot_td_echo_affordance_data_schema_hello_data_map = {
+wot_td_data_schema_map_t wot_td_echo_data_schema_hello_data_map = {
     .key = "hello",
-    .value = &wot_td_echo_affordance_data_schema_hello_data_map_data_schema,
+    .value = &wot_td_echo_data_schema_hello_data_schema,
     .next = NULL,
 };
 
-wot_td_object_schema_t wot_td_echo_affordance_data_schema_object = {
-    .properties = &wot_td_echo_affordance_data_schema_hello_data_map,
-    .required = &wot_td_echo_affordance_data_schema_hello_required,
+wot_td_object_schema_t wot_td_echo_data_schema_object = {
+    .properties = &wot_td_echo_data_schema_hello_data_map,
+    .required = &wot_td_echo_data_schema_hello_required,
 };
 
-wot_td_type_t wot_td_echo_affordance_data_schema_type_0 = {
+wot_td_multi_lang_t wot_td_echo_data_schema_title_1 = {
+    .tag = "en",
+    .value = "English Title",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_echo_data_schema_title_0 = {
+    .tag = "de",
+    .value = "Deutscher Titel",
+    .next = &wot_td_echo_data_schema_title_1,
+};
+
+wot_td_multi_lang_t wot_td_echo_data_schema_description_1 = {
+    .tag = "en",
+    .value = "English description",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_echo_data_schema_description_0 = {
+    .tag = "de",
+    .value = "Deutsche Beschreibung",
+    .next = &wot_td_echo_data_schema_description_1,
+};
+
+wot_td_type_t wot_td_echo_data_schema_type_0 = {
     .value = "Type",
     .next = NULL,
 };
 
-wot_td_data_schema_t wot_td_echo_affordance_data_schema = {
-    .type = &wot_td_echo_affordance_data_schema_type_0,
+wot_td_data_schema_t wot_td_echo_data_schema = {
+    .type = &wot_td_echo_data_schema_type_0,
+    .descriptions = &wot_td_echo_data_schema_description_0,
+    .titles = &wot_td_echo_data_schema_title_0,
     .json_type = JSON_TYPE_OBJECT,
     .read_only = true,
     .write_only = false,
-    .schema = &wot_td_echo_affordance_data_schema_object,
+    .schema = &wot_td_echo_data_schema_object,
 };
 
 wot_td_prop_affordance_t wot_td_echo_affordance = {
     .key = "echo",
     .int_affordance = &wot_td_echo_int_affordance,
-    .data_schema = &wot_td_echo_affordance_data_schema,
+    .data_schema = &wot_td_echo_data_schema,
+    .observable = false,
     .next = NULL,
 };
 
@@ -278,9 +307,69 @@ wot_td_int_affordance_t wot_td_toggle_int_affordance = {
     .forms = &wot_td_toggle_aff_form_0,
 };
 
+wot_td_multi_lang_t wot_td_toggle_output_data_schema_title_1 = {
+    .tag = "en",
+    .value = "English title",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_toggle_output_data_schema_title_0 = {
+    .tag = "de",
+    .value = "Deutscher Titel",
+    .next = &wot_td_toggle_output_data_schema_title_1,
+};
+
+wot_td_multi_lang_t wot_td_toggle_output_data_schema_description_1 = {
+    .tag = "en",
+    .value = "English description",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_toggle_output_data_schema_description_0 = {
+    .tag = "de",
+    .value = "Deutsche Beschreibung",
+    .next = &wot_td_toggle_output_data_schema_description_1,
+};
+
+wot_td_data_schema_t wot_td_toggle_output_data_schema = {
+    .descriptions = &wot_td_toggle_output_data_schema_description_0,
+    .titles = &wot_td_toggle_output_data_schema_title_0,
+};
+
+wot_td_multi_lang_t wot_td_toggle_input_data_schema_title_1 = {
+    .tag = "en",
+    .value = "English title",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_toggle_input_data_schema_title_0 = {
+    .tag = "de",
+    .value = "Deutscher Titel",
+    .next = &wot_td_toggle_input_data_schema_title_1,
+};
+
+wot_td_multi_lang_t wot_td_toggle_input_data_schema_description_1 = {
+    .tag = "en",
+    .value = "English description",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_toggle_input_data_schema_description_0 = {
+    .tag = "de",
+    .value = "Deutsche Beschreibung",
+    .next = &wot_td_toggle_input_data_schema_description_1,
+};
+
+wot_td_data_schema_t wot_td_toggle_input_data_schema = {
+    .descriptions = &wot_td_toggle_input_data_schema_description_0,
+    .titles = &wot_td_toggle_input_data_schema_title_0,
+};
+
 wot_td_action_affordance_t wot_td_toggle_affordance = {
     .key = "toggle",
     .int_affordance = &wot_td_toggle_int_affordance,
+    .input = &wot_td_toggle_input_data_schema,
+    .output = &wot_td_toggle_input_data_schema,
     .next = NULL,
 };
 
