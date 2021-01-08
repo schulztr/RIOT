@@ -133,7 +133,7 @@ typedef struct wot_td_media_type_parameter {
 
 typedef struct {
     wot_td_media_type_t media_type;
-    wot_td_media_type_parameter_t *media_type_paramter;
+    wot_td_media_type_parameter_t *media_type_parameter;
 } wot_td_content_type_t;
 
 typedef enum {
