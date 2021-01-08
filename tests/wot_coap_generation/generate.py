@@ -373,7 +373,7 @@ def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
     for coap_resource in coap_resources:
         struct_elements.append(generate_coap_link_param(coap_resource))
 
-    return generate_struct(struct_elements)
+    return f'\n{INDENT}'.join(struct_elements) + "\n};"
 
 
 def get_affordance_type_specifier(affordance_type: str) -> str:
@@ -381,82 +381,112 @@ def get_affordance_type_specifier(affordance_type: str) -> str:
 
 
 def get_affordance_struct_name(affordance_name: str) -> str:
-    return f'wot_coap_{affordance_name}_affordance'
+    return f'{NAMESPACE}_{affordance_name}'
 
 
-def generate_struct(struct_elements: List[str]) -> str:
-    return f'\n{INDENT}'.join(struct_elements) + "\n};"
-
-
-def add_operations_struct(parent: CStruct, form_index: int, has_next: bool, op_type: str, affordance_name: str, affordance_type: str, op_index=0) -> None:
-    assert op_type in ALLOWED_OPERATIONS_BY_TYPE[
-        affordance_type], f"Operation {op_type} not allowed for affordance type {affordance_type}"
-
-    op = CStruct("wot_td_form_op_t",
-                 f"wot_td_{affordance_name}_form_{form_index}_op_{op_index}")
-    op.add_field("op_type", OPERATION_TYPES[op_type])
-    if has_next:
-        next_op = f"wot_td_{affordance_name}_form_{form_index}_op_{op_index + 1}"
-        op.add_field("next", next_op)
-    else:
-        op.add_field("next", "NULL")
-
-    parent.add_child(op)
-
-
-def add_href_struct(parent: CStruct, index: int, affordance_name: str) -> None:
-    struct = CStruct(f"{NAMESPACE}_uri_t",
-                     f"{NAMESPACE}_{affordance_name}_aff_form_href_{index}",
-                     zero_struct=True)
-    parent.add_child(struct)
-
-
-def add_extension_struct(parent: CStruct, index: int, affordance_name: str) -> None:
-    struct = CStruct(f"{NAMESPACE}_extension_t",
-                     f"{NAMESPACE}_{affordance_name}_form_coap_{index}",
-                     zero_struct=True)
-    parent.add_child(struct)
-
-
-def generate_operations(parent: CStruct, form: dict, index: int, affordance_type: str,  affordance_name: str, affordance: dict) -> None:
-    operations = form["op"]
-    if isinstance(operations, str):
-        operations = [operations]
-    for op_index, operation in enumerate(operations):
-        has_next = len(operations) < op_index + 1
-        add_operations_struct(parent, index, has_next,
-                              operation, affordance_name, affordance_type)
-
-
-def add_forms(parent: CStruct, affordance_type: str,  affordance_name: str, affordance: dict) -> None:
-    forms = affordance['forms']
-    prefix = f"{NAMESPACE}_{affordance_name}"
-    for index, form in enumerate(forms):
-        struct = CStruct(f'{NAMESPACE}_form_t',
-                         f'{prefix}_aff_form_{index}')
-        if "op" in form:
-            op = f'&{prefix}_form_{index}_op_0'
-            struct.add_field("op", op)
-        if "contentType" in form:
-            content_type = f'&{prefix}_content_type_{index}'
-            struct.add_field("content_type", content_type)
-        assert "href" in form, f'ERROR: "href" is mandatory in "form" elements! ({affordance_name})'
-        href = f'&{prefix}_aff_form_href_{index}'
-        struct.add_field("href", href)
-        first_extension = f'&{prefix}_form_coap_{index}'
-        struct.add_field("extensions", first_extension)
-        if index + 1 < len(forms):
-            next_form = f"&{prefix}_aff_form_{index + 1}"
-            struct.add_field("next", next_form)
+def add_next_field(index: int, struct: CStruct, struct_name: str, struct_data, use_struct_index=True):
+    if index + 1 < len(struct_data):
+        if use_struct_index:
+            next_struct = f"{struct_name}_{index + 1}"
         else:
-            struct.add_field("next", "NULL")
+            next_struct = struct_name
+        struct.add_reference_field("next", next_struct)
+    else:
+        struct.add_field("next", "NULL")
+
+
+def add_href(parent: CStruct,  form: dict) -> None:
+    href_name = f'{parent.struct_name}_href'
+    assert "href" in form, f'ERROR: "href" is mandatory in "form" elements! ({href_name})'
+    parent.add_reference_field("href", href_name)
+    struct = CStruct(f"{NAMESPACE}_uri_t",
+                     f"{href_name}",
+                     zero_struct=True)
+    parent.add_child(struct)
+
+
+def add_extension(parent: CStruct) -> None:
+    extension_name = f'{parent.struct_name}_extension'
+    parent.add_reference_field("extensions", extension_name)
+    struct = CStruct(f"{NAMESPACE}_extension_t",
+                     extension_name,
+                     zero_struct=True)
+    parent.add_child(struct)
+
+
+def add_operations(parent: CStruct, form: dict, affordance_type: str) -> None:
+    if "op" in form:
+        op_name = f'{parent.struct_name}_op'
+        parent.add_reference_field("op", f"{op_name}_0")
+        operations = form["op"]
+        if isinstance(operations, str):
+            operations = [operations]
+        for op_index, operation in enumerate(operations):
+            assert operation in ALLOWED_OPERATIONS_BY_TYPE[
+                affordance_type], f"Operation {operation} not allowed for affordance type {affordance_type}"
+            op = CStruct(f"{NAMESPACE}_form_op_t",
+                         f"{op_name}_{op_index}")
+            op.add_field("op_type", OPERATION_TYPES[operation])
+            add_next_field(op_index, op, op_name, operations)
+
+            parent.add_child(op)
+
+
+def get_media_type_and_parameters(media_string: str):
+    media_list = [x.strip() for x in media_string.split(";")]
+    media_type = media_list[0]
+    parameters = [tuple(parameter.split("=")) for parameter in media_list[1:]]
+    return media_type, parameters
+
+
+def add_parameters(parent: CStruct, parameters: List[Tuple[str, str]]) -> None:
+    parameter_name = f'{parent.struct_name}_parameter'
+    for index, parameter in enumerate(parameters):
+        struct_name = f'{parameter_name}_{index}'
+        if index == 0:
+            parent.add_reference_field("media_type_parameter", struct_name)
+        key, value = parameter
+        struct = CStruct(f"{NAMESPACE}_media_type_parameter_t",
+                         struct_name)
+        struct.add_field("key", f'"{key}"')
+        struct.add_field("value", f'"{value}"')
+        add_next_field(index, struct, parameter_name,
+                       parameters)
+        parent.add_child(struct)
+
+
+def add_content_type(parent: CStruct, form: dict) -> None:
+    if "contentType" in form:
+        media_type, parameters = get_media_type_and_parameters(
+            form["contentType"])
+        struct_name = f'{parent.struct_name}_content_type'
+
+        struct = CStruct(f'{NAMESPACE}_content_type_t',
+                         struct_name)
+        struct.add_field("media_type", CONTENT_TYPES[media_type])
+        add_parameters(struct, parameters)
 
         parent.add_child(struct)
-        if "op" in form:
-            generate_operations(struct, form, index,
-                                affordance_type, affordance_name, affordance)
-        add_href_struct(struct, index, affordance_name)
-        add_extension_struct(struct, index, affordance_name)
+        parent.add_reference_field("content_type", struct_name)
+
+
+def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None:
+    assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
+    forms = affordance['forms']
+    struct_name = f'{parent.struct_name}_form'
+    for index, form in enumerate(forms):
+        struct = CStruct(f'{NAMESPACE}_form_t',
+                         f'{struct_name}_{index}')
+        parent.add_child(struct)
+        if index == 0:
+            parent.parent.parent.add_reference_field(
+                "form", f"{struct_name}_0")  # FIXME: Move to href
+        add_operations(struct, form, affordance_type)
+        add_content_type(struct, form)
+        add_href(struct, form)
+        add_extension(struct)
+        add_next_field(index, struct, struct_name,
+                       forms)
 
 
 def add_type(parent: CStruct, affordance: dict) -> None:
@@ -467,56 +497,47 @@ def add_type(parent: CStruct, affordance: dict) -> None:
             type_list = [type_list]
 
         # TODO: Also use linked list for definition in struct
-        parent.add_field("type", f"&{struct_name}_0")
+        parent.add_reference_field("type", f"{struct_name}_0")
         for index, type_entry in enumerate(type_list):
             struct = CStruct(f'{NAMESPACE}_type_t',
                              f'{struct_name}_{index}')
             struct.add_field("value", f'"{type_entry}"')
-            if index + 1 >= len(type_list):
-                struct.add_field("next", "NULL")
-            else:
-                struct.add_field("next", f'&{struct_name}_{index + 1}')
+
+            add_next_field(index, struct, struct_name,
+                           type_list)
             parent.add_child(struct)
 
 
 def add_multi_lang(parent: CStruct, field_name: str, struct_name: str, json_key: str, affordance: dict) -> None:
     if json_key in affordance:
-        blah = f'{parent.struct_name}_{struct_name}'
-        parent.add_field(field_name, f"&{blah}_0")
+        complete_struct_name = f'{parent.struct_name}_{struct_name}'
+        parent.add_reference_field(field_name, f"{complete_struct_name}_0")
         multi_lang_dict = affordance[json_key]
         for index, entry in enumerate(multi_lang_dict.items()):
+            tag, value = entry
             struct = CStruct(f'{NAMESPACE}_multi_lang_t',
-                             f'{blah}_{index}')
-            struct.add_field("tag", f'"{entry[0]}"')
-            struct.add_field("value", f'"{entry[1]}"')
-            if index + 1 >= len(multi_lang_dict):
-                struct.add_field("next", "NULL")
-            else:
-                struct.add_field("next", f'&{blah}_{index + 1}')
+                             f'{complete_struct_name}_{index}')
+            struct.add_field("tag", f'"{tag}"')
+            struct.add_field("value", f'"{value}"')
+            add_next_field(index, struct, complete_struct_name,
+                           multi_lang_dict)
             parent.add_child(struct)
 
 
-def add_interaction_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> None:
-    prefix = f"{NAMESPACE}_{affordance_name}"
-    uri_variables_name = f"{prefix}_uri_variable"
+def add_interaction_affordance(parent: CStruct, affordance_type: str,  affordance: dict) -> None:
+    struct_name = f'{parent.struct_name}_int'
     struct = CStruct(f"{NAMESPACE}_int_affordance_t",
-                     f'{prefix}_int_affordance')
+                     struct_name)
+    parent.add_child(struct)
+    parent.add_reference_field("int_affordance", struct_name)
     add_type(struct, affordance)
     add_multi_lang(struct, "descriptions", "description",
                    "descriptions", affordance)
     add_multi_lang(struct, "titles", "title",
                    "titles", affordance)
-    if "uriVariables" in affordance:
-        first_variable_name = list(affordance["uriVariables"])[0]
-        struct.add_field(
-            "uri_variables", f"&{uri_variables_name}_{first_variable_name}_data_map")
-        add_data_schema_maps(struct, uri_variables_name,
-                             affordance["uriVariables"])
-    assert "forms" in affordance, f"ERROR: No forms defined in {affordance_type} affordance {affordance_name}"
-    struct.add_field("forms", f"&{prefix}_aff_form_0")
-
-    add_forms(struct, affordance_type, affordance_name, affordance)
-    parent.add_child(struct)
+    add_data_schema_maps(struct, "uri_variables", "uriVariables",
+                         f"{parent.struct_name}_uri_variable", affordance)
+    add_forms(struct, affordance_type, affordance)
 
 
 def get_c_boolean(boolean: bool) -> str:
@@ -526,34 +547,41 @@ def get_c_boolean(boolean: bool) -> str:
         return "false"
 
 
-def add_requirements(parent: CStruct, schema_name: str, requirements: List[str]) -> None:
-    for requirement in requirements:
-        struct = CStruct("wot_td_object_required_t",
-                         f"{schema_name}_{requirement}_required")
-        struct.add_field("value", f'"{requirement}"')
-        parent.add_child(struct)
+def add_requirements(parent: CStruct, schema_name: str, schema: dict) -> None:
+    required_properties: List[str] = get_required_properties(schema)
+    if required_properties:
+        for index, requirement in enumerate(required_properties):
+            struct_name = f"{schema_name}_{requirement}_required"
+            if index == 0:
+                parent.add_reference_field('required', struct_name)
+            struct = CStruct(f"{NAMESPACE}_object_required_t", struct_name)
+            struct.add_field("value", f'"{requirement}"')
+            parent.add_child(struct)
 
 
-def add_data_schema_maps(parent: CStruct, schema_name: str, properties: dict) -> None:
-    enumerated_properties = list(enumerate(properties.items()))
-    for index, entry in enumerate(properties.items()):
-        property_name = entry[0]
-        property = entry[1]
-        struct = CStruct(f"{NAMESPACE}_data_schema_map_t",
-                         f"{schema_name}_{property_name}_data_map")
-        struct.add_field("key", f'"{property_name}"')
-        data_schema_name = f'{schema_name}_{property_name}_data_schema'
-        struct.add_field("value", f"&{data_schema_name}")
-        if index >= len(properties) - 1:
-            struct.add_field("next", "NULL")
-        else:
-            next_item = enumerated_properties[index + 1][1][0]
-            print(next_item)
-            struct.add_field(
-                "next", f"&{schema_name}_{next_item}_data_map")
-        parent.add_child(struct)
+def add_data_schema_maps(parent: CStruct, field_name: str, json_name: str, schema_name: str, schema: dict) -> None:
+    if json_name in schema:
+        enumerated_properties = list(enumerate(schema[json_name].items()))
+        for index, entry in enumerated_properties:
+            property_name, property = entry
+            data_map_name = f'{schema_name}_{property_name}_data_map'
+            data_schema_name = f'{schema_name}_{property_name}_data_schema'
+            if index == 0:
+                parent.add_reference_field(field_name, data_map_name)
 
-        generate_data_schema(struct,  property, data_schema_name)
+            struct = CStruct(f"{NAMESPACE}_data_schema_map_t",
+                             data_map_name)
+            struct.add_field("key", f'"{property_name}"')
+            struct.add_reference_field("value", data_schema_name)
+            if index + 1 < len(enumerated_properties):
+                next_item = enumerated_properties[index + 1][1][0]
+                struct.add_reference_field("next",
+                                           f"{schema_name}_{next_item}_data_map")
+            else:
+                struct.add_field("next", "NULL")
+            parent.add_child(struct)
+
+            generate_data_schema(struct,  property, data_schema_name)
 
 
 def get_required_properties(schema: dict) -> List[str]:
@@ -567,136 +595,152 @@ def get_required_properties(schema: dict) -> List[str]:
 
 
 def add_schema_object(parent: CStruct, schema_name: str, schema: dict) -> None:
-    parent.add_field("schema", f'&{schema_name}_object')
-    properties = schema['properties']
-    first_property = list(properties.keys())[0]
-    required_properties: List[str] = get_required_properties(schema)
-
+    struct_name = f'{schema_name}_object'
+    parent.add_reference_field("schema", struct_name)
     struct = CStruct(f"{NAMESPACE}_object_schema_t",
                      f"{schema_name}_object")
-    data_map = f'&{schema_name}_{first_property}_data_map'
-    add_data_schema_maps(struct, schema_name, properties)
-    struct.add_field('properties', data_map)
+    add_data_schema_maps(struct, 'properties',
+                         'properties', schema_name, schema)
 
-    if required_properties:
-        required = f'&{schema_name}_{required_properties[0]}_required'
-        struct.add_field('required', required)
-        add_requirements(struct, schema_name, required_properties)
+    add_requirements(struct, schema_name, schema)
 
     parent.add_child(struct)
 
 
-def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> None:
+def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> None:
     json_type = None
     if "properties" in schema:
         json_type = "object"
     elif "type" in schema:
         json_type = schema["type"]
 
+    if json_type is not None:
+        parent.add_field("json_type", JSON_TYPES[json_type])
+
+    struct_name = f"{schema_name}_{json_type}"
+
+    if json_type == "object":
+        add_schema_object(parent, schema_name, schema)
+    elif json_type == "array":
+        struct = CStruct(f"{NAMESPACE}_{json_type}_schema_t",
+                         struct_name)
+        for json_field_name, c_field_name in ARRAY_FIELDS.items():
+            if json_field_name in schema:
+                value = schema[json_field_name]
+                assert isinstance(
+                    value, int) and value >= 0, "Min and max values for arrays must be positive integers!"
+                struct.add_field(c_field_name, str(value))
+            else:
+                struct.add_field(c_field_name, "NULL")
+        add_data_schema_array(struct, "items", "items", schema)
+
+        parent.add_child(struct)
+        parent.add_reference_field("schema", struct_name)
+    elif json_type == "number" or json_type == "integer":
+        struct = CStruct(f"{NAMESPACE}_{json_type}_schema_t",
+                         f"{schema_name}_{json_type}")
+        for field_name in ["minimum", "maximum"]:
+            if field_name in schema:
+                value = schema[field_name]
+                if json_type == "integer":
+                    assert isinstance(
+                        value, int), "Min or max values for integers must also be integers!"
+                struct.add_field(field_name, str(value))
+            else:
+                struct.add_field(field_name, "NULL")
+
+        parent.add_child(struct)
+        parent.add_reference_field("schema", struct_name)
+
+
+def add_data_schema_array(parent: CStruct, field_name: str, json_name: str, schema: dict) -> None:
+    if json_name in schema:
+        struct_name = f'{parent.struct_name}_{field_name}'
+        data_schemas = schema[json_name]
+        assert isinstance(data_schemas, list)
+        for index, entry in enumerate(data_schemas):
+            if index == 0:
+                parent.add_reference_field(field_name, f'{struct_name}_0')
+            struct = CStruct(f"{NAMESPACE}_data_schemas_t",
+                             f'{struct_name}_{index}')
+            struct.add_reference_field(
+                "value", f'{struct_name}_{index}_schema')
+            generate_data_schema(struct,
+                                 entry,
+                                 f'{struct_name}_{index}_schema')
+            add_next_field(index, struct, struct_name, data_schemas)
+            parent.add_child(struct)
+
+
+def add_enumeration(parent: CStruct, schema: dict) -> None:
+    # TODO: Should actually support any type as specified by WoT
+    if "enum" in schema:
+        enum_name = f'{parent.struct_name}_enum'
+        enum_data = schema["enum"]
+        assert isinstance(enum_data, list)
+        for index, entry in enumerate(enum_data):
+            if index == 0:
+                parent.add_reference_field("enumeration", f'{enum_name}_0')
+            struct = CStruct(f"{NAMESPACE}_data_enums_t",
+                             f'{enum_name}_{index}')
+            struct.add_field("value", f'"{entry}"')
+            add_next_field(index, struct, enum_name, enum_data)
+            parent.add_child(struct)
+
+
+def add_data_schema_field(parent: CStruct, field_name: str, json_name: str, schema: dict):
+    if json_name in schema:
+        data_schema_name = f'{parent.struct_name}_{field_name}_data_schema'
+        parent.add_reference_field(field_name, data_schema_name)
+        generate_data_schema(parent, schema, data_schema_name)
+
+
+def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> None:
     struct = CStruct(f"{NAMESPACE}_data_schema_t",
                      f"{schema_name}")
+    parent.add_child(struct)
     add_type(struct, schema)
     add_multi_lang(struct, "descriptions", "description",
                    "descriptions", schema)
     add_multi_lang(struct, "titles", "title",
                    "titles", schema)
-    if "const" in schema:
-        struct.add_field("constant", f'"{schema["const"]}"')
-    if "unit" in schema:
-        struct.add_field("unit", f'"{schema["unit"]}"')
-    if "format" in schema:
-        struct.add_field("format", f'"{schema["format"]}"')
-    if "enum" in schema:
-        # TODO: Add wot_td_data_enums_t
-        struct.add_field("enumeration", f'"{schema["enum"]}"')
-    if "oneOf" in schema:
-        struct.add_field("oneOf", 'Test.')  # TODO: Add wot_td_data_schemas
-    if json_type is not None:
-        struct.add_field("json_type", JSON_TYPES[json_type])
-    if "readOnly" in schema:
-        struct.add_field("read_only", get_c_boolean(schema["readOnly"]))
-    if "writeOnly" in schema:
-        struct.add_field("write_only", get_c_boolean(schema["writeOnly"]))
-    if json_type == "object":
-        add_schema_object(struct, schema_name, schema)
-    elif json_type == "array":
-        pass
-        # TODO: Add other schema types
-        # struct.add_field("schema", f'&{schema_name}_array')
-    elif json_type == "string":
-        pass
-        # struct.add_field("schema", f'&{schema_name}_string')
-    elif json_type == "number":
-        pass
-        # struct.add_field("schema", f'&{schema_name}_number')
-    elif json_type == "integer":
-        pass
-        # struct.add_field("schema", f'&{schema_name}_integer')
-    elif json_type == "boolean":
-        pass
-        # struct.add_field("schema", f'&{schema_name}_boolean')
-    elif json_type == "null":
-        pass
-        # struct.add_field("schema", f'&{schema_name}_null')
-    parent.add_child(struct)
+    struct.add_string_field("constant", "const", schema)
+    struct.add_string_field("unit", "unit", schema)
+    struct.add_string_field("format", "format", schema)
+    add_enumeration(struct, schema)
+    add_data_schema_array(struct, "one_of", "oneOf", schema)
+    add_json_type_schema(struct, schema_name, schema)
+    struct.add_boolean_field("read_only", "readOnly", schema)
+    struct.add_boolean_field("write_only", "writeOnly", schema)
 
 
 def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> None:
-    schema_name = f"{NAMESPACE}_{affordance_name}"
     specifier = get_affordance_type_specifier(affordance_type)
+    struct_name = f"{parent.struct_name}_{specifier}_aff"
     struct = CStruct(f'{NAMESPACE}_{specifier}_affordance_t',
-                     f'{schema_name}_affordance')
+                     struct_name)
+    parent.add_child(struct)
+    parent.add_reference_field("affordance", struct_name)
     struct.add_field("key", f'"{affordance_name}"')
-    struct.add_field("int_affordance",
-                     f'&{schema_name}_int_affordance')
+    add_interaction_affordance(struct, affordance_type, affordance)
     if PROPERTIES_NAME in affordance:
         assert affordance_type == PROPERTIES_NAME
-        data_schema_name = f'{schema_name}_data_schema'
-        struct.add_field(
-            "data_schema", f'&{data_schema_name}')
-        generate_data_schema(struct, affordance, data_schema_name)
-    if affordance_type == PROPERTIES_NAME and "observable" in affordance:
-        observable: bool = affordance["observable"]
-        assert isinstance(observable, bool)
-        struct.add_field("observable", f'{get_c_boolean(observable)}')
+        add_data_schema_field(struct, "properties", "properties", affordance)
+    if affordance_type == PROPERTIES_NAME:
+        struct.add_boolean_field("observable", "observable", affordance)
     elif affordance_type == ACTIONS_NAME:
-        # TODO: Refactor adding fields
-        if "safe" in affordance:
-            safe: bool = affordance["safe"]
-            assert isinstance(safe, bool)
-            struct.add_field("safe", f'{get_c_boolean(safe)}')
-        if "idempotent" in affordance:
-            idempotent: bool = affordance["idempotent"]
-            assert isinstance(idempotent, bool)
-            struct.add_field("idempotent", f'{get_c_boolean(idempotent)}')
-        if "input" in affordance:
-            input_schema_name = f'{schema_name}_input_data_schema'
-            struct.add_field("input", f'&{input_schema_name}')
-            generate_data_schema(struct, affordance, input_schema_name)
-        if "output" in affordance:
-            output_schema_name = f'{schema_name}_output_data_schema'
-            struct.add_field("output", f'&{input_schema_name}')
-            generate_data_schema(struct, affordance, output_schema_name)
+        struct.add_boolean_field("safe", "safe", affordance)
+        struct.add_boolean_field("idempotent", "idempotent", affordance)
+        add_data_schema_field(struct, "input", "input", affordance)
+        add_data_schema_field(struct, "output", "output", affordance)
     elif affordance_type == EVENTS_NAME:
-        # TODO: Refactor adding fields
-        if "subscription" in affordance:
-            subscription_schema_name = f'{schema_name}_subscription_data_schema'
-            struct.add_field("subscription", f'&{subscription_schema_name}')
-            generate_data_schema(struct, affordance, subscription_schema_name)
-        if "data" in affordance:
-            data_schema_name = f'{schema_name}_data_data_schema'
-            struct.add_field("data", f'&{data_schema_name}')
-            generate_data_schema(struct, affordance, data_schema_name)
-        if "cancellation" in affordance:
-            cancellation_schema_name = f'{schema_name}_cancellation_data_schema'
-            struct.add_field("cancellation", f'&{input_schema_name}')
-            generate_data_schema(struct, affordance, cancellation_schema_name)
+        add_data_schema_field(struct, "subscription",
+                              "subscription", affordance)
+        add_data_schema_field(struct, "data", "data", affordance)
+        add_data_schema_field(struct, "cancellation",
+                              "cancellation", affordance)
 
-    add_interaction_affordance(
-        struct, affordance_type, affordance_name, affordance)
-    struct.add_field("next", "NULL")
-
-    parent.add_child(struct)
+    struct.add_field("next", "NULL")  # TODO: Create linked list?
 
 
 def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
@@ -706,11 +750,8 @@ def generate_affordance_struct(affordance_type: str, affordance_name: str, affor
     struct_name = get_affordance_struct_name(affordance_name)
     struct = CStruct(f"{NAMESPACE}_coap_{struct_specifier}_affordance_t",
                      struct_name)
-    struct.add_field("coap_resource",
-                     f"&{COAP_RESOURCES_NAME}[{resource_index}]")
-    struct.add_field("affordance",
-                     f"&{NAMESPACE}_{affordance_name}_affordance")
-    struct.add_field("form", f"&{NAMESPACE}_{affordance_name}_aff_form_0")
+    struct.add_reference_field(
+        "coap_resource", f"{COAP_RESOURCES_NAME}[{resource_index}]")  # TODO: Move to href
 
     add_specific_affordance(struct, affordance_type,
                             affordance_name, affordance)
