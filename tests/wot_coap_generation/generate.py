@@ -83,6 +83,11 @@ JSON_TYPES = {
     "null": "JSON_TYPE_NULL"
 }
 
+ARRAY_FIELDS = {
+    "minItems": "min_items",
+    "maxItems": "max_items",
+}
+
 ALLOWED_OPERATIONS_BY_TYPE = {
     PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
     ACTIONS_NAME: ["invokeaction", ],
