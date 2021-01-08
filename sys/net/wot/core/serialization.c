@@ -579,9 +579,9 @@ void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_t
             _wot_td_fill_json_string(receiver, "", sizeof("")-1, slicer);
             break;
     }
-    if(content_type->media_type_paramter != NULL){
+    if(content_type->media_type_parameter != NULL){
         _wot_td_fill_json_receiver(receiver, ";", 1, slicer);
-        wot_td_media_type_parameter_t *tmp = content_type->media_type_paramter;
+        wot_td_media_type_parameter_t *tmp = content_type->media_type_parameter;
         while(tmp != NULL){
             _wot_td_fill_json_receiver(receiver, tmp->key, strlen(tmp->key), slicer);
             _wot_td_fill_json_receiver(receiver, "=", sizeof("="), slicer);
