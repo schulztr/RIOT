@@ -11,12 +11,18 @@
                 "de": "Deutsche Beschreibung",
                 "en": "English description"
             },
+            "oneOf": [
+                {
+                    "@type": "test"
+                }
+            ],
             "forms": [
                 {
                     "handler_function": "_echo_handler",
                     "op": "readproperty",
                     "href": "/echo",
-                    "cov:methodName": "GET"
+                    "cov:methodName": "GET",
+                    "contentType": "application/json; charset=iso-8859-1"
                 }
             ],
             "properties": {
@@ -25,7 +31,8 @@
                     "readOnly": true,
                     "writeOnly": false,
                     "const": "world",
-                    "format": "email"
+                    "format": "email",
+                    "enum": ["On", "Off", "Error"]
                 }
             },
             "required": ["hello"],
@@ -33,15 +40,22 @@
             "writeOnly": false,
             "uriVariables": {
                 "p": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 16,
+                    "type": "array",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": [
+                        {
+                            "@type": "test"
+                        },
+                        {
+                            "@type": "test2"
+                        }
+                    ],
                     "@type": "eg:SomeKindOfAngle"
                 },
                 "d": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 1,
+                    "type": "number",
+                    "maximum": 1.5,
                     "@type": "eg:Direction"
                 }
             }
@@ -99,7 +113,9 @@
                     "de": "Deutsche Beschreibung",
                     "en": "English description"
                 }
-            }
+            },
+            "idempotent": true,
+            "safe": true
         }
     }
 }
