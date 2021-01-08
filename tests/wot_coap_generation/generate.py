@@ -149,6 +149,7 @@ class CStruct:
         self.first_line = self.__get_first_line(
             struct_type, struct_name, keywords)
         self.children: List[CStruct] = []
+        self.parent = None
         if not zero_struct:
             self.elements = [self.first_line]
 
@@ -191,6 +192,7 @@ class CStruct:
     def add_child(self, child: 'CStruct') -> None:
         assert not self.zero_struct
         self.children.insert(0, child)
+        child.parent = self
 
 
 def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
