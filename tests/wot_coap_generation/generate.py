@@ -66,6 +66,13 @@ OPERATION_TYPES = {
     "writemultipleproperties": "FORM_OP_WRITE_MULTIPLE_PROPERTIES"
 }
 
+CONTENT_TYPES = {
+    "application/json": "CONTENT_TYPE_JSON",
+    "text/plain": "CONTENT_TYPE_TEXT_PLAIN",
+    "application/ld+json": "CONTENT_TYPE_JSON_LD",
+    "text/comma-separated-values": "CONTENT_TYPE_CSV"
+}
+
 JSON_TYPES = {
     "object": "JSON_TYPE_OBJECT",
     "array": "JSON_TYPE_ARRAY",
