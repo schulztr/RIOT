@@ -200,10 +200,6 @@ class CStruct:
         assert not self.zero_struct
         self.elements.append(f"{field},")
 
-    def insert_into(self, structs: List[str], index=0) -> None:
-        struct = self.generate_c_code()
-        structs.insert(index, struct)
-
     def add_child(self, child: 'CStruct') -> None:
         assert not self.zero_struct
         self.children.insert(0, child)
