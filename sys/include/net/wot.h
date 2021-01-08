@@ -86,7 +86,7 @@ typedef struct wot_td_multi_language {
 } wot_td_multi_lang_t;
 
 typedef struct {
-    const char *type;
+    wot_td_type_t *type; /** (@)type in specs **/
     wot_td_multi_lang_t *descriptions;
     wot_td_uri_t *proxy;
     wot_td_sec_scheme_type_t scheme_type;
