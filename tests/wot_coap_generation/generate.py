@@ -176,6 +176,21 @@ class CStruct:
     def __generate_field(self, field_name: str, field_value: str) -> str:
         return f".{field_name} = {field_value},"
 
+    def add_reference_field(self, field_name: str, reference_name: str) -> None:
+        self.add_field(field_name, f'&{reference_name}')
+
+    def add_string_field(self, c_name: str, json_name: str, schema: dict):
+        if json_name in schema:
+            value: str = schema[json_name]
+            assert isinstance(value, str)
+            self.add_field(c_name, f'"{value}"')
+
+    def add_boolean_field(self, c_name: str, json_name: str, schema: dict):
+        if json_name in schema:
+            value: bool = schema[json_name]
+            assert isinstance(value, bool)
+            self.add_field(c_name, get_c_boolean(value))
+
     def add_field(self, field_name: str, field_value: str) -> None:
         assert not self.zero_struct
         field = self.__generate_field(field_name, field_value)
