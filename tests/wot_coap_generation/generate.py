@@ -88,6 +88,24 @@ ARRAY_FIELDS = {
     "maxItems": "max_items",
 }
 
+SECURITY_SCHEMA_TYPE = {
+    "nosec": "SECURITY_SCHEME_NONE",
+    "basic": "SECURITY_SCHEME_BASIC",
+    "digest": "SECURITY_SCHEME_DIGEST",
+    "apikey": "SECURITY_SCHEME_API_KEY",
+    "bearer": "SECURITY_SCHEME_BEARER",
+    "psk": "SECURITY_SCHEME_PSK",
+    "oauth2": "SECURITY_SCHEME_OAUTH2",
+}
+
+SECURITY_SCHEMA_INFORMATION = {
+    "default": "SECURITY_SCHEME_IN_DEFAULT",
+    "header": "SECURITY_SCHEME_IN_HEADER",
+    "query": "SECURITY_SCHEME_IN_QUERY",
+    "body": "SECURITY_SCHEME_IN_BODY",
+    "cookie": "SECURITY_SCHEME_IN_COOKIE",
+}
+
 CONTENT_ENCODINGS = {
     "gzip": "CONTENT_ENCODING_GZIP",
     "compress": "CONTENT_ENCODING_COMPRESS",
