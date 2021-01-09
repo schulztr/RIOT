@@ -22,7 +22,13 @@
                     "op": "readproperty",
                     "href": "/echo",
                     "cov:methodName": "GET",
-                    "contentType": "application/json; charset=iso-8859-1"
+                    "contentType": "application/json; charset=iso-8859-1",
+                    "contentCoding": "gzip",
+                    "security": "basic",
+                    "scopes": "limited",
+                    "response": {
+                        "contentType": "application/json; charset=iso-8859-1"
+                    }
                 }
             ],
             "properties": {
@@ -81,7 +87,8 @@
                     "op": "invokeaction",
                     "handler_function": "_led_toggle_handler",
                     "href": "/led/toggle",
-                    "cov:methodName": "POST"
+                    "cov:methodName": "POST",
+                    "subprotocol": "longpoll"
                 }
             ],
             "titles": {

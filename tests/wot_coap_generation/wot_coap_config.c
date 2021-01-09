@@ -163,7 +163,31 @@ wot_td_data_schema_t wot_td_echo_prop_aff_properties_data_schema = {
 
 wot_td_extension_t wot_td_echo_prop_aff_int_form_0_extension = {0};
 
-wot_td_uri_t wot_td_echo_prop_aff_int_form_0_href = {0};
+wot_td_media_type_parameter_t wot_td_echo_prop_aff_int_form_0_response_content_type_parameter_0 = {
+    .key = "charset",
+    .value = "iso-8859-1",
+    .next = NULL,
+};
+
+wot_td_content_type_t wot_td_echo_prop_aff_int_form_0_response_content_type = {
+    .media_type = CONTENT_TYPE_JSON,
+    .media_type_parameter = &wot_td_echo_prop_aff_int_form_0_response_content_type_parameter_0,
+};
+
+wot_td_expected_res_t wot_td_echo_prop_aff_int_form_0_response = {
+    .content_type = &wot_td_echo_prop_aff_int_form_0_response_content_type,
+};
+
+wot_td_auth_scopes_t wot_td_echo_prop_aff_int_form_0_scope_0 = {
+    .value = "blah",
+    .next = &wot_td_echo_prop_aff_int_form_0_scope_1,
+};
+
+wot_td_security_t wot_td_echo_prop_aff_int_form_0_security_basic = {
+    .key = "basic",
+    .value = &wot_td_security_schema_basic,
+    .next = NULL,
+};
 
 wot_td_media_type_parameter_t wot_td_echo_prop_aff_int_form_0_content_type_parameter_0 = {
     .key = "charset",
@@ -176,6 +200,8 @@ wot_td_content_type_t wot_td_echo_prop_aff_int_form_0_content_type = {
     .media_type_parameter = &wot_td_echo_prop_aff_int_form_0_content_type_parameter_0,
 };
 
+wot_td_uri_t wot_td_echo_prop_aff_int_form_0_href = {0};
+
 wot_td_form_op_t wot_td_echo_prop_aff_int_form_0_op_0 = {
     .op_type = FORM_OP_READ_PROPERTY,
     .next = NULL,
@@ -183,8 +209,12 @@ wot_td_form_op_t wot_td_echo_prop_aff_int_form_0_op_0 = {
 
 wot_td_form_t wot_td_echo_prop_aff_int_form_0 = {
     .op = &wot_td_echo_prop_aff_int_form_0_op_0,
-    .content_type = &wot_td_echo_prop_aff_int_form_0_content_type,
     .href = &wot_td_echo_prop_aff_int_form_0_href,
+    .content_type = &wot_td_echo_prop_aff_int_form_0_content_type,
+    .content_encoding = CONTENT_ENCODING_GZIP,
+    .securtiy = &wot_td_echo_prop_aff_int_form_0_security_basic,
+    .scopes = &wot_td_echo_prop_aff_int_form_0_scope_0,
+    .expected_response = &wot_td_echo_prop_aff_int_form_0_response,
     .extensions = &wot_td_echo_prop_aff_int_form_0_extension,
     .next = NULL,
 };
@@ -413,6 +443,7 @@ wot_td_form_op_t wot_td_toggle_action_aff_int_form_0_op_0 = {
 wot_td_form_t wot_td_toggle_action_aff_int_form_0 = {
     .op = &wot_td_toggle_action_aff_int_form_0_op_0,
     .href = &wot_td_toggle_action_aff_int_form_0_href,
+    .sub_protocol = "longpoll",
     .extensions = &wot_td_toggle_action_aff_int_form_0_extension,
     .next = NULL,
 };
