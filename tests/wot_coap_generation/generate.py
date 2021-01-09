@@ -102,6 +102,18 @@ ALLOWED_OPERATIONS_BY_TYPE = {
     EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
 }
 
+SECURITY_DEFINITIONS: dict = {
+    "basic": {
+        "scheme": "basic",
+        "in": "query",
+        "name": "querykey",
+        "description": "Basic sec schema",
+        "descriptions": {
+            "en": "Basic sec schema"
+        }
+    },
+}
+
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
 extern_functions: List[str] = []
@@ -483,6 +495,33 @@ def add_content_coding(struct: CStruct, form: dict) -> None:
         struct.add_field("content_encoding", content_coding_enum)
 
 
+def add_security(parent: CStruct, form: dict) -> None:
+    if "security" in form:
+        securities = form["security"]
+        if isinstance(securities, str):
+            securities = [securities]
+        enumerated_securities = list(enumerate(securities))
+        for index, security in enumerated_securities:
+            assert security in SECURITY_DEFINITIONS
+            struct_name = f'{parent.struct_name}_security_{security}'
+            struct = CStruct(f"{NAMESPACE}_security_t",
+                             struct_name)
+            parent.add_child(struct)
+            if index == 0:
+                parent.add_reference_field("securtiy", struct_name)
+            struct.add_field("key", f'"{security}"')
+            struct.add_reference_field(
+                "value", f'{NAMESPACE}_security_schema_{security}')
+
+            if index + 1 < len(enumerated_securities):
+                next_item = enumerated_securities[index + 1][1]
+                print(next_item)
+                struct.add_reference_field("next",
+                                           f'{parent.struct_name}_security_{next_item}')
+            else:
+                struct.add_field("next", "NULL")
+
+
 def add_scopes(parent: CStruct, form: dict) -> None:
     if "scopes" in form:
         scopes = form["scopes"]
@@ -529,6 +568,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_content_type(struct, form)
         add_content_coding(struct, form)
         struct.add_string_field("sub_protocol", "subprotocol", form)
+        add_security(struct, form)
         add_scopes(struct, form)
         add_response(struct, form)
         add_extension(struct)
