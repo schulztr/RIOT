@@ -1,29 +1,70 @@
 {
     "properties": {
         "echo": {
-            "description": "English description",
+            "@type": "Type",
+            "observable": false,
+            "titles": {
+                "de": "Deutscher Titel",
+                "en": "English Title"
+            },
             "descriptions": {
                 "de": "Deutsche Beschreibung",
                 "en": "English description"
             },
+            "oneOf": [
+                {
+                    "@type": "test"
+                }
+            ],
             "forms": [
                 {
                     "handler_function": "_echo_handler",
                     "op": "readproperty",
                     "href": "/echo",
-                    "cov:methodName": "GET"
+                    "cov:methodName": "GET",
+                    "contentType": "application/json; charset=iso-8859-1",
+                    "contentCoding": "gzip",
+                    "security": "basic",
+                    "scopes": "limited",
+                    "response": {
+                        "contentType": "application/json; charset=iso-8859-1"
+                    }
                 }
             ],
             "properties": {
                 "hello": {
                     "type": "string",
                     "readOnly": true,
-                    "writeOnly": false
+                    "writeOnly": false,
+                    "const": "world",
+                    "format": "email",
+                    "enum": ["On", "Off", "Error"]
                 }
             },
             "required": ["hello"],
             "readOnly": true,
-            "writeOnly": false
+            "writeOnly": false,
+            "uriVariables": {
+                "p": {
+                    "type": "array",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": [
+                        {
+                            "@type": "test"
+                        },
+                        {
+                            "@type": "test2"
+                        }
+                    ],
+                    "@type": "eg:SomeKindOfAngle"
+                },
+                "d": {
+                    "type": "number",
+                    "maximum": 1.5,
+                    "@type": "eg:Direction"
+                }
+            }
         },
         "status": {
             "description": "The current LED status",
@@ -46,7 +87,8 @@
                     "op": "invokeaction",
                     "handler_function": "_led_toggle_handler",
                     "href": "/led/toggle",
-                    "cov:methodName": "POST"
+                    "cov:methodName": "POST",
+                    "subprotocol": "longpoll"
                 }
             ],
             "titles": {
@@ -78,7 +120,9 @@
                     "de": "Deutsche Beschreibung",
                     "en": "English description"
                 }
-            }
+            },
+            "idempotent": true,
+            "safe": true
         }
     }
 }

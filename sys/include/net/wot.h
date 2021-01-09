@@ -86,7 +86,7 @@ typedef struct wot_td_multi_language {
 } wot_td_multi_lang_t;
 
 typedef struct {
-    const char *type;
+    wot_td_type_t *type; /** (@)type in specs **/
     wot_td_multi_lang_t *descriptions;
     wot_td_uri_t *proxy;
     wot_td_sec_scheme_type_t scheme_type;
@@ -133,7 +133,7 @@ typedef struct wot_td_media_type_parameter {
 
 typedef struct {
     wot_td_media_type_t media_type;
-    wot_td_media_type_parameter_t *media_type_paramter;
+    wot_td_media_type_parameter_t *media_type_parameter;
 } wot_td_content_type_t;
 
 typedef enum {
@@ -246,7 +246,7 @@ typedef struct {
 } wot_td_object_schema_t;
 
 typedef struct {
-    const char *type;
+    wot_td_type_t *type; /** (@)type in specs **/
     wot_td_multi_lang_t *titles;
     wot_td_multi_lang_t *descriptions;
     wot_td_form_t *forms;
