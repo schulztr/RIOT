@@ -525,8 +525,8 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
             parent.parent.parent.add_reference_field(
                 "form", f"{struct_name}_0")  # FIXME: Move to href
         add_operations(struct, form, affordance_type)
-        add_content_type(struct, form)
         add_href(struct, form)
+        add_content_type(struct, form)
         add_content_coding(struct, form)
         struct.add_string_field("sub_protocol", "subprotocol", form)
         add_scopes(struct, form)
