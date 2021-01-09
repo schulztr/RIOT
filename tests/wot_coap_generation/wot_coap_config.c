@@ -179,7 +179,7 @@ wot_td_expected_res_t wot_td_echo_prop_aff_int_form_0_response = {
 };
 
 wot_td_auth_scopes_t wot_td_echo_prop_aff_int_form_0_scope_0 = {
-    .value = "blah",
+    .value = "limited",
     .next = &wot_td_echo_prop_aff_int_form_0_scope_1,
 };
 
