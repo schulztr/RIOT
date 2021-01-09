@@ -88,6 +88,14 @@ ARRAY_FIELDS = {
     "maxItems": "max_items",
 }
 
+CONTENT_ENCODINGS = {
+    "gzip": "CONTENT_ENCODING_GZIP",
+    "compress": "CONTENT_ENCODING_COMPRESS",
+    "deflate": "CONTENT_ENCODING_DEFLATE",
+    "identity": "CONTENT_ENCODING_IDENTITY",
+    "br": "CONTENT_ENCODING_BROTLI",
+}
+
 ALLOWED_OPERATIONS_BY_TYPE = {
     PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
     ACTIONS_NAME: ["invokeaction", ],
@@ -466,6 +474,15 @@ def add_content_type(parent: CStruct, form: dict) -> None:
         parent.add_reference_field("content_type", struct_name)
 
 
+def add_content_coding(struct: CStruct, form: dict) -> None:
+    if "contentCoding" in form:
+        content_coding = form["contentCoding"]
+        content_coding_enum = "CONTENT_ENCODING_NONE"
+        if content_coding in CONTENT_ENCODINGS:
+            content_coding_enum = CONTENT_ENCODINGS[content_coding]
+        struct.add_field("content_encoding", content_coding_enum)
+
+
 def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None:
     assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
     forms = affordance['forms']
@@ -480,6 +497,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_operations(struct, form, affordance_type)
         add_content_type(struct, form)
         add_href(struct, form)
+        add_content_coding(struct, form)
         add_extension(struct)
         add_next_field(index, struct, struct_name,
                        forms)
