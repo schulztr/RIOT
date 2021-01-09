@@ -483,6 +483,24 @@ def add_content_coding(struct: CStruct, form: dict) -> None:
         struct.add_field("content_encoding", content_coding_enum)
 
 
+def add_scopes(parent: CStruct, form: dict) -> None:
+    if "scopes" in form:
+        scopes = form["scopes"]
+        if isinstance(scopes, str):
+            scopes = [scopes]
+        scope_name = f'{parent.struct_name}_scope'
+        for index, scope in enumerate(scopes):
+            struct_name = f'{scope_name}_{index}'
+            struct = CStruct(f"{NAMESPACE}_auth_scopes_t",
+                             struct_name)
+            if index == 0:
+                parent.add_reference_field("scopes",
+                                           struct_name)
+            struct.add_field("value", f'"{scope}"')
+            add_next_field(index, struct, scope_name, form)
+            parent.add_child(struct)
+
+
 def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None:
     assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
     forms = affordance['forms']
@@ -498,6 +516,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_content_type(struct, form)
         add_href(struct, form)
         add_content_coding(struct, form)
+        add_scopes(struct, form)
         add_extension(struct)
         add_next_field(index, struct, struct_name,
                        forms)
