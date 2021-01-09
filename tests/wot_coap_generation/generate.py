@@ -501,6 +501,18 @@ def add_scopes(parent: CStruct, form: dict) -> None:
             parent.add_child(struct)
 
 
+def add_response(parent: CStruct, form: dict) -> None:
+    if "response" in form:
+        response = form["response"]
+        struct_name = f'{parent.struct_name}_response'
+        struct = CStruct(f"{NAMESPACE}_expected_res_t",
+                         struct_name)
+        parent.add_reference_field("expected_response",
+                                   struct_name)
+        add_content_type(struct, response)
+        parent.add_child(struct)
+
+
 def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None:
     assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
     forms = affordance['forms']
@@ -517,6 +529,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_href(struct, form)
         add_content_coding(struct, form)
         add_scopes(struct, form)
+        add_response(struct, form)
         add_extension(struct)
         add_next_field(index, struct, struct_name,
                        forms)
