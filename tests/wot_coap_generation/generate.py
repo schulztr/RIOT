@@ -528,6 +528,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_content_type(struct, form)
         add_href(struct, form)
         add_content_coding(struct, form)
+        struct.add_string_field("sub_protocol", "subprotocol", form)
         add_scopes(struct, form)
         add_response(struct, form)
         add_extension(struct)
