@@ -579,6 +579,8 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
                          f'{struct_name}_{index}')
         parent.add_child(struct)
         if index == 0:
+            parent.add_reference_field(
+                "forms", f"{struct_name}_0")
             parent.parent.parent.add_reference_field(
                 "form", f"{struct_name}_0")  # FIXME: Move to href
         add_operations(struct, form, affordance_type)
