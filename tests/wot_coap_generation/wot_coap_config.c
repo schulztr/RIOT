@@ -185,7 +185,7 @@ wot_td_auth_scopes_t wot_td_echo_prop_aff_int_form_0_scope_0 = {
 
 wot_td_security_t wot_td_echo_prop_aff_int_form_0_security_basic = {
     .key = "basic",
-    .value = &wot_td_security_schema_basic,
+    .value = &wot_td_security_schema_basic_sec_scheme,
     .next = NULL,
 };
 
@@ -219,8 +219,10 @@ wot_td_form_t wot_td_echo_prop_aff_int_form_0 = {
     .next = NULL,
 };
 
+double wot_td_echo_prop_aff_uri_variable_d_data_schema_number_maximum = 2.0;
+
 wot_td_number_schema_t wot_td_echo_prop_aff_uri_variable_d_data_schema_number = {
-    .maximum = 2.0,
+    .maximum = &wot_td_echo_prop_aff_uri_variable_d_data_schema_number_maximum,
 };
 
 wot_td_type_t wot_td_echo_prop_aff_uri_variable_d_data_schema_type_0 = {
@@ -268,9 +270,12 @@ wot_td_data_schemas_t wot_td_echo_prop_aff_uri_variable_p_data_schema_array_item
     .next = &wot_td_echo_prop_aff_uri_variable_p_data_schema_array_items_1,
 };
 
+uint32_t wot_td_echo_prop_aff_uri_variable_p_data_schema_array_min_items = 0;
+uint32_t wot_td_echo_prop_aff_uri_variable_p_data_schema_array_max_items = 16;
+
 wot_td_array_schema_t wot_td_echo_prop_aff_uri_variable_p_data_schema_array = {
-    .min_items = 0,
-    .max_items = 16,
+    .min_items = &wot_td_echo_prop_aff_uri_variable_p_data_schema_array_min_items,
+    .max_items = &wot_td_echo_prop_aff_uri_variable_p_data_schema_array_max_items,
     .items = &wot_td_echo_prop_aff_uri_variable_p_data_schema_array_items_0,
 };
 

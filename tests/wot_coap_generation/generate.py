@@ -187,6 +187,7 @@ class CStruct:
         self.first_line = self.__get_first_line(
             struct_type, struct_name, keywords)
         self.children: List[CStruct] = []
+        self.variables: List[Tuple[str, str, str]] = []
         self.parent = None
         if not zero_struct:
             self.elements = [self.first_line]
@@ -206,8 +207,32 @@ class CStruct:
         else:
             return f'\n{INDENT}'.join(self.elements) + "\n};"
 
+    def __add_variable(self, variable_type: str, variable_name: str, variable_value: str):
+        reference_name = f'{self.struct_name}_{variable_name}'
+        variable = variable_type, reference_name, variable_value
+        self.add_reference_field(variable_name, reference_name)
+        self.variables.append(variable)
+
+    def add_double(self, variable_name: str, value: float):
+        self.__add_variable("double", variable_name, str(float(value)))
+
+    def add_integer(self, variable_name: str, value: int):
+        self.__add_variable("uint32_t", variable_name, str(int(value)))
+
+    def __variable_to_string(self, pointer):
+        variable_type, variable_name, variable_value = pointer
+        return f'{variable_type} {variable_name} = {variable_value};'
+
+    def generate_variable_pointers(self) -> str:
+        variable_list = []
+        for variable in self.variables:
+            variable_list.append(self.__variable_to_string(variable))
+        return "\n".join(variable_list)
+
     def generate_c_code(self) -> str:
         code = [child.generate_c_code() for child in self.children]
+        if (variable_pointers := self.generate_variable_pointers()):
+            code.append(variable_pointers)
         code.append(self.generate_struct())
         return SEPERATOR.join(code)
 
@@ -734,7 +759,7 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
         for json_field_name, c_field_name in ARRAY_FIELDS.items():
             if json_field_name in schema:
                 value = int(schema[json_field_name])
-                struct.add_field(c_field_name, str(value))
+                struct.add_integer(c_field_name, value)
         add_data_schema_array(struct, "items", "items", schema)
 
         parent.add_child(struct)
@@ -746,10 +771,9 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
             if field_name in schema:
                 value = schema[field_name]
                 if json_type == "integer":
-                    value = int(value)
+                    struct.add_integer(field_name, value)
                 else:
-                    value = float(value)
-                struct.add_field(field_name, str(value))
+                    struct.add_double(field_name, value)
 
         parent.add_child(struct)
         parent.add_reference_field("schema", struct_name)
