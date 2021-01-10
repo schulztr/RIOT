@@ -89,7 +89,6 @@ ARRAY_FIELDS = {
 }
 
 SECURITY_SCHEMA_TYPE = {
-    "nosec": "SECURITY_SCHEME_NONE",
     "basic": "SECURITY_SCHEME_BASIC",
     "digest": "SECURITY_SCHEME_DIGEST",
     "apikey": "SECURITY_SCHEME_API_KEY",
@@ -99,11 +98,25 @@ SECURITY_SCHEMA_TYPE = {
 }
 
 SECURITY_SCHEMA_INFORMATION = {
-    "default": "SECURITY_SCHEME_IN_DEFAULT",
     "header": "SECURITY_SCHEME_IN_HEADER",
     "query": "SECURITY_SCHEME_IN_QUERY",
     "body": "SECURITY_SCHEME_IN_BODY",
     "cookie": "SECURITY_SCHEME_IN_COOKIE",
+}
+
+
+SECURITY_SCHEMA_QUALITY_OF_PROTECTION = {
+    "auth": "SECURITY_DIGEST_QOP_AUTH",
+    "auth-int": "SECURITY_DIGEST_QOP_AUTH_INT",
+}
+
+SECURITY_SCHEMA_STRUCT_SPECIFIERS = {
+    "basic": "basic",
+    "digest": "digest",
+    "apikey": "api_key",
+    "bearer": "bearer",
+    "psk": "psk",
+    "oauth2": "oauth2",
 }
 
 CONTENT_ENCODINGS = {
@@ -125,9 +138,10 @@ SECURITY_DEFINITIONS: dict = {
         "scheme": "basic",
         "in": "query",
         "name": "querykey",
-        "description": "Basic sec schema",
+        "proxy": "https://example.org",
         "descriptions": {
-            "en": "Basic sec schema"
+            "en": "Basic sec schema",
+            "de": "Einfaches Sicherheitsschema",
         }
     },
 }
@@ -201,7 +215,7 @@ class CStruct:
     def __generate_zero_struct(self):
         return f"{self.first_line}0}};"
 
-    def generate_struct(self):
+    def generate_struct(self) -> str:
         if self.zero_struct:
             return self.__generate_zero_struct()
         else:
@@ -212,6 +226,9 @@ class CStruct:
         variable = variable_type, reference_name, variable_value
         self.add_reference_field(variable_name, reference_name)
         self.variables.append(variable)
+
+    def add_string(self, variable_name: str, value: str):
+        self.__add_variable("char", f'{variable_name}[]', value)
 
     def add_double(self, variable_name: str, value: float):
         self.__add_variable("double", variable_name, str(float(value)))
@@ -554,7 +571,7 @@ def add_security(parent: CStruct, form: dict) -> None:
                 parent.add_reference_field("security", struct_name)
             struct.add_field("key", f'"{security}"')
             struct.add_reference_field(
-                "value", f'{NAMESPACE}_security_schema_{security}')
+                "value", f'{NAMESPACE}_security_schema_{security}_sec_scheme')
 
             if index + 1 < len(enumerated_securities):
                 next_item = enumerated_securities[index + 1][1]
@@ -921,6 +938,103 @@ def generate_init_function(coap_jsons: List[dict]) -> str:
     return result
 
 
+def add_uri(parent: CStruct, c_field_name: str, json_field_name: str, data):
+    if json_field_name in data:
+        struct_name = f'{parent.struct_name}_{c_field_name}'
+        struct = CStruct(f"{NAMESPACE}_uri_t",
+                         struct_name)
+        # TODO: Also add scheme?
+        struct.add_field("value", f'"{data[json_field_name]}"')
+
+        parent.add_child(struct)
+        parent.add_reference_field(c_field_name, struct_name)
+
+
+def add_in_and_name_information(struct: CStruct, definition):
+    if "name" in definition:
+        struct.add_field("name", f'"{definition["name"]}"')
+    if "in" in definition and definition["in"] in SECURITY_SCHEMA_INFORMATION:
+        in_value = SECURITY_SCHEMA_INFORMATION[definition["in"]]
+    else:
+        in_value = "SECURITY_SCHEME_IN_DEFAULT"
+    struct.add_field("in", in_value)
+
+
+def add_security_information(parent: CStruct, definition):
+    scheme = definition["scheme"]
+    if scheme in SECURITY_SCHEMA_STRUCT_SPECIFIERS:
+        specifier = SECURITY_SCHEMA_STRUCT_SPECIFIERS[scheme]
+        struct_name = f'{parent.struct_name}_definitions'
+        struct = CStruct(f"{NAMESPACE}_{specifier}_sec_scheme_t",
+                         struct_name)
+        if scheme == "digest":
+            if "qop" in definition and definition["qop"] in SECURITY_SCHEMA_QUALITY_OF_PROTECTION:
+                qop_value = SECURITY_SCHEMA_QUALITY_OF_PROTECTION[definition["qop"]]
+            else:
+                qop_value = "SECURITY_SCHEME_IN_DEFAULT"
+            struct.add_field("qop", qop_value)
+        elif scheme == "oauth2":
+            assert "flow" in definition
+            struct.add_field("flow", f'"{definition["flow"]}"')
+            add_scopes(struct, definition)
+            add_uri(struct, "token", "token", definition)
+            add_uri(struct, "refresh", "refresh", definition)
+        elif scheme == "psk" and "identity" in definition:
+            struct.add_field("identity", f'"{definition["identity"]}"')
+        elif scheme == "bearer":
+            for field in ["alg", "format"]:
+                if field in definition:
+                    struct.add_field(field, f'"{definition[field]}"')
+
+        if scheme in ["oauth2", "bearer"]:
+            add_uri(struct, "authorization", "authorization", definition)
+        if scheme in ["bearer", "apikey", "digest", "basic"]:
+            add_in_and_name_information(struct, definition)
+
+        parent.add_reference_field("scheme", struct_name)
+        parent.add_child(struct)
+
+
+def add_sec_schema(parent: CStruct, definition):
+    assert "scheme" in definition
+    scheme_type = definition["scheme"]
+    struct_name = f'{parent.struct_name}_sec_scheme'
+    struct = CStruct(f"{NAMESPACE}_sec_scheme_t",
+                     struct_name)
+    if scheme_type in SECURITY_SCHEMA_TYPE:
+        schema_enum = SECURITY_SCHEMA_TYPE[scheme_type]
+    else:
+        schema_enum = "SECURITY_SCHEME_NONE"
+    struct.add_field("scheme_type", schema_enum)
+    add_type(struct, definition)
+    add_uri(struct, "proxy", "proxy", definition)
+    add_multi_lang(struct, "descriptions", "description",
+                   "descriptions", definition)
+    add_multi_lang(struct, "titles", "title",
+                   "titles", definition)
+    if scheme_type in SECURITY_SCHEMA_STRUCT_SPECIFIERS:
+        add_security_information(struct, definition)
+    parent.add_child(struct)
+    parent.add_reference_field("value", struct_name)
+
+
+def generate_security_definitions():
+    result_elements: List[str] = []
+    enumerated_definitions = list(enumerate(SECURITY_DEFINITIONS.items()))
+    for index, (name, definition) in enumerated_definitions:
+        prefix = f'{NAMESPACE}_security_schema'
+        struct = CStruct(f"{NAMESPACE}_security_t",
+                         f'{prefix}_{name}')
+        struct.add_field("key", f'"{name}"')
+        add_sec_schema(struct, definition)
+        # struct.add_reference_field("value", )
+        result_elements.append(struct.generate_c_code())
+
+        print(definition)
+
+    return SEPERATOR.join(result_elements)
+
+
 def add_to_result(result_element: str, result_elements: List[str]):
     if result_element:
         result_elements.append(result_element)
@@ -937,6 +1051,7 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     add_to_result(generate_coap_link_params(coap_resources), result_elements)
     add_to_result(COAP_LINK_ENCODER, result_elements)
     add_to_result(generate_coap_listener(), result_elements)
+    add_to_result(generate_security_definitions(), result_elements)
     add_to_result(generate_json_serialization(coap_jsons), result_elements)
     add_to_result(generate_init_function(coap_jsons), result_elements)
 
