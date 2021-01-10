@@ -733,12 +733,8 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
                          struct_name)
         for json_field_name, c_field_name in ARRAY_FIELDS.items():
             if json_field_name in schema:
-                value = schema[json_field_name]
-                assert isinstance(
-                    value, int) and value >= 0, "Min and max values for arrays must be positive integers!"
+                value = int(schema[json_field_name])
                 struct.add_field(c_field_name, str(value))
-            else:
-                struct.add_field(c_field_name, "NULL")
         add_data_schema_array(struct, "items", "items", schema)
 
         parent.add_child(struct)
@@ -750,11 +746,10 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
             if field_name in schema:
                 value = schema[field_name]
                 if json_type == "integer":
-                    assert isinstance(
-                        value, int), "Min or max values for integers must also be integers!"
+                    value = int(value)
+                else:
+                    value = float(value)
                 struct.add_field(field_name, str(value))
-            else:
-                struct.add_field(field_name, "NULL")
 
         parent.add_child(struct)
         parent.add_reference_field("schema", struct_name)
