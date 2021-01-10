@@ -172,6 +172,10 @@ def write_to_c_file(result) -> None:
     f.close()
 
 
+def remove_all_white_space(input: str) -> str:
+    return input.replace(" ", "_")
+
+
 def validate_coap_json(coap_jsons: dict) -> None:
     # TODO: Add actual validator for (different types of) affordances
     assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
@@ -1022,15 +1026,17 @@ def generate_security_definitions():
     enumerated_definitions = list(enumerate(SECURITY_DEFINITIONS.items()))
     for index, (name, definition) in enumerated_definitions:
         prefix = f'{NAMESPACE}_security_schema'
+        suffix = remove_all_white_space(name)
         struct = CStruct(f"{NAMESPACE}_security_t",
-                         f'{prefix}_{name}')
-        struct.add_field("key", f'"{name}"')
+                         f'{prefix}_{suffix}')
+        struct.add_field("key", f'"{suffix}"')
         add_sec_schema(struct, definition)
 
         if index + 1 < len(enumerated_definitions):
-            next_item = enumerated_definitions[index + 1][1][0]
+            next_name = enumerated_definitions[index + 1][1][0]
+            next_suffix = remove_all_white_space(next_name)
             struct.add_reference_field("next",
-                                       f'{prefix}_{next_item}')
+                                       f'{prefix}_{next_suffix}')
         else:
             struct.add_field("next", "NULL")
         result_elements.insert(0, struct.generate_c_code())

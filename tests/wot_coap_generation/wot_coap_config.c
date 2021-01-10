@@ -99,6 +99,7 @@ wot_td_sec_scheme_t wot_td_security_schema_basic_sec_scheme = {
 wot_td_security_t wot_td_security_schema_basic = {
     .key = "basic",
     .value = &wot_td_security_schema_basic_sec_scheme,
+    .next = &wot_td_security_schema_digest_test,
 };
 
 wot_td_object_required_t wot_td_echo_prop_aff_data_schema_data_schema_hello_required = {
