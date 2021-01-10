@@ -526,7 +526,7 @@ def add_security(parent: CStruct, form: dict) -> None:
                              struct_name)
             parent.add_child(struct)
             if index == 0:
-                parent.add_reference_field("securtiy", struct_name)
+                parent.add_reference_field("security", struct_name)
             struct.add_field("key", f'"{security}"')
             struct.add_reference_field(
                 "value", f'{NAMESPACE}_security_schema_{security}')
@@ -830,7 +830,7 @@ def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_na
     add_interaction_affordance(struct, affordance_type, affordance)
     if PROPERTIES_NAME in affordance:
         assert affordance_type == PROPERTIES_NAME
-        add_data_schema_field(struct, "properties", "properties", affordance)
+        add_data_schema_field(struct, "data_schema", "properties", affordance)
     if affordance_type == PROPERTIES_NAME:
         struct.add_boolean_field("observable", "observable", affordance)
     elif affordance_type == ACTIONS_NAME:
