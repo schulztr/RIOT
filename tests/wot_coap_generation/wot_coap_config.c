@@ -68,95 +68,95 @@ static gcoap_listener_t _wot_coap_listener = {
     NULL,
 };
 
-wot_td_object_required_t wot_td_echo_prop_aff_properties_data_schema_hello_required = {
+wot_td_object_required_t wot_td_echo_prop_aff_data_schema_data_schema_hello_required = {
     .value = "hello",
 };
 
-wot_td_data_enums_t wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_2 = {
+wot_td_data_enums_t wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_2 = {
     .value = "Error",
     .next = NULL,
 };
 
-wot_td_data_enums_t wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_1 = {
+wot_td_data_enums_t wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_1 = {
     .value = "Off",
-    .next = &wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_2,
+    .next = &wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_2,
 };
 
-wot_td_data_enums_t wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_0 = {
+wot_td_data_enums_t wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_0 = {
     .value = "On",
-    .next = &wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_1,
+    .next = &wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_1,
 };
 
-wot_td_data_schema_t wot_td_echo_prop_aff_properties_data_schema_hello_data_schema = {
+wot_td_data_schema_t wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema = {
     .constant = "world",
     .format = "email",
-    .enumeration = &wot_td_echo_prop_aff_properties_data_schema_hello_data_schema_enum_0,
+    .enumeration = &wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema_enum_0,
     .json_type = JSON_TYPE_STRING,
     .read_only = true,
     .write_only = false,
 };
 
-wot_td_data_schema_map_t wot_td_echo_prop_aff_properties_data_schema_hello_data_map = {
+wot_td_data_schema_map_t wot_td_echo_prop_aff_data_schema_data_schema_hello_data_map = {
     .key = "hello",
-    .value = &wot_td_echo_prop_aff_properties_data_schema_hello_data_schema,
+    .value = &wot_td_echo_prop_aff_data_schema_data_schema_hello_data_schema,
     .next = NULL,
 };
 
-wot_td_object_schema_t wot_td_echo_prop_aff_properties_data_schema_object = {
-    .properties = &wot_td_echo_prop_aff_properties_data_schema_hello_data_map,
-    .required = &wot_td_echo_prop_aff_properties_data_schema_hello_required,
+wot_td_object_schema_t wot_td_echo_prop_aff_data_schema_data_schema_object = {
+    .properties = &wot_td_echo_prop_aff_data_schema_data_schema_hello_data_map,
+    .required = &wot_td_echo_prop_aff_data_schema_data_schema_hello_required,
 };
 
-wot_td_type_t wot_td_echo_prop_aff_properties_data_schema_one_of_0_schema_type_0 = {
+wot_td_type_t wot_td_echo_prop_aff_data_schema_data_schema_one_of_0_schema_type_0 = {
     .value = "test",
     .next = NULL,
 };
 
-wot_td_data_schema_t wot_td_echo_prop_aff_properties_data_schema_one_of_0_schema = {
-    .type = &wot_td_echo_prop_aff_properties_data_schema_one_of_0_schema_type_0,
+wot_td_data_schema_t wot_td_echo_prop_aff_data_schema_data_schema_one_of_0_schema = {
+    .type = &wot_td_echo_prop_aff_data_schema_data_schema_one_of_0_schema_type_0,
 };
 
-wot_td_data_schemas_t wot_td_echo_prop_aff_properties_data_schema_one_of_0 = {
-    .value = &wot_td_echo_prop_aff_properties_data_schema_one_of_0_schema,
+wot_td_data_schemas_t wot_td_echo_prop_aff_data_schema_data_schema_one_of_0 = {
+    .value = &wot_td_echo_prop_aff_data_schema_data_schema_one_of_0_schema,
     .next = NULL,
 };
 
-wot_td_multi_lang_t wot_td_echo_prop_aff_properties_data_schema_title_1 = {
+wot_td_multi_lang_t wot_td_echo_prop_aff_data_schema_data_schema_title_1 = {
     .tag = "en",
     .value = "English Title",
     .next = NULL,
 };
 
-wot_td_multi_lang_t wot_td_echo_prop_aff_properties_data_schema_title_0 = {
+wot_td_multi_lang_t wot_td_echo_prop_aff_data_schema_data_schema_title_0 = {
     .tag = "de",
     .value = "Deutscher Titel",
-    .next = &wot_td_echo_prop_aff_properties_data_schema_title_1,
+    .next = &wot_td_echo_prop_aff_data_schema_data_schema_title_1,
 };
 
-wot_td_multi_lang_t wot_td_echo_prop_aff_properties_data_schema_description_1 = {
+wot_td_multi_lang_t wot_td_echo_prop_aff_data_schema_data_schema_description_1 = {
     .tag = "en",
     .value = "English description",
     .next = NULL,
 };
 
-wot_td_multi_lang_t wot_td_echo_prop_aff_properties_data_schema_description_0 = {
+wot_td_multi_lang_t wot_td_echo_prop_aff_data_schema_data_schema_description_0 = {
     .tag = "de",
     .value = "Deutsche Beschreibung",
-    .next = &wot_td_echo_prop_aff_properties_data_schema_description_1,
+    .next = &wot_td_echo_prop_aff_data_schema_data_schema_description_1,
 };
 
-wot_td_type_t wot_td_echo_prop_aff_properties_data_schema_type_0 = {
+wot_td_type_t wot_td_echo_prop_aff_data_schema_data_schema_type_0 = {
     .value = "Type",
     .next = NULL,
 };
 
-wot_td_data_schema_t wot_td_echo_prop_aff_properties_data_schema = {
-    .type = &wot_td_echo_prop_aff_properties_data_schema_type_0,
-    .descriptions = &wot_td_echo_prop_aff_properties_data_schema_description_0,
-    .titles = &wot_td_echo_prop_aff_properties_data_schema_title_0,
-    .one_of = &wot_td_echo_prop_aff_properties_data_schema_one_of_0,
+wot_td_data_schema_t wot_td_echo_prop_aff_data_schema_data_schema = {
+    .type = &wot_td_echo_prop_aff_data_schema_data_schema_type_0,
+    .descriptions = &wot_td_echo_prop_aff_data_schema_data_schema_description_0,
+    .titles = &wot_td_echo_prop_aff_data_schema_data_schema_title_0,
+    .one_of = &wot_td_echo_prop_aff_data_schema_data_schema_one_of_0,
     .json_type = JSON_TYPE_OBJECT,
-    .schema = &wot_td_echo_prop_aff_properties_data_schema_object,
+    .schema = &wot_td_echo_prop_aff_data_schema_data_schema_object,
     .read_only = true,
     .write_only = false,
 };
@@ -180,7 +180,7 @@ wot_td_expected_res_t wot_td_echo_prop_aff_int_form_0_response = {
 
 wot_td_auth_scopes_t wot_td_echo_prop_aff_int_form_0_scope_0 = {
     .value = "limited",
-    .next = &wot_td_echo_prop_aff_int_form_0_scope_1,
+    .next = NULL,
 };
 
 wot_td_security_t wot_td_echo_prop_aff_int_form_0_security_basic = {
@@ -212,7 +212,7 @@ wot_td_form_t wot_td_echo_prop_aff_int_form_0 = {
     .href = &wot_td_echo_prop_aff_int_form_0_href,
     .content_type = &wot_td_echo_prop_aff_int_form_0_content_type,
     .content_encoding = CONTENT_ENCODING_GZIP,
-    .securtiy = &wot_td_echo_prop_aff_int_form_0_security_basic,
+    .security = &wot_td_echo_prop_aff_int_form_0_security_basic,
     .scopes = &wot_td_echo_prop_aff_int_form_0_scope_0,
     .expected_response = &wot_td_echo_prop_aff_int_form_0_response,
     .extensions = &wot_td_echo_prop_aff_int_form_0_extension,
@@ -220,8 +220,7 @@ wot_td_form_t wot_td_echo_prop_aff_int_form_0 = {
 };
 
 wot_td_number_schema_t wot_td_echo_prop_aff_uri_variable_d_data_schema_number = {
-    .minimum = NULL,
-    .maximum = 1.5,
+    .maximum = 2.0,
 };
 
 wot_td_type_t wot_td_echo_prop_aff_uri_variable_d_data_schema_type_0 = {
@@ -326,12 +325,13 @@ wot_td_int_affordance_t wot_td_echo_prop_aff_int = {
     .descriptions = &wot_td_echo_prop_aff_int_description_0,
     .titles = &wot_td_echo_prop_aff_int_title_0,
     .uri_variables = &wot_td_echo_prop_aff_uri_variable_p_data_map,
+    .forms = &wot_td_echo_prop_aff_int_form_0,
 };
 
 wot_td_prop_affordance_t wot_td_echo_prop_aff = {
     .key = "echo",
     .int_affordance = &wot_td_echo_prop_aff_int,
-    .properties = &wot_td_echo_prop_aff_properties_data_schema,
+    .data_schema = &wot_td_echo_prop_aff_data_schema_data_schema,
     .observable = false,
     .next = NULL,
 };
@@ -359,6 +359,7 @@ wot_td_form_t wot_td_status_prop_aff_int_form_0 = {
 };
 
 wot_td_int_affordance_t wot_td_status_prop_aff_int = {
+    .forms = &wot_td_status_prop_aff_int_form_0,
 };
 
 wot_td_prop_affordance_t wot_td_status_prop_aff = {
@@ -475,6 +476,7 @@ wot_td_multi_lang_t wot_td_toggle_action_aff_int_description_0 = {
 wot_td_int_affordance_t wot_td_toggle_action_aff_int = {
     .descriptions = &wot_td_toggle_action_aff_int_description_0,
     .titles = &wot_td_toggle_action_aff_int_title_0,
+    .forms = &wot_td_toggle_action_aff_int_form_0,
 };
 
 wot_td_action_affordance_t wot_td_toggle_action_aff = {
