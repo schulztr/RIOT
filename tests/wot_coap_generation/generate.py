@@ -144,6 +144,16 @@ SECURITY_DEFINITIONS: dict = {
             "de": "Einfaches Sicherheitsschema",
         }
     },
+    "digest test": {
+        "scheme": "digest",
+        "in": "query",
+        "name": "querykey",
+        "proxy": "https://example.org",
+        "descriptions": {
+            "en": "Digest sec schema",
+            "de": "Digest-Sicherheitsschema",
+        }
+    },
 }
 
 used_affordance_keys: List[str] = []

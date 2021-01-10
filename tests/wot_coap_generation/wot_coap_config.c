@@ -68,6 +68,41 @@ static gcoap_listener_t _wot_coap_listener = {
     NULL,
 };
 
+wot_td_digest_sec_scheme_t wot_td_security_schema_digest_test_sec_scheme_definitions = {
+    .qop = SECURITY_SCHEME_IN_DEFAULT,
+    .name = "querykey",
+    .in = SECURITY_SCHEME_IN_QUERY,
+};
+
+wot_td_multi_lang_t wot_td_security_schema_digest_test_sec_scheme_description_1 = {
+    .tag = "de",
+    .value = "Digest-Sicherheitsschema",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_security_schema_digest_test_sec_scheme_description_0 = {
+    .tag = "en",
+    .value = "Digest sec schema",
+    .next = &wot_td_security_schema_digest_test_sec_scheme_description_1,
+};
+
+wot_td_uri_t wot_td_security_schema_digest_test_sec_scheme_proxy = {
+    .value = "https://example.org",
+};
+
+wot_td_sec_scheme_t wot_td_security_schema_digest_test_sec_scheme = {
+    .scheme_type = SECURITY_SCHEME_DIGEST,
+    .proxy = &wot_td_security_schema_digest_test_sec_scheme_proxy,
+    .descriptions = &wot_td_security_schema_digest_test_sec_scheme_description_0,
+    .scheme = &wot_td_security_schema_digest_test_sec_scheme_definitions,
+};
+
+wot_td_security_t wot_td_security_schema_digest_test = {
+    .key = "digest_test",
+    .value = &wot_td_security_schema_digest_test_sec_scheme,
+    .next = NULL,
+};
+
 wot_td_basic_sec_scheme_t wot_td_security_schema_basic_sec_scheme_definitions = {
     .name = "querykey",
     .in = SECURITY_SCHEME_IN_QUERY,
