@@ -554,7 +554,7 @@ def add_scopes(parent: CStruct, form: dict) -> None:
                 parent.add_reference_field("scopes",
                                            struct_name)
             struct.add_field("value", f'"{scope}"')
-            add_next_field(index, struct, scope_name, form)
+            add_next_field(index, struct, scope_name, scopes)
             parent.add_child(struct)
 
 
