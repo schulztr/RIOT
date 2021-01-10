@@ -10,6 +10,11 @@ typedef struct json_ld_context {
     struct json_ld_context *next;
 } json_ld_context_t;
 
+typedef struct wot_td_type {
+    const char *value;
+    struct wot_td_type *next;
+} wot_td_type_t;
+
 typedef enum {
     SECURITY_SCHEME_NONE,
     SECURITY_SCHEME_BASIC,
@@ -202,11 +207,6 @@ typedef enum {
     JSON_TYPE_BOOLEAN,
     JSON_TYPE_NULL
 } wot_td_json_type_t;
-
-typedef struct wot_td_type {
-    const char *value;
-    struct wot_td_type *next;
-} wot_td_type_t;
 
 typedef struct {
     wot_td_type_t *type; /** (@)type in specs **/
