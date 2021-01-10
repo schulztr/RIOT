@@ -575,7 +575,6 @@ def add_security(parent: CStruct, form: dict) -> None:
 
             if index + 1 < len(enumerated_securities):
                 next_item = enumerated_securities[index + 1][1]
-                print(next_item)
                 struct.add_reference_field("next",
                                            f'{parent.struct_name}_security_{next_item}')
             else:
@@ -1027,10 +1026,14 @@ def generate_security_definitions():
                          f'{prefix}_{name}')
         struct.add_field("key", f'"{name}"')
         add_sec_schema(struct, definition)
-        # struct.add_reference_field("value", )
-        result_elements.append(struct.generate_c_code())
 
-        print(definition)
+        if index + 1 < len(enumerated_definitions):
+            next_item = enumerated_definitions[index + 1][1][0]
+            struct.add_reference_field("next",
+                                       f'{prefix}_{next_item}')
+        else:
+            struct.add_field("next", "NULL")
+        result_elements.insert(0, struct.generate_c_code())
 
     return SEPERATOR.join(result_elements)
 
