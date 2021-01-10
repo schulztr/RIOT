@@ -178,13 +178,13 @@ typedef struct wot_td_form {
 } wot_td_form_t;
 
 typedef struct {
-    const double *minimum;
-    const double *maximum;
+    const double minimum;
+    const double maximum;
 } wot_td_number_schema_t;
 
 typedef struct {
-    const int32_t *minimum;
-    const int32_t *maximum;
+    const int32_t minimum;
+    const int32_t maximum;
 } wot_td_integer_schema_t;
 
 typedef struct wot_td_object_required {
@@ -230,8 +230,8 @@ typedef struct wot_td_data_schemas {
 
 typedef struct {
     wot_td_data_schemas_t *items;
-    const uint32_t *min_items;
-    const uint32_t *max_items;
+    const uint32_t min_items;
+    const uint32_t max_items;
 } wot_td_array_schema_t;
 
 typedef struct wot_td_data_schema_map {
