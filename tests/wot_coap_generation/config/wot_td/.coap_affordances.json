@@ -48,7 +48,7 @@
                 "p": {
                     "type": "array",
                     "minItems": 0,
-                    "maxItems": 16,
+                    "maxItems": 16.0,
                     "items": [
                         {
                             "@type": "test"
@@ -61,7 +61,7 @@
                 },
                 "d": {
                     "type": "number",
-                    "maximum": 1.5,
+                    "maximum": 2,
                     "@type": "eg:Direction"
                 }
             }
