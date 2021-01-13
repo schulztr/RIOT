@@ -187,48 +187,6 @@ wot_td_coap_prop_affordance_t wot_td_status = {
     .form = &wot_td_status_prop_aff_int_form_0,
 };
 
-wot_td_extension_t wot_td_thing_form_1_extension = {0};
-
-wot_td_content_type_t wot_td_thing_form_1_content_type = {
-    .media_type = CONTENT_TYPE_JSON,
-};
-
-wot_td_uri_t wot_td_thing_form_1_href = {0};
-
-wot_td_form_op_t wot_td_thing_form_1_op_0 = {
-    .op_type = FORM_OP_WRITE_ALL_PROPERTIES,
-    .next = NULL,
-};
-
-wot_td_form_t wot_td_thing_form_1 = {
-    .op = &wot_td_thing_form_1_op_0,
-    .href = &wot_td_thing_form_1_href,
-    .content_type = &wot_td_thing_form_1_content_type,
-    .extensions = &wot_td_thing_form_1_extension,
-    .next = NULL,
-};
-
-wot_td_extension_t wot_td_thing_form_0_extension = {0};
-
-wot_td_content_type_t wot_td_thing_form_0_content_type = {
-    .media_type = CONTENT_TYPE_JSON,
-};
-
-wot_td_uri_t wot_td_thing_form_0_href = {0};
-
-wot_td_form_op_t wot_td_thing_form_0_op_0 = {
-    .op_type = FORM_OP_READ_ALL_PROPERTIES,
-    .next = NULL,
-};
-
-wot_td_form_t wot_td_thing_form_0 = {
-    .op = &wot_td_thing_form_0_op_0,
-    .href = &wot_td_thing_form_0_href,
-    .content_type = &wot_td_thing_form_0_content_type,
-    .extensions = &wot_td_thing_form_0_extension,
-    .next = &wot_td_thing_form_1,
-};
-
 json_ld_context_t wot_td_thing_context_1 = {
     .key = "riot_os",
     .value = "http://www.example.org/riot-os-definitions#",
@@ -245,11 +203,13 @@ wot_td_type_t wot_td_thing_type_0 = {
     .next = NULL,
 };
 
+char wot_td_thing_wot_td_default_lang_tag[] = en;
+
 int wot_td_config_init(wot_td_thing_t *wot_td_thing){
     wot_td_thing->type = &wot_td_thing_type_0;
     wot_td_thing->context = &wot_td_thing_context_0;
-    wot_td_thing->forms = &wot_td_thing_form_0;
     wot_td_thing->security = &wot_td_security_schema_basic;
+    wot_td_thing->wot_td_default_lang_tag[] = &wot_td_thing_wot_td_default_lang_tag[];
 
     return 0;
 }
