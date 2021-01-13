@@ -695,10 +695,8 @@ def add_interaction_affordance(parent: CStruct, affordance_type: str,  affordanc
     parent.add_child(struct)
     parent.add_reference_field("int_affordance", struct_name)
     add_type(struct, affordance)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", affordance)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", affordance)
+    add_descriptions(struct, affordance)
+    add_titles(struct, affordance)
     add_data_schema_maps(struct, "uri_variables", "uriVariables",
                          f"{parent.struct_name}_uri_variable", affordance)
     add_forms(struct, affordance_type, affordance)
@@ -853,15 +851,23 @@ def add_data_schema_field(parent: CStruct, field_name: str, json_name: str, sche
         generate_data_schema(parent, schema, data_schema_name)
 
 
+def add_descriptions(struct, schema):
+    add_multi_lang(struct, "descriptions", "description",
+                   "descriptions", schema)
+
+
+def add_titles(struct, schema):
+    add_multi_lang(struct, "titles", "title",
+                   "titles", schema)
+
+
 def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> None:
     struct = CStruct(f"{NAMESPACE}_data_schema_t",
                      f"{schema_name}")
     parent.add_child(struct)
     add_type(struct, schema)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", schema)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", schema)
+    add_descriptions(struct, schema)
+    add_titles(struct, schema)
     struct.add_string_field("constant", "const", schema)
     struct.add_string_field("unit", "unit", schema)
     struct.add_string_field("format", "format", schema)
@@ -1023,10 +1029,8 @@ def add_sec_schema(parent: CStruct, definition):
     struct.add_field("scheme_type", schema_enum)
     add_type(struct, definition)
     add_uri(struct, "proxy", "proxy", definition)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", definition)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", definition)
+    add_descriptions(struct, definition)
+    add_titles(struct, definition)
     if scheme_type in SECURITY_SCHEMA_STRUCT_SPECIFIERS:
         add_security_information(struct, definition)
     parent.add_child(struct)
