@@ -5,6 +5,7 @@ import sys
 from typing import List, Tuple, Type, TypedDict, IO, Any
 
 NAMESPACE = "wot_td"
+THING_NAME = "thing"
 PROPERTIES_NAME = 'properties'
 ACTIONS_NAME = 'actions'
 EVENTS_NAME = 'events'
@@ -128,6 +129,7 @@ CONTENT_ENCODINGS = {
 }
 
 ALLOWED_OPERATIONS_BY_TYPE = {
+    THING_NAME: ["readallproperties", "writeallproperties", "readmultipleproperties", "writemultipleproperties", ],
     PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
     ACTIONS_NAME: ["invokeaction", ],
     EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
