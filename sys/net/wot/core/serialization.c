@@ -1114,9 +1114,10 @@ void _serialize_link_array(wot_td_serialize_receiver_t receiver, wot_td_link_t *
         _wot_td_fill_json_uri(receiver, tmp->href, slicer);
 
         if(tmp->type != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-            _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key, sizeof(wot_td_type_obj_key)-1, slicer);
-            _wot_td_fill_json_string(receiver, tmp->type, strlen(tmp->type), slicer);
+            _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+            _wot_td_fill_json_obj_key(receiver, "type", sizeof("type")-1, slicer);
+            _content_type_string(receiver, tmp->type, slicer);
+            _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         }
 
         if(tmp->rel != NULL){
