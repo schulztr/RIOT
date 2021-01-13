@@ -291,12 +291,12 @@ typedef struct {
     const uint8_t hour;
     const uint8_t minute;
     const uint8_t second;
-    const int16_t timezone_offset;
+    const int16_t timezone_offset; // FIXME: There are actually timezones that have offsets are not full hours
 } wot_td_date_time_t;
 
 typedef struct wot_td_link {
     wot_td_uri_t *href;
-    const char *type;
+    wot_td_media_type_t *type;
     const char *rel;
     wot_td_uri_t *anchor;
     struct wot_td_link *next;
