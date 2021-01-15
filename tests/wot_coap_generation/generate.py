@@ -251,7 +251,7 @@ class CStruct(object):
         self.variables.append(variable)
 
     def add_string(self, variable_name: str, value: str):
-        self.__add_variable("char", f'{variable_name}[]', value)
+        self.__add_variable("char", f'{variable_name}', value)
 
     def add_double(self, variable_name: str, value: float):
         self.__add_variable("double", variable_name, str(float(value)))
