@@ -15,7 +15,7 @@ USEMODULE += xtimer
 ifeq ($(BOARD),esp32-wroom-32)
 # ESP wifi configuration
 USEMODULE += esp_wifi
-WIFI_SSID?=\"Your\ SSID"
+WIFI_SSID?=\"Your\ SSID\"
 WIFI_PASS?=\"Your\ Password\"
 CFLAGS += -DESP_WIFI_SSID=$(WIFI_SSID)
 CFLAGS += -DESP_WIFI_PASS=$(WIFI_PASS)
@@ -42,8 +42,7 @@ USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_icmpv6_error
 USEMODULE += gnrc_icmpv6_echo
 # Specify the mandatory networking modules for IPv6 and UDP
-USEMODULE += gnrc_ipv6_router_default
-USEMODULE += gnrc_sixlowpan_border_router_default
+USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_udp
 # Add a routing protocol
 USEMODULE += gnrc_rpl
