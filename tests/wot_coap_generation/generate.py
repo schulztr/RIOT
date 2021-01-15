@@ -244,7 +244,10 @@ class CStruct(object):
     def __add_variable(self, variable_type: str, variable_name: str, variable_value: str):
         reference_name = f'{self.struct_name}_{variable_name}'
         variable = variable_type, reference_name, variable_value
-        self.add_reference_field(variable_name, reference_name)
+        if variable_type == "char":
+            self.add_field(variable_name, reference_name)
+        else:
+            self.add_reference_field(variable_name, reference_name)
         self.variables.append(variable)
 
     def add_string(self, variable_name: str, value: str):
@@ -258,6 +261,8 @@ class CStruct(object):
 
     def __variable_to_string(self, pointer):
         variable_type, variable_name, variable_value = pointer
+        if variable_type == "char":
+            variable_name += "[]"
         return f'{variable_type} {variable_name} = {variable_value};'
 
     def generate_variable_pointers(self) -> str:
@@ -1221,8 +1226,7 @@ def generate_thing_serialization(thing: dict):
     add_affordances(struct, thing)
     add_links(struct, thing)
     add_security_definitions(struct, thing)
-    #Fixme: Default string has "" missing
-    struct.add_string(f"{NAMESPACE}_default_lang_tag", DEFAULT_LANG)
+    struct.add_string(f"default_language_tag", f'"{DEFAULT_LANG}"')
     return struct.generate_c_code()
 
 
