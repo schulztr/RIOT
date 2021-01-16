@@ -420,13 +420,12 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
-    parser.add_argument('--security', help='Define what security is used')
+    parser.add_argument('--thing_models', nargs='*')
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
     assert args.board, "ERROR: Argument board has to be defined"
-    assert args.security, "ERROR: Argument security has to be defined"
 
 
 def generate_includes() -> str:
@@ -1285,6 +1284,7 @@ def get_result(directory) -> str:
 def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
+    print(args.thing_models)
 
     result: str = get_result(directory=args.appdir)
     write_to_c_file(result, args.appdir)
