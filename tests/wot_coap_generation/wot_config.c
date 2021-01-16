@@ -203,13 +203,13 @@ wot_td_type_t wot_td_thing_type_0 = {
     .next = NULL,
 };
 
-char wot_td_thing_wot_td_default_lang_tag[] = en;
+char wot_td_thing_wot_td_default_lang_tag[] = "en";
 
 int wot_td_config_init(wot_td_thing_t *wot_td_thing){
     wot_td_thing->type = &wot_td_thing_type_0;
     wot_td_thing->context = &wot_td_thing_context_0;
     wot_td_thing->security = &wot_td_security_schema_basic;
-    wot_td_thing->wot_td_default_lang_tag[] = &wot_td_thing_wot_td_default_lang_tag[];
+    wot_td_thing->default_language_tag = wot_td_thing_wot_td_default_lang_tag;
 
     return 0;
 }
