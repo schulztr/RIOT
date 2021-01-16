@@ -124,10 +124,11 @@ typedef struct wot_td_form_op {
 } wot_td_form_op_t;
 
 typedef enum {
-    CONTENT_TYPE_JSON,
-    CONTENT_TYPE_TEXT_PLAIN,
-    CONTENT_TYPE_JSON_LD,
-    CONTENT_TYPE_CSV
+    MEDIA_TYPE_NONE,
+    MEDIA_TYPE_JSON,
+    MEDIA_TYPE_TEXT_PLAIN,
+    MEDIA_TYPE_JSON_LD,
+    MEDIA_TYPE_CSV
 } wot_td_media_type_t;
 
 typedef struct wot_td_media_type_parameter {
@@ -296,7 +297,7 @@ typedef struct {
 
 typedef struct wot_td_link {
     wot_td_uri_t *href;
-    wot_td_media_type_t *type;
+    wot_td_media_type_t type;
     const char *rel;
     wot_td_uri_t *anchor;
     struct wot_td_link *next;

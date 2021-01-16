@@ -560,25 +560,29 @@ void _serialize_op_array(wot_td_serialize_receiver_t receiver, wot_td_form_op_t 
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
 
-void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_type_t *content_type, wot_td_ser_slicer_t *slicer){
-    _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
-    switch (content_type->media_type) {
-        case CONTENT_TYPE_JSON:
+void _media_type_string(wot_td_serialize_receiver_t receiver, wot_td_media_type_t media_type, wot_td_ser_slicer_t *slicer){
+    switch (media_type) {
+        case MEDIA_TYPE_JSON:
             _wot_td_fill_json_receiver(receiver, "application/json", sizeof("application/json")-1, slicer);
             break;
-        case CONTENT_TYPE_TEXT_PLAIN:
+        case MEDIA_TYPE_TEXT_PLAIN:
             _wot_td_fill_json_receiver(receiver, "text/plain", sizeof("text/plain")-1, slicer);
             break;
-        case CONTENT_TYPE_JSON_LD:
+        case MEDIA_TYPE_JSON_LD:
             _wot_td_fill_json_receiver(receiver, "application/ld+json", sizeof("application/ld+json")-1, slicer);
             break;
-        case CONTENT_TYPE_CSV:
+        case MEDIA_TYPE_CSV:
             _wot_td_fill_json_receiver(receiver, "text/csv", sizeof("text/csv")-1, slicer);
             break; 
         default:
             _wot_td_fill_json_string(receiver, "", sizeof("")-1, slicer);
             break;
     }
+}
+
+void _content_type_string(wot_td_serialize_receiver_t receiver, wot_td_content_type_t *content_type, wot_td_ser_slicer_t *slicer){
+    _wot_td_fill_json_receiver(receiver, "\"", 1, slicer);
+    _media_type_string(receiver, content_type->media_type, slicer);
     if(content_type->media_type_parameter != NULL){
         _wot_td_fill_json_receiver(receiver, ";", 1, slicer);
         wot_td_media_type_parameter_t *tmp = content_type->media_type_parameter;
@@ -628,38 +632,45 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
     _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
     while (tmp != NULL){
         _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
+        bool has_previous_prop = false;
 
         if(tmp->op != NULL){
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_op_obj_key, sizeof(wot_td_op_obj_key)-1, slicer);
             _serialize_op_array(receiver, tmp->op, slicer);
         }
 
         if(tmp->href != NULL && tmp->href->value != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_href_obj_key, sizeof(wot_td_href_obj_key)-1, slicer);
             _wot_td_fill_json_uri(receiver, tmp->href, slicer);
         }
 
         if(tmp->content_type != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_content_type_obj_key, sizeof(wot_td_content_type_obj_key)-1, slicer);
             _content_type_string(receiver, tmp->content_type, slicer);
         }
 
         if(tmp->content_encoding != CONTENT_ENCODING_NONE){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_content_encoding_obj_key, sizeof(wot_td_content_encoding_obj_key)-1, slicer);
             _content_encoding_string(receiver, tmp->content_encoding, slicer);
         }
 
         if(tmp->sub_protocol != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_sub_protocol_obj_key, sizeof(wot_td_sub_protocol_obj_key)-1, slicer);
             _wot_td_fill_json_string(receiver, tmp->sub_protocol, strlen(tmp->sub_protocol), slicer);
         }
 
         if(tmp->security != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_security_def_obj_key, sizeof(wot_td_security_def_obj_key)-9, slicer);
             wot_td_security_t *sec = tmp->security;
             _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
@@ -671,7 +682,8 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
         }
 
         if(tmp->scopes != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, wot_td_scopes_obj_key, sizeof(wot_td_scopes_obj_key)-1, slicer);
             wot_td_auth_scopes_t *scope = tmp->scopes;
             _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
@@ -683,13 +695,14 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
         }
 
         if(tmp->expected_response != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             _wot_td_fill_json_obj_key(receiver, "response", sizeof("response")-1, slicer);
-
         }
 
         if(tmp->extensions != NULL){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
             wot_td_extension_t *extension = tmp->extensions;
             while(extension != NULL){
                 wot_td_ser_parser_t parser = extension->parser;
@@ -1113,10 +1126,10 @@ void _serialize_link_array(wot_td_serialize_receiver_t receiver, wot_td_link_t *
         _wot_td_fill_json_obj_key(receiver, wot_td_href_obj_key, sizeof(wot_td_href_obj_key)-1, slicer);
         _wot_td_fill_json_uri(receiver, tmp->href, slicer);
 
-        if(tmp->type != NULL){
+        if(tmp->type != MEDIA_TYPE_NONE){
             _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
             _wot_td_fill_json_obj_key(receiver, "type", sizeof("type")-1, slicer);
-            _content_type_string(receiver, tmp->type, slicer);
+            _media_type_string(receiver, tmp->type, slicer);
             _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
         }
 
@@ -1170,6 +1183,7 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
     }
 
     if(thing->type != NULL){
+        _previous_prop_check(receiver, has_previous_prop, slicer);
         has_previous_prop = true;
         wot_td_type_t *type = thing->type;
         _wot_td_fill_json_obj_key(receiver, wot_td_type_obj_key, sizeof(wot_td_type_obj_key)-1, slicer);
