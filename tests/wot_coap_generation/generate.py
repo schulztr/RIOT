@@ -273,7 +273,8 @@ class CStruct(object):
 
     def generate_c_code(self) -> str:
         code = [child.generate_c_code() for child in self.children]
-        if (variable_pointers := self.generate_variable_pointers()):
+        variable_pointers = self.generate_variable_pointers()
+        if (variable_pointers):
             code.append(variable_pointers)
         code.append(self.generate_struct())
         return SEPERATOR.join(code)
