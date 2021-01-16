@@ -421,6 +421,7 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
     parser.add_argument('--thing_models', nargs='*')
+    parser.add_argument('--thing_instance_info', nargs='*')
     parser.add_argument('--used_modules', nargs='*')
     return parser.parse_args()
 
@@ -1287,6 +1288,7 @@ def main() -> None:
     assert_command_line_arguments(args)
     print(args.thing_models)
     print(args.used_modules)
+    print(args.thing_instance_info)
 
     result: str = get_result(directory=args.appdir)
     write_to_c_file(result, args.appdir)
