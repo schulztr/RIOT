@@ -3,7 +3,7 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import List, Tuple, Type, TypedDict, IO, Any
+from typing import List, Tuple, Type, IO, Any
 
 DEFAULT_LANG = "en"
 NAMESPACE = "wot_td"
@@ -17,12 +17,6 @@ AFFORDANCE_TYPE_SPECIFIERS = {
     ACTIONS_NAME: 'action',
     EVENTS_NAME: 'event'
 }
-CURRENT_DIRECTORY = os.getcwd()
-CONFIG_DIRECTORY = f"{CURRENT_DIRECTORY}/config"
-THING_DESCRIPTION_DIRECTORY = f"{CONFIG_DIRECTORY}/wot_td"
-RESULT_FILE = f"{CURRENT_DIRECTORY}/wot_config.c"
-AFFORDANCES_FILES = [".coap_affordances.json", ]
-THING_FILES = [".thing.json", ]
 SEPERATOR = "\n\n"
 INDENT = "    "
 COAP_RESOURCES_NAME = "_wot_coap_resources"
@@ -164,8 +158,8 @@ header_files: List[str] = []
 extern_functions: List[str] = []
 resource_affordance_list: List[str] = []
 
-ResourceDict = TypedDict(
-    'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
+# ResourceDict = TypedDict(
+#     'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
 
 def dict_raise_on_duplicates(ordered_pairs):
@@ -179,8 +173,8 @@ def dict_raise_on_duplicates(ordered_pairs):
     return d
 
 
-def write_to_c_file(result) -> None:
-    f: IO[Any] = open(RESULT_FILE, "w")
+def write_to_c_file(result, result_dir) -> None:
+    f: IO[Any] = open(f'{result_dir}/wot_config.c', "w")
     f.write(result)
     f.close()
 
@@ -324,8 +318,8 @@ class ThingStruct(CStruct):
         return f"{self.struct_name}->{field_name} = {field_value};"
 
 
-def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
-    sorted_resources: List[ResourceDict] = sorted(
+def write_coap_resources(coap_resources: List[dict]) -> str:
+    sorted_resources: List[dict] = sorted(
         coap_resources, key=lambda k: k['href'])
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
@@ -343,14 +337,14 @@ def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
     return result
 
 
-def generate_coap_resources(thing) -> List[ResourceDict]:
-    coap_resources: List[ResourceDict] = []
+def generate_coap_resources(thing) -> List[dict]:
+    coap_resources: List[dict] = []
     for affordance_type in AFFORDANCE_TYPES:
         for affordance_name, affordance in thing[affordance_type].items():
             assert_unique_affordance(affordance_name)
             used_affordance_keys.append(affordance_name)
             forms: List[dict] = affordance["forms"]
-            resources: List[ResourceDict] = extract_coap_resources(
+            resources: List[dict] = extract_coap_resources(
                 affordance_name, forms)
             coap_resources.extend(resources)
     return coap_resources
@@ -360,7 +354,7 @@ def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[ResourceDict]:
+def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[dict]:
     hrefs: List[str] = []
     handlers: List[str] = []
     methods: List[List[str]] = []
@@ -388,20 +382,20 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
         elif header_file is None and handler_function not in extern_functions:
             extern_functions.append(handler_function)
 
-    resource_list: List[ResourceDict] = []
+    resource_list: List[dict] = []
 
     for index, href in enumerate(hrefs):
         dictionary = {'affordance_name': affordance_name,
                       'href': href,
                       "handler": handlers[index],
                       "methods": methods[index]
-                      }  # type: ResourceDict
+                      }  # type: dict
         resource_list.append(dictionary)
 
     return resource_list
 
 
-def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_function=None) -> dict:
+def get_wot_json(file: str, directory, validation_function=None) -> dict:
     path = f'{directory}/{file}'
     try:
         f: IO[Any] = open(path)
@@ -422,6 +416,7 @@ def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_fu
 
 def parse_command_line_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Web of Things helper script')
+    parser.add_argument('--appdir', help='Define directory of app')
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
@@ -458,7 +453,7 @@ def generate_coap_listener() -> str:
     return struct.generate_struct()
 
 
-def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
+def generate_coap_handlers(coap_resources: List[dict]) -> str:
     handlers: List[str] = []
 
     for resource in coap_resources:
@@ -477,11 +472,11 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
     return SEPERATOR.join(handlers)
 
 
-def generate_coap_link_param(coap_resource: ResourceDict) -> str:
+def generate_coap_link_param(coap_resource: dict) -> str:
     return "NULL,"
 
 
-def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
+def generate_coap_link_params(coap_resources: List[dict]) -> str:
     struct_elements = [f"static const char *{COAP_LINK_PARAMS_NAME}[] = {{"]
 
     for coap_resource in coap_resources:
@@ -1248,11 +1243,13 @@ def assemble_results(thing) -> List[str]:
     return result_elements
 
 
-def get_result() -> str:
+def get_result(directory) -> str:
 
-    thing_model = get_wot_json("thing_model.json")
+    config_dir = f'{directory}/config/wot_td'
+
+    thing_model = get_wot_json("thing_model.json", config_dir)
     try:
-        instance_information = get_wot_json("instance.json")
+        instance_information = get_wot_json("instance.json", config_dir)
         for key, value in instance_information.items():
             if key == "thing":
                 if "security" in value:
@@ -1289,8 +1286,8 @@ def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
 
-    result: str = get_result()
-    write_to_c_file(result)
+    result: str = get_result(directory=args.appdir)
+    write_to_c_file(result, args.appdir)
 
 
 if __name__ == '__main__':

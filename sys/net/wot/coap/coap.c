@@ -28,14 +28,7 @@ static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
 
 wot_td_thing_t wot_thing;
 
-static char wot_thing_addr[IPV6_ADDR_MAX_STR_LEN + 1];
-
 const char wot_td_coap_schema[] = "coap://";
-
-wot_td_uri_t _wot_thing_id = {
-        .schema = wot_td_coap_schema,
-        .value = wot_thing_addr,
-};
 
 //Todo: Implement CoAP RDF bindings.
 //See: https://github.com/w3c/wot-binding-templates/issues/97
@@ -105,6 +98,51 @@ void _wot_td_coap_ser_receiver(const char *c){
     _wot_td_coap_plen += coap_blockwise_put_char(&_wot_td_coap_slicer, _wot_td_coap_buf+_wot_td_coap_plen, (char) *c);
 }
 
+static int get_base_ip_address(ipv6_addr_t *res) {
+    const int MAX_ADRESSES_TO_CHECK = 5;
+    netif_t* interface = NULL;
+    ipv6_addr_t local_address = {0};
+    ipv6_addr_t ula_address = {0};
+    bool link_local_found = false;
+    bool ula_found = false;
+    int netres;
+
+    while ((interface = netif_iter(interface)) != NULL) {
+        ipv6_addr_t adresses[MAX_ADRESSES_TO_CHECK];
+        netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, adresses, sizeof(adresses));
+        for (unsigned i = 0; i < (netres / sizeof(ipv6_addr_t)); i++)
+        {
+            ipv6_addr_t* current_address = &adresses[i];
+
+            if (current_address == NULL) {
+                break;
+            }
+            if (ipv6_addr_is_global(current_address)) {
+                memcpy(res, current_address, sizeof(ipv6_addr_t));
+                return 0;
+            }
+            else if (ipv6_addr_is_unique_local_unicast(current_address)) {
+                memcpy(&ula_address, current_address, sizeof(ipv6_addr_t));
+                ula_found = true;
+            }
+            else if (ipv6_addr_is_link_local(current_address)) {
+                memcpy(&local_address, current_address, sizeof(ipv6_addr_t));
+                link_local_found = true;
+            }
+        }
+    }
+
+    if (ula_found) {
+        memcpy(res, &ula_address, sizeof(ipv6_addr_t));
+        return 0;
+    }
+    else if (link_local_found) {
+        memcpy(res, &local_address, sizeof(ipv6_addr_t));
+        return 0;
+    }
+    return -1;
+}
+
 static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx){
     (void)ctx;
 
@@ -121,6 +159,20 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .start = _wot_td_coap_slicer.start,
             .end = _wot_td_coap_slicer.end,
     };
+
+    char address_as_string[IPV6_ADDR_MAX_STR_LEN];
+    ipv6_addr_t base_ip_address = {0};
+    if (get_base_ip_address(&base_ip_address) < 0) {
+        return -1;
+    }
+    ipv6_addr_to_str(address_as_string, &base_ip_address, sizeof(address_as_string));
+
+    wot_td_uri_t _wot_thing_base = {
+            .schema = wot_td_coap_schema,
+            .value = address_as_string,
+    };    
+
+    wot_thing.base = &_wot_thing_base;
 
     wot_td_serialize_thing((wot_td_serialize_receiver_t) &_wot_td_coap_ser_receiver, &wot_thing, &_wot_td_slicer);
 
