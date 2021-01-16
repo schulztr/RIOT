@@ -1221,6 +1221,7 @@ def generate_thing_serialization(thing: dict):
     add_affordances(struct, thing)
     add_links(struct, thing)
     add_security_definitions(struct, thing)
+    #Fixme: Default string has "" missing
     struct.add_string(f"{NAMESPACE}_default_lang_tag", DEFAULT_LANG)
     return struct.generate_c_code()
 
