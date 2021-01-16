@@ -956,6 +956,10 @@ endif
 # Include desvirt Makefile
 include $(RIOTTOOLS)/desvirt/Makefile.desvirt
 
+ifneq (,$(filter wot_core,$(USEMODULE)))
+  include $(RIOTMAKE)/wot_td.inc.mk
+endif
+
 # Build a header file with all common macro definitions and undefinitions
 # Everytime the header is updated, it will trigger a new compilation.
 #
