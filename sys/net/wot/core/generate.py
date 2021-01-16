@@ -395,8 +395,8 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
     return resource_list
 
 
-def get_wot_json(file: str, directory, validation_function=None) -> dict:
-    path = f'{directory}/{file}'
+def get_wot_json(json_path: list,  validation_function=None) -> dict:
+    path = json_path[0]
     try:
         f: IO[Any] = open(path)
         wot_json: dict = json.loads(f.read())
@@ -1244,13 +1244,11 @@ def assemble_results(thing) -> List[str]:
     return result_elements
 
 
-def get_result(directory) -> str:
-
-    config_dir = f'{directory}/config/wot_td'
-
-    thing_model = get_wot_json("thing_model.json", config_dir)
+def get_result(thing_models, instance_informations) -> str:
+    # TODO: Allow multiple models/instance infos and merge them
+    thing_model = get_wot_json(thing_models)
     try:
-        instance_information = get_wot_json("instance.json", config_dir)
+        instance_information = get_wot_json(instance_informations)
         for key, value in instance_information.items():
             if key == "thing":
                 if "security" in value:
@@ -1290,7 +1288,7 @@ def main() -> None:
     print(args.used_modules)
     print(args.thing_instance_info)
 
-    result: str = get_result(directory=args.appdir)
+    result: str = get_result(args.thing_models, args.thing_instance_info)
     write_to_c_file(result, args.appdir)
 
 
