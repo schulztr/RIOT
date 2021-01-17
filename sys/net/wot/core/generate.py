@@ -130,29 +130,6 @@ ALLOWED_OPERATIONS_BY_TYPE = {
     EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
 }
 
-SECURITY_DEFINITIONS: dict = {
-    "basic": {
-        "scheme": "basic",
-        "in": "query",
-        "name": "querykey",
-        "proxy": "https://example.org",
-        "descriptions": {
-            "en": "Basic sec schema",
-            "de": "Einfaches Sicherheitsschema",
-        }
-    },
-    "digest test": {
-        "scheme": "digest",
-        "in": "query",
-        "name": "querykey",
-        "proxy": "https://example.org",
-        "descriptions": {
-            "en": "Digest sec schema",
-            "de": "Digest-Sicherheitsschema",
-        }
-    },
-}
-
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
 extern_functions: List[str] = []
@@ -1084,11 +1061,12 @@ def add_sec_schema(parent: CStruct, definition):
 
 
 def add_security_definitions(parent: CStruct, thing):
-    assert "securityDefinitions" in thing, "No security definitions found!"
+    if "securityDefinitions" not in thing:
+        print("WARNING: No security definitions found! Using no security as default.")
+        thing["securityDefinitions"] = {"nosec_sc": {"scheme": "none"}}
     definitions = thing["securityDefinitions"]
     enumerated_definitions = list(enumerate(definitions.items()))
     for index, (name, definition) in enumerated_definitions:
-        assert name in SECURITY_DEFINITIONS
         prefix = f'{NAMESPACE}_security_schema'
         suffix = remove_all_white_space(name)
         struct_name = f'{prefix}_{suffix}'
@@ -1197,13 +1175,6 @@ def add_links(parent: CStruct, schema):
 
 
 def generate_thing_serialization(thing: dict):
-    # TODO: Get security definitions from python script parameters
-    thing["securityDefinitions"] = SECURITY_DEFINITIONS
-    securities = thing["security"]
-    if isinstance(securities, str):
-        securities = [securities]
-    for security in securities:
-        assert security in SECURITY_DEFINITIONS
     struct_type = f'{NAMESPACE}_thing_t'
     struct_name = f"{NAMESPACE}_{THING_NAME}"
     struct: CStruct = ThingStruct(struct_type,
