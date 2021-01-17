@@ -1256,9 +1256,6 @@ def get_result(thing_models, instance_informations) -> str:
 def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
-    print(args.thing_models)
-    print(args.used_modules)
-    print(args.thing_instance_info)
 
     result: str = get_result(args.thing_models, args.thing_instance_info)
     write_to_c_file(result, args.appdir)
