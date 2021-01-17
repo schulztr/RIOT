@@ -682,7 +682,6 @@ def add_type(parent: CStruct, affordance: dict) -> None:
         if isinstance(type_list, str):
             type_list = [type_list]
 
-        # TODO: Also use linked list for definition in struct
         parent.add_reference_field("type", f"{struct_name}_0")
         for index, type_entry in enumerate(type_list):
             struct = CStruct(f'{NAMESPACE}_type_t',
@@ -926,7 +925,7 @@ def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_na
         add_data_schema_field(struct, "cancellation",
                               "cancellation", affordance)
 
-    struct.add_field("next", "NULL")  # TODO: Create linked list?
+    struct.add_field("next", "NULL")
 
 
 def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
@@ -1146,7 +1145,6 @@ def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schem
 
 
 def add_version_info(parent: CStruct, schema):
-    # TODO: Add linked list of version infos
     if "version" in schema:
         version = schema["version"]
         if "instance" in version:
