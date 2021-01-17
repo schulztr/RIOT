@@ -465,7 +465,7 @@ void _serialize_security(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme
     _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
     if(scheme->proxy != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        _wot_td_fill_json_obj_key(receiver, "proxy", sizeof("proxy"), slicer);
+        _wot_td_fill_json_obj_key(receiver, "proxy", sizeof("proxy")-1, slicer);
         _wot_td_fill_json_uri(receiver, scheme->proxy, slicer);
     }
 
