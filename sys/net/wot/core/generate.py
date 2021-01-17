@@ -1112,12 +1112,15 @@ def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schem
         struct.add_field("year", str(parsed_date.year))
         struct.add_field("month", str(parsed_date.month))
         struct.add_field("day", str(parsed_date.day))
-        # TODO: Check if hour, minute, and second values of 0 are okay
         struct.add_field("hour", str(parsed_date.hour))
         struct.add_field("minute", str(parsed_date.minute))
         struct.add_field("second", str(parsed_date.second))
         if parsed_date.utcoffset() is not None:
-            struct.add_field("timezone_offset", str(parsed_date.utcoffset()))
+            offset = parsed_date.utcoffset().seconds // 60
+            assert -840 <= offset <= 840, "Timezone offset has to be between -14:00 and +14:00!"
+        else:
+            offset = 0
+        struct.add_field("timezone_offset", str(offset))
         parent.add_reference_field(c_field_name, struct_name)
         parent.add_child(struct)
 
