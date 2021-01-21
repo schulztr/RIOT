@@ -1169,6 +1169,8 @@ def add_links(parent: CStruct, schema):
             struct = CStruct(f'{NAMESPACE}_link_t',
                              f'{struct_name}_{index}')
             add_type(struct, link)
+            assert "href" in link, "No href defined for link!"
+            add_uri(struct, "href", "href", link)
             struct.add_string_field("rel", "rel", link)
             add_uri(struct, "anchor", "anchor", link)
             add_next_field(index, struct, struct_name, links)
