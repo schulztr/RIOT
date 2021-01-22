@@ -135,6 +135,8 @@ header_files: List[str] = []
 extern_functions: List[str] = []
 resource_affordance_list: List[str] = []
 
+security_definitions = []
+
 # ResourceDict = TypedDict(
 #     'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
@@ -354,7 +356,7 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
 
         header_file: str = resource.get("header_file", None)
 
-        if header_file is not None and header_file not in header_files:
+        if header_file and header_file not in header_files:
             header_files.append(header_file)
         elif header_file is None and handler_function not in extern_functions:
             extern_functions.append(handler_function)
@@ -372,13 +374,11 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
     return resource_list
 
 
-def get_wot_json(json_path: list,  validation_function=None) -> dict:
-    path = json_path[0]
+def get_wot_json(path: str) -> dict:
     try:
         f: IO[Any] = open(path)
         wot_json: dict = json.loads(f.read())
-        if validation_function is not None:
-            validation_function(wot_json)
+        prepare_wot_json(wot_json)
     except IOError:
         print(f"ERROR reading {path} is missing")
         sys.exit(0)
@@ -394,17 +394,22 @@ def get_wot_json(json_path: list,  validation_function=None) -> dict:
 def parse_command_line_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Web of Things helper script')
     parser.add_argument('--appdir', help='Define directory of app')
+    # TODO: Check if board and saul parameters are still needed
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
-    parser.add_argument('--thing_models', nargs='*')
-    parser.add_argument('--thing_instance_info', nargs='*')
-    parser.add_argument('--used_modules', nargs='*')
+    parser.add_argument('--thing_models', nargs='*',
+                        help="List of Thing Models (in JSON format) to be merged into the Thing Description")
+    parser.add_argument('--thing_instance_info',
+                        help="JSON file with user defined meta data")
+    parser.add_argument('--used_modules', nargs='*',
+                        help="List of modules that have been declared in the build process")
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
     assert args.board, "ERROR: Argument board has to be defined"
+    assert args.thing_instance_info, "ERROR: No instance information defined!"
 
 
 def generate_includes() -> str:
@@ -567,13 +572,13 @@ def add_content_coding(struct: CStruct, form: dict) -> None:
 
 
 def add_security(parent: CStruct, form: dict) -> None:
-    if "security" in form:
+    if form.get("form", []):
         securities = form["security"]
         if isinstance(securities, str):
             securities = [securities]
         enumerated_securities = list(enumerate(securities))
         for index, security in enumerated_securities:
-            assert security in SECURITY_DEFINITIONS
+            assert security in security_definitions
             struct_name = f'{parent.struct_name}_security_{security}'
             struct = CStruct(f"{NAMESPACE}_security_t",
                              struct_name)
@@ -774,7 +779,7 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
     elif "type" in schema:
         json_type = schema["type"]
 
-    if json_type is not None:
+    if json_type:
         parent.add_field("json_type", JSON_TYPES[json_type])
 
     struct_name = f"{schema_name}_{json_type}"
@@ -983,7 +988,7 @@ def generate_init_function(thing) -> str:
 
 
 def add_uri(parent: CStruct, c_field_name: str, json_field_name: str, data):
-    if json_field_name in data:
+    if data.get(json_field_name, None):
         struct_name = f'{parent.struct_name}_{c_field_name}'
         struct = CStruct(f"{NAMESPACE}_uri_t",
                          struct_name)
@@ -1061,10 +1066,11 @@ def add_sec_schema(parent: CStruct, definition):
 
 
 def add_security_definitions(parent: CStruct, thing):
-    if "securityDefinitions" not in thing:
-        print("WARNING: No security definitions found! Using no security as default.")
+    global security_definitions
+    if not thing["securityDefinitions"]:
+        print("WARNING: No security definitions found! Using \"no security\" as default.")
         thing["securityDefinitions"] = {"nosec_sc": {"scheme": "none"}}
-    definitions = thing["securityDefinitions"]
+    definitions = security_definitions = thing["securityDefinitions"]
     enumerated_definitions = list(enumerate(definitions.items()))
     for index, (name, definition) in enumerated_definitions:
         prefix = f'{NAMESPACE}_security_schema'
@@ -1096,7 +1102,7 @@ def add_to_result(result_element: str, result_elements: List[str]):
 
 
 def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schema):
-    if json_field_name in schema:
+    if schema[json_field_name]:
         date = schema[json_field_name]
         for char in ["z", "Z"]:
             date = date.replace(char, "+00:00")
@@ -1115,7 +1121,7 @@ def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schem
         struct.add_field("hour", str(parsed_date.hour))
         struct.add_field("minute", str(parsed_date.minute))
         struct.add_field("second", str(parsed_date.second))
-        if parsed_date.utcoffset() is not None:
+        if parsed_date.utcoffset():
             offset = parsed_date.utcoffset().seconds // 60
             assert -840 <= offset <= 840, "Timezone offset has to be between -14:00 and +14:00!"
         else:
@@ -1126,16 +1132,14 @@ def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schem
 
 
 def add_version_info(parent: CStruct, schema):
-    if "version" in schema:
-        version = schema["version"]
-        if "instance" in version:
-            instance = version["instance"]
-            struct_name = f'{parent.struct_name}_version_info'
-            struct = CStruct(f'{NAMESPACE}_version_info_t',
-                             struct_name)
-            struct.add_field("instance", f'"{instance}"')
-            parent.add_reference_field("version", struct_name)
-            parent.add_child(struct)
+    if schema["version"]:
+        instance = schema["version"]["instance"]
+        struct_name = f'{parent.struct_name}_version_info'
+        struct = CStruct(f'{NAMESPACE}_version_info_t',
+                         struct_name)
+        struct.add_field("instance", f'"{instance}"')
+        parent.add_reference_field("version", struct_name)
+        parent.add_child(struct)
 
 
 def add_context(parent: CStruct, schema):
@@ -1162,7 +1166,7 @@ def add_context(parent: CStruct, schema):
 
 
 def add_links(parent: CStruct, schema):
-    if "links" in schema:
+    if schema.get("links", None):
         links = schema["links"]
         for index, link in enumerate(links):
             struct_name = f'{parent.struct_name}_link'
@@ -1193,10 +1197,11 @@ def generate_thing_serialization(thing: dict):
     add_datetime(struct, "created", "created", thing)
     add_datetime(struct, "modified", "modified", thing)
     add_uri(struct, "support", "support", thing)
+    add_security_definitions(struct, thing)
     add_forms(struct, THING_NAME, thing)
     add_affordances(struct, thing)
     add_links(struct, thing)
-    add_security_definitions(struct, thing)
+    # TODO: Retrieve default language info from @context
     struct.add_string(f"default_language_tag", f'"{DEFAULT_LANG}"')
     return struct.generate_c_code()
 
@@ -1218,37 +1223,129 @@ def assemble_results(thing) -> List[str]:
     return result_elements
 
 
-def get_result(thing_models, instance_informations) -> str:
-    # TODO: Allow multiple models/instance infos and merge them
-    thing_model = get_wot_json(thing_models)
-    try:
-        instance_information = get_wot_json(instance_informations)
-        for key, value in instance_information.items():
-            if key == "thing":
-                if "security" in value:
-                    assert "security" not in thing_model, "Security schema already defined in Thing Model"
-                    thing_model["security"] = value["security"]
-                if "@context" in value:
-                    thing_context = thing_model["@context"]
-                    if isinstance(thing_context, str):
-                        thing_context = [thing_context]
-                    for context in value["@context"]:
-                        thing_context.append(context)
-                    thing_model["@context"] = thing_context
-            for affordance_type in AFFORDANCE_TYPES:
-                for thing_affordance_type, affordances in thing_model.items():
-                    if thing_affordance_type == affordance_type:
-                        for affordance_name, affordance_data in affordances.items():
-                            if affordance_name == key:
-                                affordance = thing_model[affordance_type][affordance_name]
-                                if "forms" not in affordance_data:
-                                    affordance["forms"] = value["forms"]
-                                if "security" in value and "security" not in affordance_data:
-                                    assert affordance["security"] in thing_model["securityDefinitions"]
-                                    affordance["security"] = value["security"]
-    except:
-        print("INFO: No instance information found!")
-    assert "security" in thing_model, "No security schema defined!"
+def turn_string_field_to_list(wot_json, field_name):
+    field = wot_json.get(field_name, [])
+    if isinstance(field, str):
+        wot_json[field_name] = [field]
+    else:
+        assert isinstance(field, list)
+
+
+def prepare_wot_json(wot_json):
+    turn_string_field_to_list(wot_json, "@context")
+    turn_string_field_to_list(wot_json, "@type")
+    turn_string_field_to_list(wot_json, "security")
+
+
+def copy_field(target, source, field_name):
+    if field_name in source:
+        target[field_name] = source[field_name]
+
+
+def merge_thing_models(thing_models):
+    empty_thing_model = {
+        "@context": [],
+        "@type": set(),
+        "id": None,
+        "title": None,
+        "titles": dict(),
+        "description": None,
+        "descriptions": dict(),
+        "version": None,
+        "created": None,
+        "modified": None,
+        "support": None,
+        "base": None,
+        "properties": dict(),
+        "actions": dict(),
+        "events": dict(),
+        "links": [],
+        "forms": [],
+        "security": set(),
+        "securityDefinitions": dict(),
+    }
+
+    for thing_model in thing_models:
+        for context in thing_model.get("@context", []):
+            empty_thing_model["@context"].append(context)
+        for json_ld_type in thing_model.get("@type", []):
+            if json_ld_type != "ThingModel":
+                empty_thing_model["@type"].add(json_ld_type)
+        for security in thing_model.get("security", []):
+            empty_thing_model["security"].add(security)
+        for security_definition_name, definition in thing_model.get("securityDefinitions", dict()).items():
+            if security_definition_name not in empty_thing_model["securityDefinitions"]:
+                empty_thing_model["securityDefinitions"][security_definition_name] = definition
+            else:
+                print(
+                    f"INFO: Security definition {security_definition_name} already defined!")
+        # FIXME: Assert that links are unique
+        for link in thing_model.get("links", []):
+            empty_thing_model["links"].append(link)
+        # FIXME: Assert that forms are unique
+        for form in thing_model.get("forms", []):
+            empty_thing_model["forms"].append(form)
+        for affordance_type in AFFORDANCE_TYPES:
+            affordances = thing_model.get(affordance_type, dict())
+            for affordance_name, affordance_fields in affordances.items():
+                if affordance_name not in empty_thing_model[affordance_type]:
+                    empty_thing_model[affordance_type][affordance_name] = affordance_fields
+                else:
+                    print(f"Affordance {affordance_name} already defined!")
+    return empty_thing_model
+
+
+def get_result(thing_model_jsons, instance_information_json) -> str:
+    thing_models = [get_wot_json(thing_model_json)
+                    for thing_model_json in thing_model_jsons]
+
+    thing_model = merge_thing_models(thing_models)
+    instance_information = get_wot_json(instance_information_json)
+    for key, value in instance_information.items():
+        if key == "security":
+            if isinstance(value, str):
+                value = [value]
+            if not thing_model["security"]:
+                thing_model["security"] = value
+            else:
+                defined_security = thing_model["security"]
+                if isinstance(defined_security, str):
+                    thing_model["security"] = defined_security = [
+                        defined_security]
+                for security in value["security"]:
+                    if security not in defined_security:
+                        thing_model["security"].add(security)
+        elif key == "@context":
+            thing_context = thing_model["@context"]
+            if isinstance(value, str):
+                value = [value]
+            for context in value:
+                thing_context.append(context)
+            thing_model["@context"] = thing_context
+        copy_field(thing_model, instance_information, "id")
+        copy_field(thing_model, instance_information, "title")
+        copy_field(thing_model, instance_information, "titles")
+        copy_field(thing_model, instance_information, "description")
+        copy_field(thing_model, instance_information, "descriptions")
+        copy_field(thing_model, instance_information, "version")
+        copy_field(thing_model, instance_information, "created")
+        copy_field(thing_model, instance_information, "modified")
+        copy_field(thing_model, instance_information, "support")
+    for affordance_type in AFFORDANCE_TYPES:
+        thing_model_affordances = thing_model.get(
+            affordance_type, dict())
+        instance_affordances = instance_information.get(
+            affordance_type, dict())
+        if instance_affordances and not thing_model_affordances:
+            thing_model[affordance_type] = dict()
+
+        for affordance_name, affordance_fields in instance_affordances.items():
+
+            if affordance_name not in thing_model_affordances:
+                thing_model[affordance_type][affordance_name] = affordance_fields
+            else:
+                forms = instance_affordances[affordance_name]["forms"]
+                thing_model[affordance_type][affordance_name]["forms"] = forms
 
     result_elements: List[str] = assemble_results(thing_model)
 
