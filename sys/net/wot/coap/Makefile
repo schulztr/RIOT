@@ -1,7 +1,7 @@
 MODULE = wot_coap
 
 WOT_TD_CONFIG = $(BINDIR)/coap_config.c
-SRC += $(WOT_TD_CONFIG)
+GENSRC += $(WOT_TD_CONFIG)
 
 all: generate-wot-config
 
