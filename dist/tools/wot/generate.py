@@ -374,7 +374,8 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
     return resource_list
 
 
-def get_wot_json(path: str) -> dict:
+def get_wot_json(app_path: str, json_path: str) -> dict:
+    path = f'{app_path}/{json_path}'
     try:
         f: IO[Any] = open(path)
         wot_json: dict = json.loads(f.read())
@@ -1295,12 +1296,13 @@ def merge_thing_models(thing_models):
     return empty_thing_model
 
 
-def get_result(thing_model_jsons, instance_information_json) -> str:
-    thing_models = [get_wot_json(thing_model_json)
+def get_result(app_dir_path, thing_model_jsons, instance_information_json) -> str:
+    thing_models = [get_wot_json(app_dir_path, thing_model_json)
                     for thing_model_json in thing_model_jsons]
 
     thing_model = merge_thing_models(thing_models)
-    instance_information = get_wot_json(instance_information_json)
+    instance_information = get_wot_json(
+        app_dir_path, instance_information_json)
     for key, value in instance_information.items():
         if key == "security":
             if isinstance(value, str):
@@ -1356,7 +1358,8 @@ def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
 
-    result: str = get_result(args.thing_models, args.thing_instance_info)
+    result: str = get_result(
+        args.appdir, args.thing_models, args.thing_instance_info)
     write_to_c_file(result, args.appdir)
 
 
