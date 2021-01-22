@@ -60,16 +60,6 @@ static gcoap_listener_t _wot_coap_listener = {
     NULL,
 };
 
-wot_td_sec_scheme_t wot_td_security_schema_nosec_sc_sec_scheme = {
-    .scheme_type = SECURITY_SCHEME_NONE,
-};
-
-wot_td_security_t wot_td_security_schema_nosec_sc = {
-    .key = "nosec_sc",
-    .value = &wot_td_security_schema_nosec_sc_sec_scheme,
-    .next = NULL,
-};
-
 wot_td_extension_t wot_td_toggle_action_aff_int_form_0_extension = {0};
 
 wot_td_uri_t wot_td_toggle_action_aff_int_form_0_href = {0};
@@ -128,10 +118,53 @@ wot_td_coap_prop_affordance_t wot_td_status = {
     .form = &wot_td_status_prop_aff_int_form_0,
 };
 
-json_ld_context_t wot_td_thing_context_1 = {
-    .key = "riot_os",
-    .value = "http://www.example.org/riot-os-definitions#",
+wot_td_sec_scheme_t wot_td_security_schema_nosec_sc_sec_scheme = {
+    .scheme_type = SECURITY_SCHEME_NONE,
+};
+
+wot_td_security_t wot_td_security_schema_nosec_sc = {
+    .key = "nosec_sc",
+    .value = &wot_td_security_schema_nosec_sc_sec_scheme,
     .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_thing_description_1 = {
+    .tag = "de",
+    .value = "Lampen-Ding-Beschreibung",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_thing_description_0 = {
+    .tag = "en",
+    .value = "Lamp Thing Description",
+    .next = &wot_td_thing_description_1,
+};
+
+wot_td_multi_lang_t wot_td_thing_title_1 = {
+    .tag = "de",
+    .value = "Lampen-Ding",
+    .next = NULL,
+};
+
+wot_td_multi_lang_t wot_td_thing_title_0 = {
+    .tag = "en",
+    .value = "Lamp Thing",
+    .next = &wot_td_thing_title_1,
+};
+
+wot_td_uri_t wot_td_thing_id = {
+    .value = "urn:dev:ops:32473-WoTLamp-1234",
+};
+
+json_ld_context_t wot_td_thing_context_2 = {
+    .key = "@language",
+    .value = "en",
+    .next = NULL,
+};
+
+json_ld_context_t wot_td_thing_context_1 = {
+    .value = "https://www.w3.org/2019/wot/td/v1",
+    .next = &wot_td_thing_context_2,
 };
 
 json_ld_context_t wot_td_thing_context_0 = {
@@ -139,16 +172,14 @@ json_ld_context_t wot_td_thing_context_0 = {
     .next = &wot_td_thing_context_1,
 };
 
-wot_td_type_t wot_td_thing_type_0 = {
-    .value = "ThingModel",
-    .next = NULL,
-};
-
 char wot_td_thing_default_language_tag[] = "en";
 
 int wot_td_config_init(wot_td_thing_t *wot_td_thing){
     wot_td_thing->type = &wot_td_thing_type_0;
     wot_td_thing->context = &wot_td_thing_context_0;
+    wot_td_thing->id = &wot_td_thing_id;
+    wot_td_thing->titles = &wot_td_thing_title_0;
+    wot_td_thing->descriptions = &wot_td_thing_description_0;
     wot_td_thing->security = &wot_td_security_schema_nosec_sc;
     wot_td_thing->default_language_tag = wot_td_thing_default_language_tag;
 
