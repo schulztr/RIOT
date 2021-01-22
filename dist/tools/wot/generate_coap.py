@@ -404,7 +404,7 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--thing_instance_info',
                         help="JSON file with user defined meta data")
     parser.add_argument('--output_path',
-                        help="The path to the output file")              
+                        help="The path to the output file")
     parser.add_argument('--used_modules', nargs='*',
                         help="List of modules that have been declared in the build process")
     return parser.parse_args()
@@ -661,7 +661,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
 
 
 def add_type(parent: CStruct, affordance: dict) -> None:
-    if "@type" in affordance:
+    if affordance.get("@type", None):
         struct_name = f'{parent.struct_name}_type'
         type_list: List[str] = affordance["@type"]
         if isinstance(type_list, str):
