@@ -152,8 +152,8 @@ def dict_raise_on_duplicates(ordered_pairs):
     return d
 
 
-def write_to_c_file(result, result_dir) -> None:
-    f: IO[Any] = open(f'{result_dir}/wot_config.c', "w")
+def write_to_c_file(result, result_file) -> None:
+    f: IO[Any] = open(f'{result_file}', "w")
     f.write(result)
     f.close()
 
@@ -403,6 +403,8 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help="List of Thing Models (in JSON format) to be merged into the Thing Description")
     parser.add_argument('--thing_instance_info',
                         help="JSON file with user defined meta data")
+    parser.add_argument('--output_path',
+                        help="The path to the output file")              
     parser.add_argument('--used_modules', nargs='*',
                         help="List of modules that have been declared in the build process")
     return parser.parse_args()
@@ -1360,7 +1362,7 @@ def main() -> None:
 
     result: str = get_result(
         args.appdir, args.thing_models, args.thing_instance_info)
-    write_to_c_file(result, args.appdir)
+    write_to_c_file(result, args.output_path)
 
 
 if __name__ == '__main__':
