@@ -10,6 +10,7 @@ RIOTBASE ?= $(CURDIR)/../..
 # WoT
 USEMODULE += wot_core
 USEMODULE += wot_coap
+USEMODULE += wot_coap_config
 USEMODULE += xtimer
 
 WOT_THING_MODELS += config/wot_td/thing_model.json

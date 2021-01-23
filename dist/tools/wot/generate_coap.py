@@ -152,8 +152,8 @@ def dict_raise_on_duplicates(ordered_pairs):
     return d
 
 
-def write_to_c_file(result, result_dir) -> None:
-    f: IO[Any] = open(f'{result_dir}/wot_config.c', "w")
+def write_to_c_file(result, result_file) -> None:
+    f: IO[Any] = open(f'{result_file}', "w")
     f.write(result)
     f.close()
 
@@ -374,7 +374,8 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
     return resource_list
 
 
-def get_wot_json(path: str) -> dict:
+def get_wot_json(app_path: str, json_path: str) -> dict:
+    path = f'{app_path}/{json_path}'
     try:
         f: IO[Any] = open(path)
         wot_json: dict = json.loads(f.read())
@@ -402,6 +403,8 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help="List of Thing Models (in JSON format) to be merged into the Thing Description")
     parser.add_argument('--thing_instance_info',
                         help="JSON file with user defined meta data")
+    parser.add_argument('--output_path',
+                        help="The path to the output file")
     parser.add_argument('--used_modules', nargs='*',
                         help="List of modules that have been declared in the build process")
     return parser.parse_args()
@@ -658,7 +661,7 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
 
 
 def add_type(parent: CStruct, affordance: dict) -> None:
-    if "@type" in affordance:
+    if affordance.get("@type", None):
         struct_name = f'{parent.struct_name}_type'
         type_list: List[str] = affordance["@type"]
         if isinstance(type_list, str):
@@ -1295,12 +1298,13 @@ def merge_thing_models(thing_models):
     return empty_thing_model
 
 
-def get_result(thing_model_jsons, instance_information_json) -> str:
-    thing_models = [get_wot_json(thing_model_json)
+def get_result(app_dir_path, thing_model_jsons, instance_information_json) -> str:
+    thing_models = [get_wot_json(app_dir_path, thing_model_json)
                     for thing_model_json in thing_model_jsons]
 
     thing_model = merge_thing_models(thing_models)
-    instance_information = get_wot_json(instance_information_json)
+    instance_information = get_wot_json(
+        app_dir_path, instance_information_json)
     for key, value in instance_information.items():
         if key == "security":
             if isinstance(value, str):
@@ -1356,8 +1360,9 @@ def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
 
-    result: str = get_result(args.thing_models, args.thing_instance_info)
-    write_to_c_file(result, args.appdir)
+    result: str = get_result(
+        args.appdir, args.thing_models, args.thing_instance_info)
+    write_to_c_file(result, args.output_path)
 
 
 if __name__ == '__main__':
