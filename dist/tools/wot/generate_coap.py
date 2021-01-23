@@ -137,6 +137,12 @@ resource_affordance_list: List[str] = []
 
 security_definitions = []
 
+required_affordances = {
+    PROPERTIES_NAME: [],
+    ACTIONS_NAME: [],
+    EVENTS_NAME: []
+}
+
 # ResourceDict = TypedDict(
 #     'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
@@ -320,6 +326,8 @@ def generate_coap_resources(thing) -> List[dict]:
     coap_resources: List[dict] = []
     for affordance_type in AFFORDANCE_TYPES:
         for affordance_name, affordance in thing[affordance_type].items():
+            if "forms" not in affordance:
+                continue
             assert_unique_affordance(affordance_name)
             used_affordance_keys.append(affordance_name)
             forms: List[dict] = affordance["forms"]
@@ -913,9 +921,13 @@ def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_na
     struct.add_field("next", "NULL")
 
 
+def add_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> None:
 
+    if "forms" not in affordance:
+        assert affordance_name not in required_affordances[
+            affordance_type], f"Implementation of {affordance_name} is required!"
+        return
 
-def add_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> str:
     resource_index = resource_affordance_list.index(affordance_name)
 
     struct_specifier = get_affordance_type_specifier(affordance_type)
@@ -928,7 +940,6 @@ def add_affordance(parent: CStruct, affordance_type: str, affordance_name: str, 
     add_specific_affordance(struct, affordance_type,
                             affordance_name, affordance)
     parent.add_child(struct)
-    return struct.generate_c_code()
 
 
 def add_affordances(parent: CStruct, thing) -> None:
@@ -944,6 +955,8 @@ def generate_affordance_entries(affordance_type: str, affordance_type_json: dict
     result = ""
     specifier = get_affordance_type_specifier(affordance_type)
     for affordance_name in affordance_type_json:
+        if affordance_name not in used_affordance_keys:
+            continue
         struct_name: str = get_affordance_struct_name(affordance_name)
         result += INDENT
         result += f'{NAMESPACE}_coap_{specifier}_add(thing, &{struct_name});\n'
@@ -1266,7 +1279,12 @@ def merge_thing_models(thing_models):
         for affordance_type in AFFORDANCE_TYPES:
             affordances = thing_model.get(affordance_type, dict())
             for affordance_name, affordance_fields in affordances.items():
-                if affordance_name not in empty_thing_model[affordance_type]:
+                if affordance_name == "required":
+                    required = affordances["required"]
+                    assert isinstance(
+                        required, list), f'"required" needs to be an array, not {type(required).__name__}!'
+                    required_affordances[affordance_type] = affordances["required"]
+                elif affordance_name not in empty_thing_model[affordance_type]:
                     empty_thing_model[affordance_type][affordance_name] = affordance_fields
                 else:
                     print(f"Affordance {affordance_name} already defined!")
