@@ -468,6 +468,7 @@ def generate_coap_handlers(coap_resources: List[dict]) -> str:
 
 
 def generate_coap_link_param(coap_resource: dict) -> str:
+    # TODO: Add link parameters (in sorted order!)
     return "NULL,"
 
 
