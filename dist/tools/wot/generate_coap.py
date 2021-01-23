@@ -913,20 +913,6 @@ def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_na
     struct.add_field("next", "NULL")
 
 
-def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
-    resource_index = resource_affordance_list.index(affordance_name)
-
-    struct_specifier = get_affordance_type_specifier(affordance_type)
-    struct_name = get_affordance_struct_name(affordance_name)
-    struct = CStruct(f"{NAMESPACE}_coap_{struct_specifier}_affordance_t",
-                     struct_name)
-    struct.add_reference_field(
-        "coap_resource", f"{COAP_RESOURCES_NAME}[{resource_index}]")  # TODO: Move to href
-
-    add_specific_affordance(struct, affordance_type,
-                            affordance_name, affordance)
-
-    return struct.generate_c_code()
 
 
 def add_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> str:
@@ -943,17 +929,6 @@ def add_affordance(parent: CStruct, affordance_type: str, affordance_name: str, 
                             affordance_name, affordance)
     parent.add_child(struct)
     return struct.generate_c_code()
-
-
-def generate_json_serialization(coap_jsons: List[dict]) -> str:
-    result_elements = []
-    for coap_json in coap_jsons:
-        for affordance_type in AFFORDANCE_TYPES:
-            for affordance_name, affordance_data in coap_json[affordance_type].items():
-                result_elements.append(generate_affordance_struct(affordance_type,
-                                                                  affordance_name,
-                                                                  affordance_data))
-    return SEPERATOR.join(result_elements)
 
 
 def add_affordances(parent: CStruct, thing) -> None:
