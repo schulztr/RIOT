@@ -1233,7 +1233,8 @@ def merge_thing_models(thing_models):
 
     for thing_model in thing_models:
         for context in thing_model.get("@context", []):
-            empty_thing_model["@context"].append(context)
+            if context not in empty_thing_model["@context"]:
+                empty_thing_model["@context"].append(context)
         for json_ld_type in thing_model.get("@type", []):
             if json_ld_type != "ThingModel":
                 empty_thing_model["@type"].add(json_ld_type)
