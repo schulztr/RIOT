@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import sys
-import re
 from datetime import datetime
 from typing import List, Tuple, Type, IO, Any
 
@@ -306,7 +305,7 @@ class ThingStruct(CStruct):
 
 def write_coap_resources(coap_resources: List[dict]) -> str:
     sorted_resources: List[dict] = sorted(
-        coap_resources, key=lambda k: re.sub('[^A-Za-z]+', '', k['href']))
+        coap_resources, key=lambda k: k['href'])
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
     for resource in sorted_resources:
