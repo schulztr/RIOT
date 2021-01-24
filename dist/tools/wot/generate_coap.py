@@ -1314,9 +1314,9 @@ def get_result(app_dir_path, thing_model_jsons, instance_information_json) -> st
 
         for affordance_name, affordance_fields in instance_affordances.items():
 
-            if affordance_name not in thing_model_affordances:
+            if not thing_model_jsons:
                 thing_model[affordance_type][affordance_name] = affordance_fields
-            else:
+            elif affordance_name in thing_model_affordances:
                 forms = instance_affordances[affordance_name]["forms"]
                 thing_model[affordance_type][affordance_name]["forms"] = forms
 
