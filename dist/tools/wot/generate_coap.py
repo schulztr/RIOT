@@ -322,7 +322,6 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
     methods: List[List[str]] = []
     for resource in resources:
         href: str = resource['href']
-        # handler_function: str = resource['handler_function']
         handler_function: str = resource['riot_os:handler_function']
         method_name: str = resource['cov:methodName']
         if href not in hrefs:
@@ -337,7 +336,7 @@ def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[
                 index], f"ERROR: Method {method_name} already used for href {href}"
             methods[index].append(f"COAP_{method_name}")
 
-        header_file: str = resource.get("header_file", None)
+        header_file: str = resource.get("riot_os:header_file", None)
 
         if header_file and header_file not in header_files:
             header_files.append(header_file)
