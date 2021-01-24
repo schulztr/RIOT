@@ -147,17 +147,6 @@ required_affordances = {
 #     'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
 
-def dict_raise_on_duplicates(ordered_pairs):
-    """Reject duplicate keys."""
-    d = {}
-    for k, v in ordered_pairs:
-        if k in d:
-            raise ValueError("duplicate key: %r" % (k,))
-        else:
-            d[k] = v
-    return d
-
-
 def write_to_c_file(result, result_file) -> None:
     f: IO[Any] = open(f'{result_file}', "w")
     f.write(result)
@@ -168,26 +157,12 @@ def remove_all_white_space(input: str) -> str:
     return input.replace(" ", "_")
 
 
-def validate_coap_json(coap_jsons: dict) -> None:
-    # TODO: Add actual validator for (different types of) affordances
-    assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
-    assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
-    assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
-    assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
-
-
 def get_handler_name_for_href(href: str) -> str:
     return f'wot{href.replace("/", "_")}_handler'
 
 
 def get_handler_function_header(handler_name: str) -> str:
     return f'extern ssize_t {handler_name}(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);'
-
-
-def validate_thing_json(thing_json: dict) -> None:
-    # TODO: Expand thing validation
-    assert thing_json['titles'], "ERROR: name in thing.json missing"
-    assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
 
 
 class CStruct(object):
