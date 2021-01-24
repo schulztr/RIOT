@@ -158,7 +158,7 @@ def remove_all_white_space(input: str) -> str:
 
 
 def get_handler_name_for_href(href: str) -> str:
-    return f'wot{href.replace("/", "_")}_handler'
+    return f'wot{href.replace("/", "_").replace("-", "_")}_handler'
 
 
 def get_handler_function_header(handler_name: str) -> str:
