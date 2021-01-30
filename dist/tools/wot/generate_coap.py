@@ -381,8 +381,10 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
-    parser.add_argument('--thing_models', nargs='*',
-                        help="List of Thing Models (in JSON format) to be merged into the Thing Description")
+    parser.add_argument('--thing_model',
+                        help="Thing Model (in JSON format) which serves as the basis of the Thing Description",
+                        nargs='?', 
+                        const='')
     parser.add_argument('--thing_instance_info',
                         help="JSON file with user defined meta data")
     parser.add_argument('--output_path',
@@ -1208,7 +1210,7 @@ def copy_field(target, source, field_name):
         target[field_name] = source[field_name]
 
 
-def merge_thing_models(thing_models):
+def parse_thing_model_json(app_dir_path, thing_model_json):
     empty_thing_model = {
         "@context": [],
         "@type": set(),
@@ -1231,49 +1233,52 @@ def merge_thing_models(thing_models):
         "securityDefinitions": dict(),
     }
 
-    for thing_model in thing_models:
-        for context in thing_model.get("@context", []):
-            if context not in empty_thing_model["@context"]:
-                empty_thing_model["@context"].append(context)
-        for json_ld_type in thing_model.get("@type", []):
-            if json_ld_type != "ThingModel":
-                empty_thing_model["@type"].add(json_ld_type)
-        for security in thing_model.get("security", []):
-            empty_thing_model["security"].add(security)
-        for security_definition_name, definition in thing_model.get("securityDefinitions", dict()).items():
-            if security_definition_name not in empty_thing_model["securityDefinitions"]:
-                empty_thing_model["securityDefinitions"][security_definition_name] = definition
+    if thing_model_json:
+        thing_model = get_wot_json(app_dir_path, thing_model_json)
+    else:
+        return empty_thing_model
+
+    for context in thing_model.get("@context", []):
+        if context not in empty_thing_model["@context"]:
+            empty_thing_model["@context"].append(context)
+    for json_ld_type in thing_model.get("@type", []):
+        if json_ld_type != "ThingModel":
+            empty_thing_model["@type"].add(json_ld_type)
+    for security in thing_model.get("security", []):
+        empty_thing_model["security"].add(security)
+    for security_definition_name, definition in thing_model.get("securityDefinitions", dict()).items():
+        # FIXME: This check can probably be removed
+        if security_definition_name not in empty_thing_model["securityDefinitions"]:
+            empty_thing_model["securityDefinitions"][security_definition_name] = definition
+        else:
+            print(
+                f"INFO: Security definition {security_definition_name} already defined!")
+    # FIXME: Assert that links are unique
+    for link in thing_model.get("links", []):
+        empty_thing_model["links"].append(link)
+    # FIXME: Assert that forms are unique
+    for form in thing_model.get("forms", []):
+        empty_thing_model["forms"].append(form)
+    for affordance_type in AFFORDANCE_TYPES:
+        affordances = thing_model.get(affordance_type, dict())
+        for affordance_name, affordance_fields in affordances.items():
+            if affordance_name == "required":
+                required = affordances["required"]
+                assert isinstance(
+                    required, list), f'"required" needs to be an array, not {type(required).__name__}!'
+                required_affordances[affordance_type] = affordances["required"]
+            elif affordance_name not in empty_thing_model[affordance_type]:
+                empty_thing_model[affordance_type][affordance_name] = affordance_fields
             else:
-                print(
-                    f"INFO: Security definition {security_definition_name} already defined!")
-        # FIXME: Assert that links are unique
-        for link in thing_model.get("links", []):
-            empty_thing_model["links"].append(link)
-        # FIXME: Assert that forms are unique
-        for form in thing_model.get("forms", []):
-            empty_thing_model["forms"].append(form)
-        for affordance_type in AFFORDANCE_TYPES:
-            affordances = thing_model.get(affordance_type, dict())
-            for affordance_name, affordance_fields in affordances.items():
-                if affordance_name == "required":
-                    required = affordances["required"]
-                    assert isinstance(
-                        required, list), f'"required" needs to be an array, not {type(required).__name__}!'
-                    required_affordances[affordance_type] = affordances["required"]
-                elif affordance_name not in empty_thing_model[affordance_type]:
-                    empty_thing_model[affordance_type][affordance_name] = affordance_fields
-                else:
-                    print(f"Affordance {affordance_name} already defined!")
+                print(f"Affordance {affordance_name} already defined!")
+
     return empty_thing_model
 
 
-def get_result(app_dir_path, thing_model_jsons, instance_information_json) -> str:
-    thing_models = [get_wot_json(app_dir_path, thing_model_json)
-                    for thing_model_json in thing_model_jsons]
+def get_result(app_dir_path, thing_model_json, instance_information_json) -> str:
+    thing_model = parse_thing_model_json(app_dir_path, thing_model_json)
+    instance_information = get_wot_json(app_dir_path, instance_information_json)
 
-    thing_model = merge_thing_models(thing_models)
-    instance_information = get_wot_json(
-        app_dir_path, instance_information_json)
     for key, value in instance_information.items():
         if key == "security":
             if isinstance(value, str):
@@ -1314,7 +1319,7 @@ def get_result(app_dir_path, thing_model_jsons, instance_information_json) -> st
 
         for affordance_name, affordance_fields in instance_affordances.items():
 
-            if not thing_model_jsons:
+            if not thing_model_json:
                 thing_model[affordance_type][affordance_name] = affordance_fields
             elif affordance_name in thing_model_affordances:
                 forms = instance_affordances[affordance_name]["forms"]
@@ -1330,7 +1335,7 @@ def main() -> None:
     assert_command_line_arguments(args)
 
     result: str = get_result(
-        args.appdir, args.thing_models, args.thing_instance_info)
+        args.appdir, args.thing_model, args.thing_instance_info)
     write_to_c_file(result, args.output_path)
 
 
