@@ -384,7 +384,7 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help='Define if WoT TD SAUL is used')
     parser.add_argument('--thing_model',
                         help="Thing Model (in JSON format) which serves as the basis of the Thing Description",
-                        nargs='?', 
+                        nargs='?',
                         const='')
     parser.add_argument('--thing_instance_info',
                         help="JSON file with user defined meta data")
