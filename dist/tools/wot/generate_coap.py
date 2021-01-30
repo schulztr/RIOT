@@ -4,8 +4,9 @@ import os
 import sys
 from datetime import datetime
 from typing import List, Tuple, Type, IO, Any
+import warnings
 
-DEFAULT_LANG = "en"
+default_language = "en"
 NAMESPACE = "wot_td"
 THING_NAME = "thing"
 PROPERTIES_NAME = 'properties'
@@ -667,7 +668,24 @@ def add_multi_lang(parent: CStruct, field_name: str, struct_name: str, json_key:
     if json_key in affordance:
         complete_struct_name = f'{parent.struct_name}_{struct_name}'
         parent.add_reference_field(field_name, f"{complete_struct_name}_0")
+        singular_key = json_key[0:-1]
+        if singular_key in affordance:
+            default = affordance[singular_key]
+
         multi_lang_dict = affordance[json_key]
+
+        if default_language in multi_lang_dict:
+            if default and multi_lang_dict[default_language] != default:
+                warning = f'"{multi_lang_dict[default_language]}", a {singular_key} for language "{default_language}", and "{default}", an already defined default {singular_key}, do not match.'
+                warnings.warn(warning)
+        elif default:
+            warning = f'No {singular_key} found for language "{default_language}". Using the default {singular_key} "{default}"" instead.'
+            warnings.warn(warning)
+            multi_lang_dict[default_language] = default
+        else:
+            error_message = f'No {singular_key} for language "{default_language}" and no default {singular_key} defined.'
+            raise ValueError(error_message)
+
         for index, entry in enumerate(multi_lang_dict.items()):
             tag, value = entry
             struct = CStruct(f'{NAMESPACE}_multi_lang_t',
@@ -1110,9 +1128,25 @@ def add_version_info(parent: CStruct, schema):
         parent.add_child(struct)
 
 
+def filter_language_from_context(contexts):
+    global default_language
+    filtered_contexts = []
+    for context in contexts:
+        if isinstance(context, dict):
+            if "@language" in context:
+                language = context["@language"]
+                assert isinstance(
+                    language, str), f'@language has to be of type str, not {type(language).__name__}'
+                default_language = language
+                continue
+        filtered_contexts.append(context)
+    return filtered_contexts
+
+
 def add_context(parent: CStruct, schema):
     assert "@context" in schema
-    contexts = schema["@context"]
+    raw_contexts = schema["@context"]
+    contexts = filter_language_from_context(raw_contexts)
     for index, context in enumerate(contexts):
         struct_name = f'{parent.struct_name}_context'
         struct = CStruct("json_ld_context_t",
@@ -1131,6 +1165,8 @@ def add_context(parent: CStruct, schema):
 
         add_next_field(index, struct, struct_name, contexts)
         parent.add_child(struct)
+
+    parent.add_string(f"default_language_tag", f'"{default_language}"')
 
 
 def add_links(parent: CStruct, schema):
@@ -1169,8 +1205,6 @@ def generate_thing_serialization(thing: dict):
     add_forms(struct, THING_NAME, thing)
     add_affordances(struct, thing)
     add_links(struct, thing)
-    # TODO: Retrieve default language info from @context
-    struct.add_string(f"default_language_tag", f'"{DEFAULT_LANG}"')
     return struct.generate_c_code()
 
 
