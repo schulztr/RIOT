@@ -477,8 +477,8 @@ void _serialize_security(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
 }
 
-void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_security_t *security, char *lang, wot_td_ser_slicer_t *slicer){
-    wot_td_security_t *tmp_sec = security;
+void _serialize_security_def_array(wot_td_serialize_receiver_t receiver, wot_td_security_definition_t *security_def, char *lang, wot_td_ser_slicer_t *slicer){
+    wot_td_security_definition_t *tmp_sec = security_def;
     wot_td_sec_scheme_t *scheme = NULL;
     _wot_td_fill_json_obj_key(receiver, wot_td_security_def_obj_key, sizeof(wot_td_security_def_obj_key)-1, slicer);
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
@@ -492,17 +492,18 @@ void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_secu
         tmp_sec = tmp_sec->next;
     }
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
+}
 
-    _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+void _serialize_security_array(wot_td_serialize_receiver_t receiver, wot_td_security_t *security, wot_td_ser_slicer_t *slicer){
     _wot_td_fill_json_obj_key(receiver, wot_td_security_def_obj_key, 8, slicer);
     _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
-    tmp_sec = security;
-    while (tmp_sec != NULL){
-        _wot_td_fill_json_string(receiver, tmp_sec->key, strlen(tmp_sec->key), slicer);
-        if(tmp_sec->next != NULL){
+    wot_td_security_t *tmp = security;
+    while (tmp != NULL){
+        _wot_td_fill_json_string(receiver, tmp->definition->key, strlen(tmp->definition->key), slicer);
+        if(tmp->next != NULL){
             _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         }
-        tmp_sec = tmp_sec->next;
+        tmp = tmp->next;
     }
     _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
 }
@@ -677,7 +678,7 @@ void _serialize_form_array(wot_td_serialize_receiver_t receiver, wot_td_form_t *
             wot_td_security_t *sec = tmp->security;
             _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
             while (sec != NULL){
-                _wot_td_fill_json_string(receiver, sec->key, strlen(sec->key), slicer);
+                _wot_td_fill_json_string(receiver, sec->definition->key, strlen(sec->definition->key), slicer);
                 sec = sec->next;
             }
             _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
@@ -1176,10 +1177,18 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
         _wot_td_fill_json_string(receiver, wot_td_ser_w3c_context_value, sizeof(wot_td_ser_w3c_context_value)-1, slicer);
     }
 
+    if(thing->security_def != NULL){
+        _previous_prop_check(receiver, has_previous_prop, slicer);
+        has_previous_prop = true;
+        _serialize_security_def_array(receiver, thing->security_def, thing->default_language_tag, slicer);
+    }else{
+        return 1;
+    }
+
     if(thing->security != NULL){
         _previous_prop_check(receiver, has_previous_prop, slicer);
         has_previous_prop = true;
-        _serialize_security_array(receiver, thing->security, thing->default_language_tag, slicer);
+        _serialize_security_array(receiver, thing->security, slicer);
     }else{
         return 1;
     }

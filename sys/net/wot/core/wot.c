@@ -205,10 +205,6 @@ wot_td_security_t * wot_td_thing_security_find_nth(wot_td_thing_t *thing, uint8_
     WOT_TD_NTH_CONTENT(thing, security, wot_td_security_t);
 }
 
-wot_td_security_t * wot_td_thing_security_find_key(wot_td_thing_t *thing, char *key){
-    WOT_TD_FIND_x(thing, security, wot_td_security_t, key);
-}
-
 int wot_td_thing_link_add(wot_td_thing_t *thing, wot_td_link_t *link){
     WOT_TD_ADD_CONTENT(thing, links, link, wot_td_link_t);
 }
@@ -243,10 +239,6 @@ int wot_td_form_security_rm(wot_td_form_t *form, wot_td_security_t *security){
 
 wot_td_security_t * wot_td_form_security_find_nth(wot_td_form_t *form, uint8_t pos){
     WOT_TD_NTH_CONTENT(form, security, wot_td_security_t);
-}
-
-wot_td_security_t * wot_td_form_security_find_key(wot_td_form_t *form, char *key){
-    WOT_TD_FIND_x(form, security, wot_td_security_t, key);
 }
 
 int wot_td_form_auth_scope_add(wot_td_form_t *form, wot_td_auth_scopes_t *scope){
