@@ -98,9 +98,14 @@ typedef struct {
     void *scheme;
 } wot_td_sec_scheme_t;
 
-typedef struct wot_td_sec {
+typedef struct wot_td_sec_def {
     const char *key;
     wot_td_sec_scheme_t *value;
+    struct wot_td_sec_def *next;
+} wot_td_security_definition_t;
+
+typedef struct wot_td_sec {
+    wot_td_security_definition_t *definition;
     struct wot_td_sec *next;
 } wot_td_security_t;
 
@@ -320,6 +325,7 @@ typedef struct {
     wot_td_link_t *links;
     wot_td_form_t *forms;
     wot_td_security_t *security;
+    wot_td_security_definition_t *security_def;
     char *default_language_tag;
 } wot_td_thing_t;
 
@@ -370,7 +376,12 @@ wot_td_event_affordance_t * wot_td_thing_event_find_key(wot_td_thing_t *thing, c
 int wot_td_thing_security_add(wot_td_thing_t *thing, wot_td_security_t *security);
 int wot_td_thing_security_rm(wot_td_thing_t *thing, wot_td_security_t *security);
 wot_td_security_t * wot_td_thing_security_find_nth(wot_td_thing_t *thing, uint8_t pos);
-wot_td_security_t * wot_td_thing_security_find_key(wot_td_thing_t *thing, char *key);
+
+
+int wot_td_thing_security_def_add(wot_td_thing_t *thing, wot_td_security_definition_t *security_def);
+int wot_td_thing_security_def_rm(wot_td_thing_t *thing, wot_td_security_definition_t *security_def);
+wot_td_security_t * wot_td_thing_security_def_find_nth(wot_td_thing_t *thing, uint8_t pos);
+wot_td_security_t * wot_td_thing_security_def_find_key(wot_td_thing_t *thing, char *key);
 
 
 int wot_td_thing_link_add(wot_td_thing_t *thing, wot_td_link_t *link);
