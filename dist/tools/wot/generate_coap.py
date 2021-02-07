@@ -131,6 +131,27 @@ ALLOWED_OPERATIONS_BY_TYPE = {
     EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
 }
 
+DEFAULT_OPERATIONS_BY_TYPE = {
+    PROPERTIES_NAME: ["readproperty", "writeproperty", ],
+    ACTIONS_NAME: ["invokeaction", ],
+    EVENTS_NAME: ["subscribeevent", ],
+}
+
+DEFAULT_COAP_METHOD_BY_OPERATION = {
+    "readproperty": "COAP_GET",
+    "writeproperty": "COAP_PUT",
+    "observeproperty": "COAP_GET",
+    "unobserveproperty": "COAP_GET",
+    "invokeaction": "COAP_POST",
+    "subscribeevent": "COAP_GET",
+    "unsubscribeevent": "COAP_GET",
+    "readallproperties": "COAP_GET",
+    "writeallproperties": "COAP_PUT",
+    "readmultipleproperties": "COAP_GET",
+    "writemultipleproperties": "COAP_PUT",
+}
+
+
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
 extern_functions: List[str] = []
@@ -309,12 +330,12 @@ def generate_coap_resources(thing) -> List[dict]:
             used_affordance_keys.append(affordance_name)
             forms: List[dict] = affordance["forms"]
             resources: List[dict] = extract_coap_resources(
-                affordance_name, forms)
+                affordance_name, affordance_type, forms)
             coap_resources.extend(resources)
 
     if "forms" in thing:
         thing_resources: List[dict] = extract_coap_resources(
-            "thing", thing["forms"])
+            "thing", "thing", thing["forms"])
         coap_resources.extend(thing_resources)
 
     return coap_resources
@@ -324,25 +345,36 @@ def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[dict]:
+def extract_coap_resources(affordance_name: str, affordance_type: str, resources: List[dict]) -> List[dict]:
     hrefs: List[str] = []
     handlers: List[str] = []
     methods: List[List[str]] = []
     for resource in resources:
         href: str = resource['href']
         handler_function: str = resource['riot_os:handler_function']
-        method_name: str = resource['cov:methodName']
+        if affordance_type == "thing":
+            assert resource["op"]
+        if "op" in resource:
+            ops = resource["op"]
+            if isinstance(ops, str):
+                ops = [ops]
+        elif affordance_type == "type":
+            raise ValueError(f"No op defined for thing resource {href}!")
+        else:
+            ops = DEFAULT_OPERATIONS_BY_TYPE[affordance_type]
+        op_methods = [DEFAULT_COAP_METHOD_BY_OPERATION[x] for x in ops]
         if href not in hrefs:
             hrefs.append(href)
             handlers.append(handler_function)
-            methods.append([f"COAP_{method_name}"])
+            methods.append(op_methods)
         else:
             index: int = hrefs.index(href)
             assert handlers[
                 index] == handler_function, f"ERROR: Different handler function for {href}"
-            assert method_name not in methods[
-                index], f"ERROR: Method {method_name} already used for href {href}"
-            methods[index].append(f"COAP_{method_name}")
+            for method_name in op_methods:
+                assert method_name not in methods[
+                    index], f"ERROR: Method {method_name} already used for href {href}"
+            methods[index].extend(op_methods)
 
         header_file: str = resource.get("riot_os:header_file", None)
 
