@@ -483,16 +483,6 @@ def add_next_field(index: int, struct: CStruct, struct_name: str, struct_data, u
         struct.add_field("next", "NULL")
 
 
-def add_href(parent: CStruct,  form: dict) -> None:
-    href_name = f'{parent.struct_name}_href'
-    assert "href" in form, f'ERROR: "href" is mandatory in "form" elements! ({href_name})'
-    parent.add_reference_field("href", href_name)
-    struct = CStruct(f"{NAMESPACE}_uri_t",
-                     f"{href_name}")
-    add_uri(struct, "href", "href", form)
-    parent.add_child(struct)
-
-
 def add_extension(parent: CStruct) -> None:
     extension_name = f'{parent.struct_name}_extension'
     parent.add_reference_field("extensions", extension_name)
