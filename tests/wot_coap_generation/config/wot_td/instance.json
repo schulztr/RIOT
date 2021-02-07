@@ -16,9 +16,7 @@
             "forms": [
                 {
                     "riot_os:handler_function": "_led_status_handler",
-                    "op": "readproperty",
-                    "href": "/led/status",
-                    "cov:methodName": "GET"
+                    "href": "/led/status"
                 }
             ]
         }
@@ -28,8 +26,7 @@
             "forms": [
                 {
                     "riot_os:handler_function": "_led_toggle_handler",
-                    "href": "/led/toggle",
-                    "cov:methodName": "POST"
+                    "href": "/led/toggle"
                 }
             ]
         }
