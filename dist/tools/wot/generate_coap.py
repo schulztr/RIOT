@@ -288,7 +288,7 @@ class CStruct(object):
     def add_child(self, child: 'CStruct', add_at_back=False) -> None:
         assert not self.zero_struct
         if add_at_back:
-            self.children.append(child)    
+            self.children.append(child)
         else:
             self.children.insert(0, child)
         child.parent = self
@@ -1304,10 +1304,11 @@ def parse_thing_model_json(app_dir_path, thing_model_json):
         if json_ld_type != "ThingModel":
             empty_thing_model["@type"].add(json_ld_type)
     for security in thing_model.get("security", []):
-        empty_thing_model["security"].add(security)        
+        empty_thing_model["security"].add(security)
     if not thing_model.get("securityDefinitions", None):
         print("WARNING: No security definitions found! Using \"no security\" as default.")
-        empty_thing_model["securityDefinitions"] = {"nosec_sc": {"scheme": "none"}}
+        empty_thing_model["securityDefinitions"] = {
+            "nosec_sc": {"scheme": "none"}}
         empty_thing_model["security"] = ["nosec_sc"]
     else:
         empty_thing_model["securityDefinitions"] = thing_model["securityDefinitions"]
@@ -1380,12 +1381,16 @@ def get_result(app_dir_path, thing_model_json, instance_information_json) -> str
             thing_model[affordance_type] = dict()
 
         for affordance_name, affordance_fields in instance_affordances.items():
+            model_affordance = thing_model[affordance_type][affordance_name]
 
             if not thing_model_json:
-                thing_model[affordance_type][affordance_name] = affordance_fields
+                model_affordance = affordance_fields
             elif affordance_name in thing_model_affordances:
-                forms = instance_affordances[affordance_name]["forms"]
-                thing_model[affordance_type][affordance_name]["forms"] = forms
+                instance_affordance = instance_affordances[affordance_name]
+                copy_field(model_affordance, instance_affordance, "forms")
+                if "security" in instance_affordance:
+                    copy_field(model_affordance,
+                               instance_affordance, "security")
 
     result_elements: List[str] = assemble_results(thing_model)
 
