@@ -916,11 +916,12 @@ def add_property_affordances(parent, thing):
     if thing["properties"]:
         properties = thing["properties"]
         struct_name = f'{parent.struct_name}_property'
-        for index, prop in enumerate(properties.values()):
+        for index, (property_name, prop) in enumerate(properties.items()):
             if index == 0:
                 parent.add_reference_field("properties", f'{struct_name}_0')
             struct = CStruct(f"{NAMESPACE}_prop_affordance_t",
                              f'{struct_name}_{index}')
+            struct.add_field("key", f'"{property_name}"')
             struct.add_boolean_field("observable", "observable", prop)
             add_data_schema_field(struct, "data_schema",
                                   "properties", prop)
@@ -933,11 +934,12 @@ def add_action_affordances(parent, thing):
     if thing["actions"]:
         actions = thing["actions"]
         struct_name = f'{parent.struct_name}_action'
-        for index, action in enumerate(actions.values()):
+        for index, (action_name, action) in enumerate(actions.items()):
             if index == 0:
                 parent.add_reference_field("actions", f'{struct_name}_0')
             struct = CStruct(f"{NAMESPACE}_action_affordance_t",
                              f'{struct_name}_{index}')
+            struct.add_field("key", f'"{action_name}"')
             struct.add_boolean_field("safe", "safe", action)
             struct.add_boolean_field("idempotent", "idempotent", action)
             add_data_schema_field(struct, "input", "input", action)
@@ -951,11 +953,12 @@ def add_event_affordances(parent, thing):
     if thing["events"]:
         events = thing["events"]
         struct_name = f'{parent.struct_name}_event'
-        for index, event in enumerate(events.values()):
+        for index, (event_name, event) in enumerate(events.items()):
             if index == 0:
                 parent.add_reference_field("events", f'{struct_name}_0')
             struct = CStruct(f"{NAMESPACE}_event_affordance_t",
                              f'{struct_name}_{index}')
+            struct.add_field("key", f'"{event_name}"')
             add_data_schema_field(struct, "subscription",
                                   "subscription", event)
             add_data_schema_field(struct, "data", "data", event)
