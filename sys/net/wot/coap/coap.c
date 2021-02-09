@@ -9,19 +9,8 @@
 #include "net/wot/coap/config.h"
 #include "msg.h"
 
-#define WOT_TD_COAP_AFF_ADD(ptr, aff, func_name) \
-    func_name(thing, aff);                       \
-    _add_endpoint_to_form(                       \
-        ptr->form, ptr->coap_resource);          \
-    _add_method_to_form(                         \
-        ptr->form, ptr->coap_resource);          \
-    return 0;
-
-
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
-
-sock_udp_ep_t wot_coap_sock = { .port=COAP_PORT, .family=AF_INET6 };
 
 static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
                             size_t maxlen, coap_link_encoder_ctx_t *context);
@@ -239,24 +228,19 @@ void _add_endpoint_to_form(wot_td_form_t * form, const coap_resource_t * resourc
     form->href->value = resource->path;
 }
 
-int wot_td_coap_prop_add(wot_td_thing_t *thing, wot_td_coap_prop_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_prop_add);
-}
-
-int wot_td_coap_action_add(wot_td_thing_t *thing, wot_td_coap_action_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_action_add);
-}
-
-int wot_td_coap_event_add(wot_td_thing_t *thing, wot_td_coap_event_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_event_add);
+void wot_td_coap_add_forms(wot_td_coap_form_t *coap_forms){
+    wot_td_coap_form_t *tmp = coap_forms;
+    while(tmp != NULL){
+        _add_endpoint_to_form(tmp->form, tmp->coap_resource);
+        _add_method_to_form(tmp->form, tmp->coap_resource);
+        tmp = tmp->next;
+    }
 }
 
 void wot_td_coap_server_init(void)
 {
     wot_td_thing_context_add(&wot_thing, &wot_td_coap_binding_context);
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-
-    //Todo: Implement proper IP address resolve solution and add it to the TD
 
     wot_td_config_init(&wot_thing);
     wot_td_coap_config_init(&wot_thing);
