@@ -515,15 +515,6 @@ def add_next_field(index: int, struct: CStruct, struct_name: str, struct_data, u
         struct.add_field("next", "NULL")
 
 
-def add_extension(parent: CStruct) -> None:
-    extension_name = f'{parent.struct_name}_extension'
-    parent.add_reference_field("extensions", extension_name)
-    struct = CStruct(f"{NAMESPACE}_extension_t",
-                     extension_name,
-                     zero_struct=True)
-    parent.add_child(struct)
-
-
 def add_operations(parent: CStruct, form: dict, affordance_type: str) -> None:
     if "op" in form:
         op_name = f'{parent.struct_name}_op'
@@ -667,7 +658,6 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         add_security(struct, form)
         add_scopes(struct, form)
         add_response(struct, form)
-        add_extension(struct)
         add_next_field(index, struct, struct_name,
                        forms)
 
