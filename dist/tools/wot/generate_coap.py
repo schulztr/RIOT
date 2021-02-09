@@ -1380,12 +1380,13 @@ def get_result(app_dir_path, thing_model_json, instance_information_json) -> str
             thing_model[affordance_type] = dict()
 
         for affordance_name, affordance_fields in instance_affordances.items():
+            model_affordance = thing_model[affordance_type][affordance_name]
 
             if not thing_model_json:
-                thing_model[affordance_type][affordance_name] = affordance_fields
+                model_affordance = affordance_fields
             elif affordance_name in thing_model_affordances:
-                forms = instance_affordances[affordance_name]["forms"]
-                thing_model[affordance_type][affordance_name]["forms"] = forms
+                instance_affordance = instance_affordances[affordance_name]
+                copy_field(model_affordance, instance_affordance, "forms")
 
     result_elements: List[str] = assemble_results(thing_model)
 
