@@ -273,18 +273,24 @@ class CStruct(object):
             assert isinstance(value, bool)
             self.add_field(c_name, get_c_boolean(value))
 
-    def add_field(self, field_name: str, field_value: str) -> None:
+    def add_field(self, field_name: str, field_value: str, insert_at_front=False) -> None:
         assert not self.zero_struct
         field = self._generate_field(field_name, field_value)
-        self.elements.append(field)
+        if insert_at_front:
+            self.elements.insert(0, field)
+        else:
+            self.elements.append(field)
 
     def add_unordered_field(self, field: str) -> None:
         assert not self.zero_struct
         self.elements.append(f"{field},")
 
-    def add_child(self, child: 'CStruct') -> None:
+    def add_child(self, child: 'CStruct', add_at_back=False) -> None:
         assert not self.zero_struct
-        self.children.insert(0, child)
+        if add_at_back:
+            self.children.append(child)    
+        else:
+            self.children.insert(0, child)
         child.parent = self
 
 
@@ -581,7 +587,7 @@ def add_content_coding(struct: CStruct, form: dict) -> None:
 
 
 def add_security(parent: CStruct, form: dict) -> None:
-    if form.get("form", []):
+    if form.get("security", []):
         securities = form["security"]
         if isinstance(securities, str):
             securities = [securities]
@@ -594,9 +600,8 @@ def add_security(parent: CStruct, form: dict) -> None:
             parent.add_child(struct)
             if index == 0:
                 parent.add_reference_field("security", struct_name)
-            struct.add_field("key", f'"{security}"')
             struct.add_reference_field(
-                "value", f'{NAMESPACE}_security_schema_{security}_sec_scheme')
+                "definition", f'{NAMESPACE}_security_schema_{security}')
 
             if index + 1 < len(enumerated_securities):
                 next_item = enumerated_securities[index + 1][1]
@@ -1077,14 +1082,12 @@ def add_security_definitions(parent: CStruct, thing):
         prefix = f'{NAMESPACE}_security_schema'
         suffix = remove_all_white_space(name)
         struct_name = f'{prefix}_{suffix}'
-        struct = CStruct(f"{NAMESPACE}_security_t",
+        struct = CStruct(f"{NAMESPACE}_security_definition_t",
                          struct_name)
-
+        # parent.add_child(struct, add_at_back=True)
         parent.add_child(struct)
         if index == 0:
-            # FIXME: Not all security definitions have to appear under "security"!
-            # parent.add_reference_field("securityDefinitions", struct_name)
-            parent.add_reference_field("security", struct_name)
+            parent.add_reference_field("security_def", struct_name)
         struct.add_field("key", f'"{suffix}"')
         add_sec_schema(struct, definition)
 
@@ -1217,12 +1220,13 @@ def generate_thing_serialization(thing: dict):
     add_datetime(struct, "created", "created", thing)
     add_datetime(struct, "modified", "modified", thing)
     add_uri(struct, "support", "support", thing)
-    add_security_definitions(struct, thing)
+    add_security(struct, thing)
     add_forms(struct, THING_NAME, thing)
     add_property_affordances(struct, thing)
     add_action_affordances(struct, thing)
     add_event_affordances(struct, thing)
     add_links(struct, thing)
+    add_security_definitions(struct, thing)
     return struct.generate_c_code()
 
 
@@ -1263,6 +1267,7 @@ def copy_field(target, source, field_name):
 
 
 def parse_thing_model_json(app_dir_path, thing_model_json):
+    global security_definitions
     empty_thing_model = {
         "@context": [],
         "@type": set(),
@@ -1299,14 +1304,16 @@ def parse_thing_model_json(app_dir_path, thing_model_json):
         if json_ld_type != "ThingModel":
             empty_thing_model["@type"].add(json_ld_type)
     for security in thing_model.get("security", []):
-        empty_thing_model["security"].add(security)
-    for security_definition_name, definition in thing_model.get("securityDefinitions", dict()).items():
-        # FIXME: This check can probably be removed
-        if security_definition_name not in empty_thing_model["securityDefinitions"]:
-            empty_thing_model["securityDefinitions"][security_definition_name] = definition
-        else:
-            print(
-                f"INFO: Security definition {security_definition_name} already defined!")
+        empty_thing_model["security"].add(security)        
+    if not thing_model.get("securityDefinitions", None):
+        print("WARNING: No security definitions found! Using \"no security\" as default.")
+        empty_thing_model["securityDefinitions"] = {"nosec_sc": {"scheme": "none"}}
+        empty_thing_model["security"] = ["nosec_sc"]
+    else:
+        empty_thing_model["securityDefinitions"] = thing_model["securityDefinitions"]
+        assert "security" in thing_model
+        empty_thing_model["security"] = thing_model["security"]
+    security_definitions = empty_thing_model["securityDefinitions"]
     # FIXME: Assert that links are unique
     for link in thing_model.get("links", []):
         empty_thing_model["links"].append(link)
