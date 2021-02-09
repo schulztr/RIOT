@@ -1387,6 +1387,9 @@ def get_result(app_dir_path, thing_model_json, instance_information_json) -> str
             elif affordance_name in thing_model_affordances:
                 instance_affordance = instance_affordances[affordance_name]
                 copy_field(model_affordance, instance_affordance, "forms")
+                if "security" in instance_affordance:
+                    copy_field(model_affordance,
+                               instance_affordance, "security")
 
     result_elements: List[str] = assemble_results(thing_model)
 
