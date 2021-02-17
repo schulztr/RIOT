@@ -177,7 +177,7 @@ static const coap_resource_t _wot_td_coap_resources[] = {
 };
 
 static const char *_wot_td_link_params[] = {
-    ";et=\"wot.thing\"",
+    ";rt=\"wot.thing\";ct=432",
 };
 
 /* Adds link format params to resource list. TODO: Can probably be streamlined */
