@@ -968,9 +968,9 @@ def generate_init_function(thing) -> str:
     return result
 
 
-def split_uri(uri, seperator):
-    schema, value = tuple(uri.split(seperator, 1))
-    schema += seperator
+def split_uri(uri, separator):
+    schema, value = tuple(uri.split(separator, 1))
+    schema += separator
     return schema, value
 
 
