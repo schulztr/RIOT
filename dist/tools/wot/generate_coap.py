@@ -1,9 +1,8 @@
 import argparse
 import json
-import os
 import sys
 from datetime import datetime
-from typing import List, Tuple, Type, IO, Any
+from typing import List, Tuple, IO, Any
 import warnings
 
 default_language = "en"
@@ -35,7 +34,8 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
     ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
     if (res > 0)
     {{
-        if ({COAP_LINK_PARAMS_NAME}[context->link_pos] && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
+        if ({COAP_LINK_PARAMS_NAME}[context->link_pos] 
+            && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
         {{
             if (buf)
             {{
@@ -686,14 +686,18 @@ def add_multi_lang(parent: CStruct, field_name: str, struct_name: str, json_key:
 
         if default_language in multi_lang_dict:
             if default and multi_lang_dict[default_language] != default:
-                warning = f'"{multi_lang_dict[default_language]}", a {singular_key} for language "{default_language}", and "{default}", an already defined default {singular_key}, do not match.'
+                warning = f'"{multi_lang_dict[default_language]}", a {singular_key} for' \
+                          f'language "{default_language}", and "{default}", an already ' \
+                          f'defined default {singular_key}, do not match.'
                 warnings.warn(warning)
         elif default:
-            warning = f'No {singular_key} found for language "{default_language}". Using the default {singular_key} "{default}"" instead.'
+            warning = f'No {singular_key} found for language "{default_language}". ' \
+                      f'Using the default {singular_key} "{default}"" instead.'
             warnings.warn(warning)
             multi_lang_dict[default_language] = default
         else:
-            error_message = f'No {singular_key} for language "{default_language}" and no default {singular_key} defined.'
+            error_message = f'No {singular_key} for language "{default_language}"' \
+                            f'and no default {singular_key} defined.'
             raise ValueError(error_message)
 
         for index, entry in enumerate(multi_lang_dict.items()):
@@ -956,7 +960,7 @@ def add_event_affordances(parent, thing):
 def generate_init_function(thing) -> str:
     result = f"int {NAMESPACE}_coap_config_init({NAMESPACE}_thing_t *thing)\n"
     result += "{\n"
-    result += INDENT + f"(void) thing;\n"
+    result += INDENT + "(void) thing;\n"
     result += INDENT + f"gcoap_register_listener(&{COAP_LISTENER_NAME});\n"
     result += INDENT + "return 0;\n"
     result += "}\n"
@@ -1101,7 +1105,7 @@ def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schem
             date = date.replace(char, "+00:00")
         try:
             parsed_date = datetime.fromisoformat(date)
-        except:
+        except Exception:
             print(
                 f'WARNING: date for field "{json_field_name}" could not be parsed!')
             return
@@ -1174,7 +1178,7 @@ def add_context(parent: CStruct, schema):
         add_next_field(index, struct, struct_name, contexts)
         parent.add_child(struct)
 
-    parent.add_string(f"default_language_tag", f'"{default_language}"')
+    parent.add_string("default_language_tag", f'"{default_language}"')
 
 
 def add_links(parent: CStruct, schema):
