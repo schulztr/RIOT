@@ -1,5 +1,5 @@
-#ifndef WOT_COAP_H
-#define WOT_COAP_H
+#ifndef NET_WOT_COAP_H
+#define NET_WOT_COAP_H
 
 #include "net/wot.h"
 #include "net/gcoap.h"
@@ -21,4 +21,4 @@ void wot_td_coap_server_init(void);
 }
 #endif
 
-#endif //WOT_COAP_H
+#endif //NET_WOT_COAP_H

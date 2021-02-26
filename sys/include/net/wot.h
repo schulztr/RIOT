@@ -1,5 +1,5 @@
-#ifndef WOT_H
-#define WOT_H
+#ifndef NET_WOT_H
+#define NET_WOT_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -465,4 +465,4 @@ wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *s
 }
 #endif
 
-#endif //WOT_H
+#endif //NET_WOT_H
