@@ -97,4 +97,3 @@ int wot_td_coap_config_init(wot_td_thing_t *thing){
     wot_td_coap_prop_add(thing, &wot_coap_echo_affordance);
     return 0;
 }
-
