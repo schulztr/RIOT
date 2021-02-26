@@ -8,6 +8,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     atmega328p \
     blackpill \
     bluepill \
+    bluepill-stm32f030c8 \
     calliope-mini \
     derfmega128 \
     hifive1 \
@@ -34,6 +35,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     samd10-xmini \
     saml10-xpro \
     saml11-xpro \
+    slstk3400a \
     spark-core \
     stk3200 \
     stm32f030f4-demo \
@@ -43,4 +45,5 @@ BOARD_INSUFFICIENT_MEMORY := \
     telosb \
     waspmote-pro \
     z1 \
+    zigduino \
     #

@@ -9,19 +9,17 @@ CFLAGS_OPT  ?= -Os
 
 CFLAGS    += $(CFLAGS_CPU) $(CFLAGS_LINK) $(CFLAGS_DBG) $(CFLAGS_OPT)
 ASFLAGS   += $(CFLAGS_CPU) $(CFLAGS_DBG)
+
+# needed for xfa support. Order is important.
+LINKFLAGS += -T$(RIOTCPU)/atmega_common/ldscripts/xfa.ld
+
 LINKFLAGS += $(CFLAGS_CPU) $(CFLAGS_DBG) $(CFLAGS_OPT) -static -lgcc -e reset_handler -Wl,--gc-sections
-OFLAGS    += -j .text -j .data
 
 # Use ROM_LEN and RAM_LEN during link
 $(if $(ROM_LEN),,$(error ROM_LEN is not defined))
 $(if $(RAM_LEN),,$(error RAM_LEN is not defined))
 LINKFLAGS += $(LINKFLAGPREFIX)--defsym=__TEXT_REGION_LENGTH__=$(ROM_LEN)$(if $(ROM_RESERVED),-$(ROM_RESERVED))
 LINKFLAGS += $(LINKFLAGPREFIX)--defsym=__DATA_REGION_LENGTH__=$(RAM_LEN)
-
-# Use newer linker script to have ROM/RAM configuration symbols in binutils<2.26
-LDSCRIPT_COMPAT = $(if $(shell $(TARGET_ARCH)-ld --verbose | grep __TEXT_REGION_LENGTH__),,\
-                    -T$(RIOTCPU)/$(CPU)/ldscripts_compat/avr_2.26.ld)
-LINKFLAGS += $(LDSCRIPT_COMPAT)
 
 ifeq ($(LTO),1)
   # avr-gcc <4.8.3 has a bug when using LTO which causes a warning to be printed always:

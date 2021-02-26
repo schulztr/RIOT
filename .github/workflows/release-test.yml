@@ -100,6 +100,7 @@ jobs:
         fi
         docker pull riot/riotbuild:$DOCKER_VERSION
     - name: Create TAP interfaces
+      if: ${{ matrix.pytest_mark == 'not iotlab_creds' }}
       run: |
         sudo RIOT/dist/tools/tapsetup/tapsetup -c 11
     - name: Run release tests
@@ -122,6 +123,16 @@ jobs:
           GITHUB_REPOSITORY=${GITHUB_REPOSITORY} \
           GITHUB_RUN_ID=${GITHUB_RUN_ID} \
           GITHUB_SERVER_URL=${GITHUB_SERVER_URL} \
+          LORAWAN_APP_KEY="${{ secrets.CI_TTN_APPKEY  }}" \
+          LORAWAN_NWK_SKEY="${{ secrets.CI_TTN_NWKSKEY_ABP  }}" \
+          LORAWAN_APP_SKEY="${{ secrets.CI_TTN_APPSKEY_ABP  }}" \
+          LORAWAN_DL_KEY="${{ secrets.CI_TTN_APPID_KEY  }}" \
+          LORAWAN_DEV_EUI="009E40529364FBE6" \
+          LORAWAN_APP_EUI="70B3D57ED003B26A" \
+          LORAWAN_DEV_ADDR="26011EB0" \
+          TTN_APP_ID="11-lorawan" \
+          TTN_DEV_ID="riot_lorawan_1" \
+          TTN_DEV_ID_ABP="riot_lorawan_1_abp" \
           RIOTBASE=${RIOTBASE} \
           $(which tox) -- ${TOX_ARGS} -m "${{ matrix.pytest_mark }}"
     - name: junit2html and XML deploy
@@ -134,11 +145,12 @@ jobs:
         else
           VER=$(git -C $GITHUB_WORKSPACE/RIOT rev-parse --short HEAD)
         fi
+        MARK=$(echo "${{ matrix.pytest_mark }}" | tr '[ _]' '-')
+        REPORT_XML=$GITHUB_WORKSPACE/Release-Specs/test-report.xml
+        REPORT_NAME=test-reports/test-report-$MARK-$VER-$DATE
         mkdir test-reports/
-        junit2html $GITHUB_WORKSPACE/Release-Specs/test-report.xml \
-          test-reports/test-report-native-$VER-$DATE.html
-        cp $GITHUB_WORKSPACE/Release-Specs/test-report.xml \
-          test-reports/test-report-native-$VER-$DATE.xml
+        junit2html ${REPORT_XML} ${REPORT_NAME}.html
+        cp ${REPORT_XML} ${REPORT_NAME}.xml
     - uses: actions/upload-artifact@v2
       if: always()
       with:

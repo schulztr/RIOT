@@ -10,6 +10,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     avr-rss2 \
     blackpill \
     bluepill \
+    bluepill-stm32f030c8 \
     derfmega128 \
     derfmega256 \
     i-nucleo-lrwan1 \
@@ -23,4 +24,5 @@ BOARD_INSUFFICIENT_MEMORY := \
     saml10-xpro \
     saml11-xpro \
     waspmote-pro \
+    zigduino \
     #
