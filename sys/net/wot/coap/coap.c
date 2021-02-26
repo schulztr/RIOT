@@ -94,11 +94,10 @@ static int get_base_ip_address(ipv6_addr_t *res) {
     ipv6_addr_t ula_address = {0};
     bool link_local_found = false;
     bool ula_found = false;
-    int netres;
 
     while ((interface = netif_iter(interface)) != NULL) {
         ipv6_addr_t addresses[MAX_ADRESSES_TO_CHECK];
-        netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, addresses, sizeof(addresses));
+        int netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, addresses, sizeof(addresses));
         for (unsigned i = 0; i < (netres / sizeof(ipv6_addr_t)); i++)
         {
             ipv6_addr_t* current_address = &addresses[i];
