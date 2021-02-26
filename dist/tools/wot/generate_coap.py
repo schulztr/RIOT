@@ -34,7 +34,7 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
     ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
     if (res > 0)
     {{
-        if ({COAP_LINK_PARAMS_NAME}[context->link_pos] 
+        if ({COAP_LINK_PARAMS_NAME}[context->link_pos]
             && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
         {{
             if (buf)
