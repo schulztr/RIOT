@@ -1143,10 +1143,9 @@ void _serialize_link_array(wot_td_serialize_receiver_t receiver, wot_td_link_t *
 int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t *thing, wot_td_ser_slicer_t *slicer){
     //Todo: Check for all necessary properties, before continue processing
 
-    bool has_previous_prop = false;
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
 
-    has_previous_prop = true;
+    bool has_previous_prop = true;
     _wot_td_fill_json_obj_key(receiver, wot_td_ser_obj_context_key, sizeof(wot_td_ser_obj_context_key)-1, slicer);
 
     if(thing->context != NULL){
