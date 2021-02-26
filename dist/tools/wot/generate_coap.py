@@ -188,16 +188,14 @@ def get_handler_function_header(handler_name: str) -> str:
 
 
 class CStruct(object):
-    def __init__(self, struct_type: str, struct_name: str, keywords: List[str] = [], zero_struct=False):
+    def __init__(self, struct_type: str, struct_name: str, keywords: List[str] = []):
         self.struct_name = struct_name
-        self.zero_struct = zero_struct
         self.first_line = self._get_first_line(
             struct_type, struct_name, keywords)
         self.children: List[CStruct] = []
         self.variables: List[Tuple[str, str, str]] = []
         self.parent = None
-        if not zero_struct:
-            self.elements = [self.first_line]
+        self.elements = [self.first_line]
 
     def _get_first_line(self, struct_type: str, struct_name: str, keywords: List[str]) -> str:
         return f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"
@@ -205,17 +203,11 @@ class CStruct(object):
     def __generate_keywords(self, keywords: List[str]) -> str:
         return ' '.join(keywords) + ' ' if keywords else ''
 
-    def __generate_zero_struct(self):
-        return f"{self.first_line}0}};"
-
     def _get_last_line(self):
         return "\n};"
 
     def generate_struct(self) -> str:
-        if self.zero_struct:
-            return self.__generate_zero_struct()
-        else:
-            return f'\n{INDENT}'.join(self.elements) + self._get_last_line()
+        return f'\n{INDENT}'.join(self.elements) + self._get_last_line()
 
     def __add_variable(self, variable_type: str, variable_name: str, variable_value: str):
         reference_name = f'{self.struct_name}_{variable_name}'
@@ -274,7 +266,6 @@ class CStruct(object):
             self.add_field(c_name, get_c_boolean(value))
 
     def add_field(self, field_name: str, field_value: str, insert_at_front=False) -> None:
-        assert not self.zero_struct
         field = self._generate_field(field_name, field_value)
         if insert_at_front:
             self.elements.insert(0, field)
@@ -282,11 +273,9 @@ class CStruct(object):
             self.elements.append(field)
 
     def add_unordered_field(self, field: str) -> None:
-        assert not self.zero_struct
         self.elements.append(f"{field},")
 
     def add_child(self, child: 'CStruct', add_at_back=False) -> None:
-        assert not self.zero_struct
         if add_at_back:
             self.children.append(child)
         else:
