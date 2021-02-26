@@ -149,17 +149,20 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .end = _wot_td_coap_slicer.end,
     };
 
+    char modified_address_as_string[] = "[";
     char address_as_string[IPV6_ADDR_MAX_STR_LEN];
     ipv6_addr_t base_ip_address = {0};
     if (get_base_ip_address(&base_ip_address) < 0) {
         return -1;
     }
     ipv6_addr_to_str(address_as_string, &base_ip_address, sizeof(address_as_string));
+    strcat(modified_address_as_string, address_as_string);
+    strcat(modified_address_as_string, "]");
 
     wot_td_uri_t _wot_thing_base = {
             .schema = wot_td_coap_schema,
-            .value = address_as_string,
-    };    
+            .value = modified_address_as_string,
+    };
 
     wot_thing.base = &_wot_thing_base;
 
