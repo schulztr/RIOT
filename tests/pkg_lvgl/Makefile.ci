@@ -1,6 +1,7 @@
 BOARD_INSUFFICIENT_MEMORY := \
     blackpill \
     bluepill \
+    bluepill-stm32f030c8 \
     i-nucleo-lrwan1 \
     nucleo-f031k6 \
     nucleo-f042k6 \
@@ -14,6 +15,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     saml10-xpro \
     saml11-xpro \
     spark-core \
+    slstk3400a \
     stk3200 \
     stm32f030f4-demo \
     stm32f0discovery \

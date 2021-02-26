@@ -2,6 +2,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     airfy-beacon \
     blackpill \
     bluepill \
+    bluepill-stm32f030c8 \
     calliope-mini \
     hifive1 \
     hifive1b \
@@ -24,6 +25,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     samd10-xmini \
     saml10-xpro \
     saml11-xpro \
+    slstk3400a \
     stk3200 \
     stm32f030f4-demo \
     stm32f0discovery \

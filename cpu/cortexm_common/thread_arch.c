@@ -283,27 +283,12 @@ void *thread_isr_stack_start(void)
 
 void NORETURN cpu_switch_context_exit(void)
 {
-    /* enable IRQs to make sure the SVC interrupt is reachable */
+    /* enable IRQs to make sure the PENDSV interrupt is reachable */
     irq_enable();
-    /* trigger the SVC interrupt */
-    __asm__ volatile (
-        "svc    #1                            \n"
-        : /* no outputs */
-        : /* no inputs */
-        : /* no clobbers */
-    );
+
+    thread_yield_higher();
 
     UNREACHABLE();
-}
-
-void thread_yield_higher(void)
-{
-    /* trigger the PENDSV interrupt to run scheduler and schedule new thread if
-     * applicable */
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-    /* flush the pipeline. Otherwise we risk that subsequent instructions are
-     * executed before the IRQ has actually triggered */
-    __ISB();
 }
 
 #if CPU_CORE_CORTEXM_FULL_THUMB

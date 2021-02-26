@@ -4,6 +4,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     b-l072z-lrwan1 \
     blackpill \
     bluepill \
+    bluepill-stm32f030c8 \
     calliope-mini \
     feather-m0 \
     frdm-kw41z \
@@ -28,6 +29,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     samr30-xpro \
     samr34-xpro \
     sensebox_samd21 \
+    slstk3400a \
     sodaq-% \
     stk3200 \
     stm32f030f4-demo \
