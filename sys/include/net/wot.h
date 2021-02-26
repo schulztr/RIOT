@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct json_ld_context {
     const char *key;
     const char *value;
@@ -456,5 +460,9 @@ int wot_td_data_schema_enum_add(wot_td_data_schema_t *schema, wot_td_data_enums_
 int wot_td_data_schema_enum_rm(wot_td_data_schema_t *schema, wot_td_data_enums_t *enumeration);
 wot_td_data_enums_t * wot_td_data_schema_enum_find_nth(wot_td_data_schema_t *schema, uint8_t pos);
 wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *schema, char *value);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //WOT_H
