@@ -18,7 +18,7 @@ AFFORDANCE_TYPE_SPECIFIERS = {
     ACTIONS_NAME: 'action',
     EVENTS_NAME: 'event'
 }
-SEPERATOR = "\n\n"
+SEPARATOR = "\n\n"
 INDENT = "    "
 COAP_RESOURCES_NAME = "_wot_coap_resources"
 COAP_LISTENER_NAME = "_wot_coap_listener"
@@ -245,7 +245,7 @@ class CStruct(object):
         if (variable_pointers):
             code.append(variable_pointers)
         code.append(self.generate_struct())
-        return SEPERATOR.join(code)
+        return SEPARATOR.join(code)
 
     def _generate_field(self, field_name: str, field_value: str) -> str:
         return f".{field_name} = {field_value},"
@@ -474,7 +474,7 @@ def generate_coap_handlers(coap_resources: List[dict]) -> str:
 
         # TODO: Add validation
 
-    return SEPERATOR.join(handlers)
+    return SEPARATOR.join(handlers)
 
 
 def generate_coap_link_param(coap_resource: dict) -> str:
@@ -1383,7 +1383,7 @@ def get_result(app_dir_path, thing_model_json, instance_information_json) -> str
 
     result_elements: List[str] = assemble_results(thing_model)
 
-    return SEPERATOR.join(result_elements)
+    return SEPARATOR.join(result_elements)
 
 
 def main() -> None:
