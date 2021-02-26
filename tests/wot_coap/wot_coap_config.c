@@ -23,7 +23,7 @@ const coap_resource_t _coap_resources[] = {
 
 static gcoap_listener_t _coap_listener = {
         &_coap_resources[0],
-        sizeof(_coap_resources) / sizeof(_coap_resources[0]),
+        ARRAY_SIZE(_coap_resources),
         NULL,
         NULL
 };
