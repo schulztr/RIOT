@@ -21,4 +21,4 @@ void wot_td_coap_server_init(void);
 }
 #endif
 
-#endif //NET_WOT_COAP_H
+#endif /* NET_WOT_COAP_H */

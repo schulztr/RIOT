@@ -465,4 +465,4 @@ wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *s
 }
 #endif
 
-#endif //NET_WOT_H
+#endif /* NET_WOT_H */
