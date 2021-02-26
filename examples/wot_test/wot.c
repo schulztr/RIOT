@@ -400,4 +400,3 @@ wot_td_data_enums_t * wot_td_data_schema_enum_find_nth(wot_td_data_schema_t *sch
 wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *schema, char *value){
     WOT_TD_FIND_x(schema, enumeration, wot_td_data_enums_t, value);
 }
-

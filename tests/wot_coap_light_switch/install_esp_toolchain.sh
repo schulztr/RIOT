@@ -1,4 +1,4 @@
-#!/bin/bash  
+#!/bin/bash
 echo Installing ESP Toolchain...
 mkdir -p $HOME/esp
 cd $HOME/esp
