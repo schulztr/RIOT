@@ -1,6 +1,3 @@
-# name of your application
-APPLICATION = wot_coap
-
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 
@@ -10,7 +7,11 @@ RIOTBASE ?= $(CURDIR)/../..
 # WoT
 USEMODULE += wot_core
 USEMODULE += wot_coap
+USEMODULE += wot_coap_config
 USEMODULE += xtimer
+
+WOT_THING_MODEL = config/wot_td/thing_model.json
+WOT_INSTANCE_INFO = config/wot_td/instance.json
 
 ifeq ($(BOARD),esp32-wroom-32)
 # ESP wifi configuration

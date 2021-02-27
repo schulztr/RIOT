@@ -9,19 +9,8 @@
 #include "net/wot/coap/config.h"
 #include "msg.h"
 
-#define WOT_TD_COAP_AFF_ADD(ptr, aff, func_name) \
-    func_name(thing, aff);                       \
-    _add_endpoint_to_form(                       \
-        ptr->form, ptr->coap_resource);          \
-    _add_method_to_form(                         \
-        ptr->form, ptr->coap_resource);          \
-    return 0;
-
-
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
-
-sock_udp_ep_t wot_coap_sock = { .port=COAP_PORT, .family=AF_INET6 };
 
 static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
                             size_t maxlen, coap_link_encoder_ctx_t *context);
@@ -105,14 +94,13 @@ static int get_base_ip_address(ipv6_addr_t *res) {
     ipv6_addr_t ula_address = {0};
     bool link_local_found = false;
     bool ula_found = false;
-    int netres;
 
     while ((interface = netif_iter(interface)) != NULL) {
-        ipv6_addr_t adresses[MAX_ADRESSES_TO_CHECK];
-        netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, adresses, sizeof(adresses));
+        ipv6_addr_t addresses[MAX_ADRESSES_TO_CHECK];
+        int netres = netif_get_opt(interface, NETOPT_IPV6_ADDR, 0, addresses, sizeof(addresses));
         for (unsigned i = 0; i < (netres / sizeof(ipv6_addr_t)); i++)
         {
-            ipv6_addr_t* current_address = &adresses[i];
+            ipv6_addr_t* current_address = &addresses[i];
 
             if (current_address == NULL) {
                 break;
@@ -160,17 +148,20 @@ static ssize_t _wot_td_coap_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
             .end = _wot_td_coap_slicer.end,
     };
 
+    char modified_address_as_string[] = "[";
     char address_as_string[IPV6_ADDR_MAX_STR_LEN];
     ipv6_addr_t base_ip_address = {0};
     if (get_base_ip_address(&base_ip_address) < 0) {
         return -1;
     }
     ipv6_addr_to_str(address_as_string, &base_ip_address, sizeof(address_as_string));
+    strcat(modified_address_as_string, address_as_string);
+    strcat(modified_address_as_string, "]");
 
     wot_td_uri_t _wot_thing_base = {
             .schema = wot_td_coap_schema,
-            .value = address_as_string,
-    };    
+            .value = modified_address_as_string,
+    };
 
     wot_thing.base = &_wot_thing_base;
 
@@ -188,7 +179,7 @@ static const coap_resource_t _wot_td_coap_resources[] = {
 };
 
 static const char *_wot_td_link_params[] = {
-    ";et=\"wot.thing\"",
+    ";rt=\"wot.thing\";ct=432",
 };
 
 /* Adds link format params to resource list. TODO: Can probably be streamlined */
@@ -239,24 +230,19 @@ void _add_endpoint_to_form(wot_td_form_t * form, const coap_resource_t * resourc
     form->href->value = resource->path;
 }
 
-int wot_td_coap_prop_add(wot_td_thing_t *thing, wot_td_coap_prop_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_prop_add);
-}
-
-int wot_td_coap_action_add(wot_td_thing_t *thing, wot_td_coap_action_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_action_add);
-}
-
-int wot_td_coap_event_add(wot_td_thing_t *thing, wot_td_coap_event_affordance_t *coap_aff){
-    WOT_TD_COAP_AFF_ADD(coap_aff, coap_aff->affordance, wot_td_thing_event_add);
+void wot_td_coap_add_forms(wot_td_coap_form_t *coap_forms){
+    wot_td_coap_form_t *tmp = coap_forms;
+    while(tmp != NULL){
+        _add_endpoint_to_form(tmp->form, tmp->coap_resource);
+        _add_method_to_form(tmp->form, tmp->coap_resource);
+        tmp = tmp->next;
+    }
 }
 
 void wot_td_coap_server_init(void)
 {
     wot_td_thing_context_add(&wot_thing, &wot_td_coap_binding_context);
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-
-    //Todo: Implement proper IP address resolve solution and add it to the TD
 
     wot_td_config_init(&wot_thing);
     wot_td_coap_config_init(&wot_thing);

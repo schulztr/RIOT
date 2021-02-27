@@ -1,8 +1,12 @@
-#ifndef WOT_H
-#define WOT_H
+#ifndef NET_WOT_H
+#define NET_WOT_H
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct json_ld_context {
     const char *key;
@@ -98,9 +102,14 @@ typedef struct {
     void *scheme;
 } wot_td_sec_scheme_t;
 
-typedef struct wot_td_sec {
+typedef struct wot_td_sec_def {
     const char *key;
     wot_td_sec_scheme_t *value;
+    struct wot_td_sec_def *next;
+} wot_td_security_definition_t;
+
+typedef struct wot_td_sec {
+    wot_td_security_definition_t *definition;
     struct wot_td_sec *next;
 } wot_td_security_t;
 
@@ -124,10 +133,11 @@ typedef struct wot_td_form_op {
 } wot_td_form_op_t;
 
 typedef enum {
-    CONTENT_TYPE_JSON,
-    CONTENT_TYPE_TEXT_PLAIN,
-    CONTENT_TYPE_JSON_LD,
-    CONTENT_TYPE_CSV
+    MEDIA_TYPE_NONE,
+    MEDIA_TYPE_JSON,
+    MEDIA_TYPE_TEXT_PLAIN,
+    MEDIA_TYPE_JSON_LD,
+    MEDIA_TYPE_CSV
 } wot_td_media_type_t;
 
 typedef struct wot_td_media_type_parameter {
@@ -291,12 +301,12 @@ typedef struct {
     const uint8_t hour;
     const uint8_t minute;
     const uint8_t second;
-    const int16_t timezone_offset;
+    const int16_t timezone_offset; // FIXME: There are actually timezones that have offsets are not full hours
 } wot_td_date_time_t;
 
 typedef struct wot_td_link {
     wot_td_uri_t *href;
-    const char *type;
+    wot_td_media_type_t type;
     const char *rel;
     wot_td_uri_t *anchor;
     struct wot_td_link *next;
@@ -319,6 +329,7 @@ typedef struct {
     wot_td_link_t *links;
     wot_td_form_t *forms;
     wot_td_security_t *security;
+    wot_td_security_definition_t *security_def;
     char *default_language_tag;
 } wot_td_thing_t;
 
@@ -369,7 +380,12 @@ wot_td_event_affordance_t * wot_td_thing_event_find_key(wot_td_thing_t *thing, c
 int wot_td_thing_security_add(wot_td_thing_t *thing, wot_td_security_t *security);
 int wot_td_thing_security_rm(wot_td_thing_t *thing, wot_td_security_t *security);
 wot_td_security_t * wot_td_thing_security_find_nth(wot_td_thing_t *thing, uint8_t pos);
-wot_td_security_t * wot_td_thing_security_find_key(wot_td_thing_t *thing, char *key);
+
+
+int wot_td_thing_security_def_add(wot_td_thing_t *thing, wot_td_security_definition_t *security_def);
+int wot_td_thing_security_def_rm(wot_td_thing_t *thing, wot_td_security_definition_t *security_def);
+wot_td_security_t * wot_td_thing_security_def_find_nth(wot_td_thing_t *thing, uint8_t pos);
+wot_td_security_t * wot_td_thing_security_def_find_key(wot_td_thing_t *thing, char *key);
 
 
 int wot_td_thing_link_add(wot_td_thing_t *thing, wot_td_link_t *link);
@@ -445,4 +461,8 @@ int wot_td_data_schema_enum_rm(wot_td_data_schema_t *schema, wot_td_data_enums_t
 wot_td_data_enums_t * wot_td_data_schema_enum_find_nth(wot_td_data_schema_t *schema, uint8_t pos);
 wot_td_data_enums_t * wot_td_data_schema_enum_find_value(wot_td_data_schema_t *schema, char *value);
 
-#endif //WOT_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* NET_WOT_H */

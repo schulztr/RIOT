@@ -1,6 +1,3 @@
-# name of your application
-APPLICATION = wot_test
-
 # If no BOARD is found in the environment, use this default:
 BOARD ?= nrf52dk
 

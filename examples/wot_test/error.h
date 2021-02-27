@@ -1,5 +1,5 @@
-#ifndef ERRNO_H
-#define ERRNO_H
+#ifndef ERROR_H
+#define ERROR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,5 +90,4 @@ extern "C" {
 #define ETXTBSY         (79)
 #define EWOULDBLOCK     (80)
 #define EXDEV           (81)
-#endif /* ERRNO_H */
-
+#endif /* ERROR_H */

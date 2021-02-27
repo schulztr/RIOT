@@ -1,10 +1,13 @@
 import argparse
 import json
-import os
 import sys
-from typing import List, Tuple, Type, TypedDict, IO, Any
+from datetime import datetime
+from typing import List, Tuple, IO, Any
+import warnings
 
+default_language = "en"
 NAMESPACE = "wot_td"
+THING_NAME = "thing"
 PROPERTIES_NAME = 'properties'
 ACTIONS_NAME = 'actions'
 EVENTS_NAME = 'events'
@@ -14,13 +17,7 @@ AFFORDANCE_TYPE_SPECIFIERS = {
     ACTIONS_NAME: 'action',
     EVENTS_NAME: 'event'
 }
-CURRENT_DIRECTORY = os.getcwd()
-CONFIG_DIRECTORY = f"{CURRENT_DIRECTORY}/config"
-THING_DESCRIPTION_DIRECTORY = f"{CONFIG_DIRECTORY}/wot_td"
-RESULT_FILE = f"{CURRENT_DIRECTORY}/wot_coap_config.c"
-AFFORDANCES_FILES = [".coap_affordances.json", ]
-THING_FILES = [".thing.json", ]
-SEPERATOR = "\n\n"
+SEPARATOR = "\n\n"
 INDENT = "    "
 COAP_RESOURCES_NAME = "_wot_coap_resources"
 COAP_LISTENER_NAME = "_wot_coap_listener"
@@ -37,7 +34,8 @@ COAP_LINK_ENCODER = f'''static ssize_t {COAP_LINK_ENCODER_NAME}(const coap_resou
     ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
     if (res > 0)
     {{
-        if ({COAP_LINK_PARAMS_NAME}[context->link_pos] && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
+        if ({COAP_LINK_PARAMS_NAME}[context->link_pos]
+            && (strlen({COAP_LINK_PARAMS_NAME}[context->link_pos]) < (maxlen - res)))
         {{
             if (buf)
             {{
@@ -104,7 +102,6 @@ SECURITY_SCHEMA_INFORMATION = {
     "cookie": "SECURITY_SCHEME_IN_COOKIE",
 }
 
-
 SECURITY_SCHEMA_QUALITY_OF_PROTECTION = {
     "auth": "SECURITY_DIGEST_QOP_AUTH",
     "auth-int": "SECURITY_DIGEST_QOP_AUTH_INT",
@@ -128,56 +125,52 @@ CONTENT_ENCODINGS = {
 }
 
 ALLOWED_OPERATIONS_BY_TYPE = {
+    THING_NAME: ["readallproperties", "writeallproperties", "readmultipleproperties", "writemultipleproperties", ],
     PROPERTIES_NAME: ["readproperty", "writeproperty", "observeproperty", "unobserveproperty", ],
     ACTIONS_NAME: ["invokeaction", ],
     EVENTS_NAME: ["subscribeevent", "unsubscribeevent", ],
 }
 
-SECURITY_DEFINITIONS: dict = {
-    "basic": {
-        "scheme": "basic",
-        "in": "query",
-        "name": "querykey",
-        "proxy": "https://example.org",
-        "descriptions": {
-            "en": "Basic sec schema",
-            "de": "Einfaches Sicherheitsschema",
-        }
-    },
-    "digest test": {
-        "scheme": "digest",
-        "in": "query",
-        "name": "querykey",
-        "proxy": "https://example.org",
-        "descriptions": {
-            "en": "Digest sec schema",
-            "de": "Digest-Sicherheitsschema",
-        }
-    },
+DEFAULT_OPERATIONS_BY_TYPE = {
+    PROPERTIES_NAME: ["readproperty", "writeproperty", ],
+    ACTIONS_NAME: ["invokeaction", ],
+    EVENTS_NAME: ["subscribeevent", ],
 }
+
+DEFAULT_COAP_METHOD_BY_OPERATION = {
+    "readproperty": "COAP_GET",
+    "writeproperty": "COAP_PUT",
+    "observeproperty": "COAP_GET",
+    "unobserveproperty": "COAP_GET",
+    "invokeaction": "COAP_POST",
+    "subscribeevent": "COAP_GET",
+    "unsubscribeevent": "COAP_GET",
+    "readallproperties": "COAP_GET",
+    "writeallproperties": "COAP_PUT",
+    "readmultipleproperties": "COAP_GET",
+    "writemultipleproperties": "COAP_PUT",
+}
+
 
 used_affordance_keys: List[str] = []
 header_files: List[str] = []
 extern_functions: List[str] = []
 resource_affordance_list: List[str] = []
 
-ResourceDict = TypedDict(
-    'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
+security_definitions = []
+
+required_affordances = {
+    PROPERTIES_NAME: [],
+    ACTIONS_NAME: [],
+    EVENTS_NAME: []
+}
+
+# ResourceDict = TypedDict(
+#     'ResourceDict', {'affordance_name': str, 'href': str, 'handler': str, "methods": List[str]})
 
 
-def dict_raise_on_duplicates(ordered_pairs):
-    """Reject duplicate keys."""
-    d = {}
-    for k, v in ordered_pairs:
-        if k in d:
-            raise ValueError("duplicate key: %r" % (k,))
-        else:
-            d[k] = v
-    return d
-
-
-def write_to_c_file(result) -> None:
-    f: IO[Any] = open(RESULT_FILE, "w")
+def write_to_c_file(result, result_file) -> None:
+    f: IO[Any] = open(f'{result_file}', "w")
     f.write(result)
     f.close()
 
@@ -186,63 +179,47 @@ def remove_all_white_space(input: str) -> str:
     return input.replace(" ", "_")
 
 
-def validate_coap_json(coap_jsons: dict) -> None:
-    # TODO: Add actual validator for (different types of) affordances
-    assert coap_jsons['name'], "ERROR: name in coap_affordances.json missing"
-    assert coap_jsons['url'], "ERROR: url in coap_affordances.json missing"
-    assert coap_jsons['handler'], "ERROR: handler in coap_affordances.json missing"
-    assert coap_jsons['method'], "ERROR: method in coap_affordances.json missing"
-
-
 def get_handler_name_for_href(href: str) -> str:
-    return f'wot{href.replace("/", "_")}_handler'
+    return f'wot{href.replace("/", "_").replace("-", "_")}_handler'
 
 
 def get_handler_function_header(handler_name: str) -> str:
     return f'extern ssize_t {handler_name}(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);'
 
 
-def validate_thing_json(thing_json: dict) -> None:
-    # TODO: Expand thing validation
-    assert thing_json['titles'], "ERROR: name in thing.json missing"
-    assert thing_json['defaultLang'], "ERROR: name in thing.json missing"
-
-
-class CStruct:
-    def __init__(self, struct_type: str, struct_name: str, keywords: List[str] = [], zero_struct=False):
+class CStruct(object):
+    def __init__(self, struct_type: str, struct_name: str, keywords: List[str] = []):
         self.struct_name = struct_name
-        self.zero_struct = zero_struct
-        self.first_line = self.__get_first_line(
+        self.first_line = self._get_first_line(
             struct_type, struct_name, keywords)
         self.children: List[CStruct] = []
         self.variables: List[Tuple[str, str, str]] = []
         self.parent = None
-        if not zero_struct:
-            self.elements = [self.first_line]
+        self.elements = [self.first_line]
 
-    def __get_first_line(self, struct_type: str, struct_name: str, keywords: List[str]) -> str:
+    def _get_first_line(self, struct_type: str, struct_name: str, keywords: List[str]) -> str:
         return f"{self.__generate_keywords(keywords)}{struct_type} {struct_name} = {{"
 
     def __generate_keywords(self, keywords: List[str]) -> str:
         return ' '.join(keywords) + ' ' if keywords else ''
 
-    def __generate_zero_struct(self):
-        return f"{self.first_line}0}};"
+    def _get_last_line(self):
+        return "\n};"
 
     def generate_struct(self) -> str:
-        if self.zero_struct:
-            return self.__generate_zero_struct()
-        else:
-            return f'\n{INDENT}'.join(self.elements) + "\n};"
+        return f'\n{INDENT}'.join(self.elements) + self._get_last_line()
 
     def __add_variable(self, variable_type: str, variable_name: str, variable_value: str):
         reference_name = f'{self.struct_name}_{variable_name}'
         variable = variable_type, reference_name, variable_value
-        self.add_reference_field(variable_name, reference_name)
+        if variable_type == "char":
+            self.add_field(variable_name, reference_name)
+        else:
+            self.add_reference_field(variable_name, reference_name)
         self.variables.append(variable)
 
     def add_string(self, variable_name: str, value: str):
-        self.__add_variable("char", f'{variable_name}[]', value)
+        self.__add_variable("char", f'{variable_name}', value)
 
     def add_double(self, variable_name: str, value: float):
         self.__add_variable("double", variable_name, str(float(value)))
@@ -252,6 +229,8 @@ class CStruct:
 
     def __variable_to_string(self, pointer):
         variable_type, variable_name, variable_value = pointer
+        if variable_type == "char":
+            variable_name += "[]"
         return f'{variable_type} {variable_name} = {variable_value};'
 
     def generate_variable_pointers(self) -> str:
@@ -262,12 +241,13 @@ class CStruct:
 
     def generate_c_code(self) -> str:
         code = [child.generate_c_code() for child in self.children]
-        if (variable_pointers := self.generate_variable_pointers()):
+        variable_pointers = self.generate_variable_pointers()
+        if (variable_pointers):
             code.append(variable_pointers)
         code.append(self.generate_struct())
-        return SEPERATOR.join(code)
+        return SEPARATOR.join(code)
 
-    def __generate_field(self, field_name: str, field_value: str) -> str:
+    def _generate_field(self, field_name: str, field_value: str) -> str:
         return f".{field_name} = {field_value},"
 
     def add_reference_field(self, field_name: str, reference_name: str) -> None:
@@ -285,23 +265,38 @@ class CStruct:
             assert isinstance(value, bool)
             self.add_field(c_name, get_c_boolean(value))
 
-    def add_field(self, field_name: str, field_value: str) -> None:
-        assert not self.zero_struct
-        field = self.__generate_field(field_name, field_value)
-        self.elements.append(field)
+    def add_field(self, field_name: str, field_value: str, insert_at_front=False) -> None:
+        field = self._generate_field(field_name, field_value)
+        if insert_at_front:
+            self.elements.insert(0, field)
+        else:
+            self.elements.append(field)
 
     def add_unordered_field(self, field: str) -> None:
-        assert not self.zero_struct
         self.elements.append(f"{field},")
 
-    def add_child(self, child: 'CStruct') -> None:
-        assert not self.zero_struct
-        self.children.insert(0, child)
+    def add_child(self, child: 'CStruct', add_at_back=False) -> None:
+        if add_at_back:
+            self.children.append(child)
+        else:
+            self.children.insert(0, child)
         child.parent = self
 
 
-def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
-    sorted_resources: List[ResourceDict] = sorted(
+class ThingStruct(CStruct):
+
+    def _get_last_line(self):
+        return f"\n\n{INDENT}return 0;\n}}"
+
+    def _get_first_line(self, struct_type: str, struct_name: str, keywords: List[str]) -> str:
+        return f"int {NAMESPACE}_config_init({struct_type} *{struct_name}){{"
+
+    def _generate_field(self, field_name: str, field_value: str) -> str:
+        return f"{self.struct_name}->{field_name} = {field_value};"
+
+
+def write_coap_resources(coap_resources: List[dict]) -> str:
+    sorted_resources: List[dict] = sorted(
         coap_resources, key=lambda k: k['href'])
 
     result = f"const coap_resource_t {COAP_RESOURCES_NAME}[] = {{\n"
@@ -319,17 +314,25 @@ def write_coap_resources(coap_resources: List[ResourceDict]) -> str:
     return result
 
 
-def generate_coap_resources(coap_jsons: list) -> List[ResourceDict]:
-    coap_resources: List[ResourceDict] = []
-    for coap_json in coap_jsons:
-        for affordance_type in AFFORDANCE_TYPES:
-            for affordance_name, affordance in coap_json[affordance_type].items():
-                assert_unique_affordance(affordance_name)
-                used_affordance_keys.append(affordance_name)
-                forms: List[dict] = affordance["forms"]
-                resources: List[ResourceDict] = extract_coap_resources(
-                    affordance_name, forms)
-                coap_resources.extend(resources)
+def generate_coap_resources(thing) -> List[dict]:
+    coap_resources: List[dict] = []
+
+    for affordance_type in AFFORDANCE_TYPES:
+        for affordance_name, affordance in thing[affordance_type].items():
+            if "forms" not in affordance:
+                continue
+            assert_unique_affordance(affordance_name)
+            used_affordance_keys.append(affordance_name)
+            forms: List[dict] = affordance["forms"]
+            resources: List[dict] = extract_coap_resources(
+                affordance_name, affordance_type, forms)
+            coap_resources.extend(resources)
+
+    if "forms" in thing:
+        thing_resources: List[dict] = extract_coap_resources(
+            "thing", "thing", thing["forms"])
+        coap_resources.extend(thing_resources)
+
     return coap_resources
 
 
@@ -337,53 +340,63 @@ def assert_unique_affordance(affordance_name: str) -> None:
     assert affordance_name not in used_affordance_keys, "ERROR: Each coap affordance name has to be unique"
 
 
-def extract_coap_resources(affordance_name: str, resources: List[dict]) -> List[ResourceDict]:
+def extract_coap_resources(affordance_name: str, affordance_type: str, resources: List[dict]) -> List[dict]:
     hrefs: List[str] = []
     handlers: List[str] = []
     methods: List[List[str]] = []
     for resource in resources:
         href: str = resource['href']
-        handler_function: str = resource['handler_function']
-        method_name: str = resource['cov:methodName']
+        handler_function: str = resource['riot_os:handler_function']
+        if affordance_type == "thing":
+            assert resource["op"]
+        if "op" in resource:
+            ops = resource["op"]
+            if isinstance(ops, str):
+                ops = [ops]
+        elif affordance_type == "type":
+            raise ValueError(f"No op defined for thing resource {href}!")
+        else:
+            ops = DEFAULT_OPERATIONS_BY_TYPE[affordance_type]
+        op_methods = [DEFAULT_COAP_METHOD_BY_OPERATION[x] for x in ops]
         if href not in hrefs:
             hrefs.append(href)
             handlers.append(handler_function)
-            methods.append([f"COAP_{method_name}"])
+            methods.append(op_methods)
         else:
             index: int = hrefs.index(href)
             assert handlers[
                 index] == handler_function, f"ERROR: Different handler function for {href}"
-            assert method_name not in methods[
-                index], f"ERROR: Method {method_name} already used for href {href}"
-            methods[index].append(f"COAP_{method_name}")
+            for method_name in op_methods:
+                assert method_name not in methods[
+                    index], f"ERROR: Method {method_name} already used for href {href}"
+            methods[index].extend(op_methods)
 
-        header_file: str = resource.get("header_file", None)
+        header_file: str = resource.get("riot_os:header_file", None)
 
-        if header_file is not None and header_file not in header_files:
+        if header_file and header_file not in header_files:
             header_files.append(header_file)
         elif header_file is None and handler_function not in extern_functions:
             extern_functions.append(handler_function)
 
-    resource_list: List[ResourceDict] = []
+    resource_list: List[dict] = []
 
     for index, href in enumerate(hrefs):
         dictionary = {'affordance_name': affordance_name,
                       'href': href,
                       "handler": handlers[index],
                       "methods": methods[index]
-                      }  # type: ResourceDict
+                      }  # type: dict
         resource_list.append(dictionary)
 
     return resource_list
 
 
-def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_function=None) -> dict:
-    path = f'{directory}/{file}'
+def get_wot_json(app_path: str, json_path: str) -> dict:
+    path = f'{app_path}/{json_path}'
     try:
         f: IO[Any] = open(path)
         wot_json: dict = json.loads(f.read())
-        if validation_function is not None:
-            validation_function(wot_json)
+        prepare_wot_json(wot_json)
     except IOError:
         print(f"ERROR reading {path} is missing")
         sys.exit(0)
@@ -398,16 +411,27 @@ def get_wot_json(file: str, directory=THING_DESCRIPTION_DIRECTORY, validation_fu
 
 def parse_command_line_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Web of Things helper script')
+    parser.add_argument('--appdir', help='Define directory of app')
+    # TODO: Check if board and saul parameters are still needed
     parser.add_argument('--board', help='Define used board')
     parser.add_argument('--saul', action='store_true',
                         help='Define if WoT TD SAUL is used')
-    parser.add_argument('--security', help='Define what security is used')
+    parser.add_argument('--thing_model',
+                        help="Thing Model (in JSON format) which serves as the basis of the Thing Description",
+                        nargs='?',
+                        const='')
+    parser.add_argument('--thing_instance_info',
+                        help="JSON file with user defined meta data")
+    parser.add_argument('--output_path',
+                        help="The path to the output file")
+    parser.add_argument('--used_modules', nargs='*',
+                        help="List of modules that have been declared in the build process")
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
     assert args.board, "ERROR: Argument board has to be defined"
-    assert args.security, "ERROR: Argument security has to be defined"
+    assert args.thing_instance_info, "ERROR: No instance information defined!"
 
 
 def generate_includes() -> str:
@@ -434,7 +458,7 @@ def generate_coap_listener() -> str:
     return struct.generate_struct()
 
 
-def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
+def generate_coap_handlers(coap_resources: List[dict]) -> str:
     handlers: List[str] = []
 
     for resource in coap_resources:
@@ -450,14 +474,15 @@ def generate_coap_handlers(coap_resources: List[ResourceDict]) -> str:
 
         # TODO: Add validation
 
-    return SEPERATOR.join(handlers)
+    return SEPARATOR.join(handlers)
 
 
-def generate_coap_link_param(coap_resource: ResourceDict) -> str:
+def generate_coap_link_param(coap_resource: dict) -> str:
+    # TODO: Add link parameters (in sorted order!)
     return "NULL,"
 
 
-def generate_coap_link_params(coap_resources: List[ResourceDict]) -> str:
+def generate_coap_link_params(coap_resources: List[dict]) -> str:
     struct_elements = [f"static const char *{COAP_LINK_PARAMS_NAME}[] = {{"]
 
     for coap_resource in coap_resources:
@@ -483,25 +508,6 @@ def add_next_field(index: int, struct: CStruct, struct_name: str, struct_data, u
         struct.add_reference_field("next", next_struct)
     else:
         struct.add_field("next", "NULL")
-
-
-def add_href(parent: CStruct,  form: dict) -> None:
-    href_name = f'{parent.struct_name}_href'
-    assert "href" in form, f'ERROR: "href" is mandatory in "form" elements! ({href_name})'
-    parent.add_reference_field("href", href_name)
-    struct = CStruct(f"{NAMESPACE}_uri_t",
-                     f"{href_name}",
-                     zero_struct=True)
-    parent.add_child(struct)
-
-
-def add_extension(parent: CStruct) -> None:
-    extension_name = f'{parent.struct_name}_extension'
-    parent.add_reference_field("extensions", extension_name)
-    struct = CStruct(f"{NAMESPACE}_extension_t",
-                     extension_name,
-                     zero_struct=True)
-    parent.add_child(struct)
 
 
 def add_operations(parent: CStruct, form: dict, affordance_type: str) -> None:
@@ -570,22 +576,21 @@ def add_content_coding(struct: CStruct, form: dict) -> None:
 
 
 def add_security(parent: CStruct, form: dict) -> None:
-    if "security" in form:
+    if form.get("security", []):
         securities = form["security"]
         if isinstance(securities, str):
             securities = [securities]
         enumerated_securities = list(enumerate(securities))
         for index, security in enumerated_securities:
-            assert security in SECURITY_DEFINITIONS
+            assert security in security_definitions
             struct_name = f'{parent.struct_name}_security_{security}'
             struct = CStruct(f"{NAMESPACE}_security_t",
                              struct_name)
             parent.add_child(struct)
             if index == 0:
                 parent.add_reference_field("security", struct_name)
-            struct.add_field("key", f'"{security}"')
             struct.add_reference_field(
-                "value", f'{NAMESPACE}_security_schema_{security}_sec_scheme')
+                "definition", f'{NAMESPACE}_security_schema_{security}')
 
             if index + 1 < len(enumerated_securities):
                 next_item = enumerated_securities[index + 1][1]
@@ -626,7 +631,10 @@ def add_response(parent: CStruct, form: dict) -> None:
 
 
 def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None:
-    assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
+    if affordance_type != THING_NAME:
+        assert "forms" in affordance, f"ERROR: No forms defined for {parent.struct_name}"
+    elif "forms" not in affordance:
+        return
     forms = affordance['forms']
     struct_name = f'{parent.struct_name}_form'
     for index, form in enumerate(forms):
@@ -636,29 +644,25 @@ def add_forms(parent: CStruct, affordance_type: str,   affordance: dict) -> None
         if index == 0:
             parent.add_reference_field(
                 "forms", f"{struct_name}_0")
-            parent.parent.parent.add_reference_field(
-                "form", f"{struct_name}_0")  # FIXME: Move to href
         add_operations(struct, form, affordance_type)
-        add_href(struct, form)
+        add_uri(struct, "href", "href", form)
         add_content_type(struct, form)
         add_content_coding(struct, form)
         struct.add_string_field("sub_protocol", "subprotocol", form)
         add_security(struct, form)
         add_scopes(struct, form)
         add_response(struct, form)
-        add_extension(struct)
         add_next_field(index, struct, struct_name,
                        forms)
 
 
 def add_type(parent: CStruct, affordance: dict) -> None:
-    if "@type" in affordance:
+    if affordance.get("@type", None):
         struct_name = f'{parent.struct_name}_type'
         type_list: List[str] = affordance["@type"]
         if isinstance(type_list, str):
             type_list = [type_list]
 
-        # TODO: Also use linked list for definition in struct
         parent.add_reference_field("type", f"{struct_name}_0")
         for index, type_entry in enumerate(type_list):
             struct = CStruct(f'{NAMESPACE}_type_t',
@@ -674,7 +678,28 @@ def add_multi_lang(parent: CStruct, field_name: str, struct_name: str, json_key:
     if json_key in affordance:
         complete_struct_name = f'{parent.struct_name}_{struct_name}'
         parent.add_reference_field(field_name, f"{complete_struct_name}_0")
+        singular_key = json_key[0:-1]
+        if singular_key in affordance:
+            default = affordance[singular_key]
+
         multi_lang_dict = affordance[json_key]
+
+        if default_language in multi_lang_dict:
+            if default and multi_lang_dict[default_language] != default:
+                warning = f'"{multi_lang_dict[default_language]}", a {singular_key} for' \
+                          f'language "{default_language}", and "{default}", an already ' \
+                          f'defined default {singular_key}, do not match.'
+                warnings.warn(warning)
+        elif default:
+            warning = f'No {singular_key} found for language "{default_language}". ' \
+                      f'Using the default {singular_key} "{default}"" instead.'
+            warnings.warn(warning)
+            multi_lang_dict[default_language] = default
+        else:
+            error_message = f'No {singular_key} for language "{default_language}"' \
+                            f'and no default {singular_key} defined.'
+            raise ValueError(error_message)
+
         for index, entry in enumerate(multi_lang_dict.items()):
             tag, value = entry
             struct = CStruct(f'{NAMESPACE}_multi_lang_t',
@@ -693,10 +718,8 @@ def add_interaction_affordance(parent: CStruct, affordance_type: str,  affordanc
     parent.add_child(struct)
     parent.add_reference_field("int_affordance", struct_name)
     add_type(struct, affordance)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", affordance)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", affordance)
+    add_descriptions(struct, affordance)
+    add_titles(struct, affordance)
     add_data_schema_maps(struct, "uri_variables", "uriVariables",
                          f"{parent.struct_name}_uri_variable", affordance)
     add_forms(struct, affordance_type, affordance)
@@ -776,7 +799,7 @@ def add_json_type_schema(parent: CStruct, schema_name: str, schema: dict) -> Non
     elif "type" in schema:
         json_type = schema["type"]
 
-    if json_type is not None:
+    if json_type:
         parent.add_field("json_type", JSON_TYPES[json_type])
 
     struct_name = f"{schema_name}_{json_type}"
@@ -829,7 +852,6 @@ def add_data_schema_array(parent: CStruct, field_name: str, json_name: str, sche
 
 
 def add_enumeration(parent: CStruct, schema: dict) -> None:
-    # TODO: Should actually support any type as specified by WoT
     if "enum" in schema:
         enum_name = f'{parent.struct_name}_enum'
         enum_data = schema["enum"]
@@ -839,7 +861,7 @@ def add_enumeration(parent: CStruct, schema: dict) -> None:
                 parent.add_reference_field("enumeration", f'{enum_name}_0')
             struct = CStruct(f"{NAMESPACE}_data_enums_t",
                              f'{enum_name}_{index}')
-            struct.add_field("value", f'"{entry}"')
+            struct.add_field("value", f'"{str(entry)}"')
             add_next_field(index, struct, enum_name, enum_data)
             parent.add_child(struct)
 
@@ -851,15 +873,23 @@ def add_data_schema_field(parent: CStruct, field_name: str, json_name: str, sche
         generate_data_schema(parent, schema, data_schema_name)
 
 
+def add_descriptions(struct, schema):
+    add_multi_lang(struct, "descriptions", "description",
+                   "descriptions", schema)
+
+
+def add_titles(struct, schema):
+    add_multi_lang(struct, "titles", "title",
+                   "titles", schema)
+
+
 def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> None:
     struct = CStruct(f"{NAMESPACE}_data_schema_t",
                      f"{schema_name}")
     parent.add_child(struct)
     add_type(struct, schema)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", schema)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", schema)
+    add_descriptions(struct, schema)
+    add_titles(struct, schema)
     struct.add_string_field("constant", "const", schema)
     struct.add_string_field("unit", "unit", schema)
     struct.add_string_field("format", "format", schema)
@@ -870,94 +900,99 @@ def generate_data_schema(parent: CStruct, schema: dict, schema_name: str) -> Non
     struct.add_boolean_field("write_only", "writeOnly", schema)
 
 
-def add_specific_affordance(parent: CStruct, affordance_type: str, affordance_name: str, affordance: dict) -> None:
-    specifier = get_affordance_type_specifier(affordance_type)
-    struct_name = f"{parent.struct_name}_{specifier}_aff"
-    struct = CStruct(f'{NAMESPACE}_{specifier}_affordance_t',
-                     struct_name)
-    parent.add_child(struct)
-    parent.add_reference_field("affordance", struct_name)
-    struct.add_field("key", f'"{affordance_name}"')
-    add_interaction_affordance(struct, affordance_type, affordance)
-    if PROPERTIES_NAME in affordance:
-        assert affordance_type == PROPERTIES_NAME
-        add_data_schema_field(struct, "data_schema", "properties", affordance)
-    if affordance_type == PROPERTIES_NAME:
-        struct.add_boolean_field("observable", "observable", affordance)
-    elif affordance_type == ACTIONS_NAME:
-        struct.add_boolean_field("safe", "safe", affordance)
-        struct.add_boolean_field("idempotent", "idempotent", affordance)
-        add_data_schema_field(struct, "input", "input", affordance)
-        add_data_schema_field(struct, "output", "output", affordance)
-    elif affordance_type == EVENTS_NAME:
-        add_data_schema_field(struct, "subscription",
-                              "subscription", affordance)
-        add_data_schema_field(struct, "data", "data", affordance)
-        add_data_schema_field(struct, "cancellation",
-                              "cancellation", affordance)
-
-    struct.add_field("next", "NULL")  # TODO: Create linked list?
+def add_property_affordances(parent, thing):
+    if thing["properties"]:
+        properties = thing["properties"]
+        struct_name = f'{parent.struct_name}_property'
+        for index, (property_name, prop) in enumerate(properties.items()):
+            if index == 0:
+                parent.add_reference_field("properties", f'{struct_name}_0')
+            struct = CStruct(f"{NAMESPACE}_prop_affordance_t",
+                             f'{struct_name}_{index}')
+            struct.add_field("key", f'"{property_name}"')
+            struct.add_boolean_field("observable", "observable", prop)
+            add_data_schema_field(struct, "data_schema",
+                                  "properties", prop)
+            add_interaction_affordance(struct, "properties", prop)
+            add_next_field(index, struct, struct_name, properties)
+            parent.add_child(struct)
 
 
-def generate_affordance_struct(affordance_type: str, affordance_name: str, affordance: dict) -> str:
-    resource_index = resource_affordance_list.index(affordance_name)
-
-    struct_specifier = get_affordance_type_specifier(affordance_type)
-    struct_name = get_affordance_struct_name(affordance_name)
-    struct = CStruct(f"{NAMESPACE}_coap_{struct_specifier}_affordance_t",
-                     struct_name)
-    struct.add_reference_field(
-        "coap_resource", f"{COAP_RESOURCES_NAME}[{resource_index}]")  # TODO: Move to href
-
-    add_specific_affordance(struct, affordance_type,
-                            affordance_name, affordance)
-
-    return struct.generate_c_code()
-
-
-def generate_json_serialization(coap_jsons: List[dict]) -> str:
-    result_elements = []
-    for coap_json in coap_jsons:
-        for affordance_type in AFFORDANCE_TYPES:
-            for affordance in coap_json[affordance_type].items():
-                result_elements.append(generate_affordance_struct(affordance_type, affordance[0],
-                                                                  affordance[1]))
-    return SEPERATOR.join(result_elements)
+def add_action_affordances(parent, thing):
+    if thing["actions"]:
+        actions = thing["actions"]
+        struct_name = f'{parent.struct_name}_action'
+        for index, (action_name, action) in enumerate(actions.items()):
+            if index == 0:
+                parent.add_reference_field("actions", f'{struct_name}_0')
+            struct = CStruct(f"{NAMESPACE}_action_affordance_t",
+                             f'{struct_name}_{index}')
+            struct.add_field("key", f'"{action_name}"')
+            struct.add_boolean_field("safe", "safe", action)
+            struct.add_boolean_field("idempotent", "idempotent", action)
+            add_data_schema_field(struct, "input", "input", action)
+            add_data_schema_field(struct, "output", "output", action)
+            add_interaction_affordance(struct, "actions", action)
+            add_next_field(index, struct, struct_name, actions)
+            parent.add_child(struct)
 
 
-def generate_affordance_entries(affordance_type: str, affordance_type_json: dict) -> str:
-    result = ""
-    specifier = get_affordance_type_specifier(affordance_type)
-    for affordance_name in affordance_type_json:
-        struct_name: str = get_affordance_struct_name(affordance_name)
-        result += INDENT
-        result += f'{NAMESPACE}_coap_{specifier}_add(thing, &{struct_name});\n'
+def add_event_affordances(parent, thing):
+    if thing["events"]:
+        events = thing["events"]
+        struct_name = f'{parent.struct_name}_event'
+        for index, (event_name, event) in enumerate(events.items()):
+            if index == 0:
+                parent.add_reference_field("events", f'{struct_name}_0')
+            struct = CStruct(f"{NAMESPACE}_event_affordance_t",
+                             f'{struct_name}_{index}')
+            struct.add_field("key", f'"{event_name}"')
+            add_data_schema_field(struct, "subscription",
+                                  "subscription", event)
+            add_data_schema_field(struct, "data", "data", event)
+            add_data_schema_field(struct, "cancellation",
+                                  "cancellation", event)
+            add_interaction_affordance(struct, "events", event)
+            add_next_field(index, struct, struct_name, events)
+            parent.add_child(struct)
 
-    return result
 
-
-def generate_init_function(coap_jsons: List[dict]) -> str:
+def generate_init_function(thing) -> str:
     result = f"int {NAMESPACE}_coap_config_init({NAMESPACE}_thing_t *thing)\n"
     result += "{\n"
+    result += INDENT + "(void) thing;\n"
     result += INDENT + f"gcoap_register_listener(&{COAP_LISTENER_NAME});\n"
-    for coap_json in coap_jsons:
-        for affordance_type in AFFORDANCE_TYPES:
-            result += generate_affordance_entries(
-                affordance_type, coap_json[affordance_type])
-
     result += INDENT + "return 0;\n"
     result += "}\n"
 
     return result
 
 
+def split_uri(uri, separator):
+    schema, value = tuple(uri.split(separator, 1))
+    schema += separator
+    return schema, value
+
+
 def add_uri(parent: CStruct, c_field_name: str, json_field_name: str, data):
-    if json_field_name in data:
+    if data.get(json_field_name, None):
         struct_name = f'{parent.struct_name}_{c_field_name}'
         struct = CStruct(f"{NAMESPACE}_uri_t",
                          struct_name)
-        # TODO: Also add scheme?
-        struct.add_field("value", f'"{data[json_field_name]}"')
+        uri = data[json_field_name]
+        schema = None
+
+        if "://" in uri:
+            schema, value = split_uri(uri, "://")
+        elif ":" in uri:
+            schema, value = split_uri(uri, ":")
+        else:
+            value = uri
+
+        # TODO: Save used schemas for reuse
+        if schema:
+            struct.add_field("schema", f'"{schema}"')
+        struct.add_field("value", f'"{value}"')
 
         parent.add_child(struct)
         parent.add_reference_field(c_field_name, struct_name)
@@ -1021,24 +1056,31 @@ def add_sec_schema(parent: CStruct, definition):
     struct.add_field("scheme_type", schema_enum)
     add_type(struct, definition)
     add_uri(struct, "proxy", "proxy", definition)
-    add_multi_lang(struct, "descriptions", "description",
-                   "descriptions", definition)
-    add_multi_lang(struct, "titles", "title",
-                   "titles", definition)
+    add_descriptions(struct, definition)
+    add_titles(struct, definition)
     if scheme_type in SECURITY_SCHEMA_STRUCT_SPECIFIERS:
         add_security_information(struct, definition)
     parent.add_child(struct)
     parent.add_reference_field("value", struct_name)
 
 
-def generate_security_definitions():
-    result_elements: List[str] = []
-    enumerated_definitions = list(enumerate(SECURITY_DEFINITIONS.items()))
+def add_security_definitions(parent: CStruct, thing):
+    global security_definitions
+    if not thing["securityDefinitions"]:
+        print("WARNING: No security definitions found! Using \"no security\" as default.")
+        thing["securityDefinitions"] = {"nosec_sc": {"scheme": "none"}}
+    definitions = security_definitions = thing["securityDefinitions"]
+    enumerated_definitions = list(enumerate(definitions.items()))
     for index, (name, definition) in enumerated_definitions:
         prefix = f'{NAMESPACE}_security_schema'
         suffix = remove_all_white_space(name)
-        struct = CStruct(f"{NAMESPACE}_security_t",
-                         f'{prefix}_{suffix}')
+        struct_name = f'{prefix}_{suffix}'
+        struct = CStruct(f"{NAMESPACE}_security_definition_t",
+                         struct_name)
+        # parent.add_child(struct, add_at_back=True)
+        parent.add_child(struct)
+        if index == 0:
+            parent.add_reference_field("security_def", struct_name)
         struct.add_field("key", f'"{suffix}"')
         add_sec_schema(struct, definition)
 
@@ -1049,9 +1091,6 @@ def generate_security_definitions():
                                        f'{prefix}_{next_suffix}')
         else:
             struct.add_field("next", "NULL")
-        result_elements.insert(0, struct.generate_c_code())
-
-    return SEPERATOR.join(result_elements)
 
 
 def add_to_result(result_element: str, result_elements: List[str]):
@@ -1059,8 +1098,133 @@ def add_to_result(result_element: str, result_elements: List[str]):
         result_elements.append(result_element)
 
 
-def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[str]:
-    coap_resources = generate_coap_resources(coap_jsons)
+def add_datetime(parent: CStruct, c_field_name: str, json_field_name: str, schema):
+    if schema[json_field_name]:
+        date = schema[json_field_name]
+        for char in ["z", "Z"]:
+            date = date.replace(char, "+00:00")
+        try:
+            parsed_date = datetime.fromisoformat(date)
+        except Exception:
+            print(
+                f'WARNING: date for field "{json_field_name}" could not be parsed!')
+            return
+        struct_name = f'{parent.struct_name}_{c_field_name}'
+        struct = CStruct(f'{NAMESPACE}_date_time_t',
+                         struct_name)
+        struct.add_field("year", str(parsed_date.year))
+        struct.add_field("month", str(parsed_date.month))
+        struct.add_field("day", str(parsed_date.day))
+        struct.add_field("hour", str(parsed_date.hour))
+        struct.add_field("minute", str(parsed_date.minute))
+        struct.add_field("second", str(parsed_date.second))
+        if parsed_date.utcoffset():
+            offset = parsed_date.utcoffset().seconds // 60
+            assert -840 <= offset <= 840, "Timezone offset has to be between -14:00 and +14:00!"
+        else:
+            offset = 0
+        struct.add_field("timezone_offset", str(offset))
+        parent.add_reference_field(c_field_name, struct_name)
+        parent.add_child(struct)
+
+
+def add_version_info(parent: CStruct, schema):
+    if schema["version"]:
+        instance = schema["version"]["instance"]
+        struct_name = f'{parent.struct_name}_version_info'
+        struct = CStruct(f'{NAMESPACE}_version_info_t',
+                         struct_name)
+        struct.add_field("instance", f'"{instance}"')
+        parent.add_reference_field("version", struct_name)
+        parent.add_child(struct)
+
+
+def filter_language_from_context(contexts):
+    global default_language
+    filtered_contexts = []
+    for context in contexts:
+        if isinstance(context, dict):
+            if "@language" in context:
+                language = context["@language"]
+                assert isinstance(
+                    language, str), f'@language has to be of type str, not {type(language).__name__}'
+                default_language = language
+                continue
+        filtered_contexts.append(context)
+    return filtered_contexts
+
+
+def add_context(parent: CStruct, schema):
+    assert "@context" in schema
+    raw_contexts = schema["@context"]
+    contexts = filter_language_from_context(raw_contexts)
+    for index, context in enumerate(contexts):
+        struct_name = f'{parent.struct_name}_context'
+        struct = CStruct("json_ld_context_t",
+                         f'{struct_name}_{index}')
+        if isinstance(context, str):
+            struct.add_field("value", f'"{context}"')
+        else:
+            key, value = list(context.items())[0]
+            assert isinstance(key, str)
+            assert isinstance(value, str)
+            struct.add_field("key", f'"{key}"')
+            # TODO: Also use uri_t if value is a URI?
+            struct.add_field("value", f'"{value}"')
+
+        if index == 0:
+            parent.add_reference_field("context",  f'{struct_name}_{index}')
+
+        add_next_field(index, struct, struct_name, contexts)
+        parent.add_child(struct)
+
+    parent.add_string("default_language_tag", f'"{default_language}"')
+
+
+def add_links(parent: CStruct, schema):
+    if schema.get("links", None):
+        links = schema["links"]
+        for index, link in enumerate(links):
+            struct_name = f'{parent.struct_name}_link'
+            struct = CStruct(f'{NAMESPACE}_link_t',
+                             f'{struct_name}_{index}')
+            add_type(struct, link)
+            assert "href" in link, "No href defined for link!"
+            add_uri(struct, "href", "href", link)
+            struct.add_string_field("rel", "rel", link)
+            add_uri(struct, "anchor", "anchor", link)
+            add_next_field(index, struct, struct_name, links)
+            if index == 0:
+                parent.add_reference_field("links", f'{struct_name}_{index}')
+            parent.add_child(struct)
+
+
+def generate_thing_serialization(thing: dict):
+    struct_type = f'{NAMESPACE}_thing_t'
+    struct_name = f"{NAMESPACE}_{THING_NAME}"
+    struct: CStruct = ThingStruct(struct_type,
+                                  struct_name)
+    add_type(struct, thing)
+    add_context(struct, thing)
+    add_uri(struct, "id", "id", thing)
+    add_titles(struct, thing)
+    add_descriptions(struct, thing)
+    add_version_info(struct, thing)
+    add_datetime(struct, "created", "created", thing)
+    add_datetime(struct, "modified", "modified", thing)
+    add_uri(struct, "support", "support", thing)
+    add_security(struct, thing)
+    add_forms(struct, THING_NAME, thing)
+    add_property_affordances(struct, thing)
+    add_action_affordances(struct, thing)
+    add_event_affordances(struct, thing)
+    add_links(struct, thing)
+    add_security_definitions(struct, thing)
+    return struct.generate_c_code()
+
+
+def assemble_results(thing) -> List[str]:
+    coap_resources = generate_coap_resources(thing)
 
     result_elements: List[str] = []
     add_to_result(generate_includes(), result_elements)
@@ -1070,30 +1234,169 @@ def assemble_results(coap_jsons: List[dict], thing_jsons: List[dict]) -> List[st
     add_to_result(generate_coap_link_params(coap_resources), result_elements)
     add_to_result(COAP_LINK_ENCODER, result_elements)
     add_to_result(generate_coap_listener(), result_elements)
-    add_to_result(generate_security_definitions(), result_elements)
-    add_to_result(generate_json_serialization(coap_jsons), result_elements)
-    add_to_result(generate_init_function(coap_jsons), result_elements)
+    add_to_result(generate_thing_serialization(thing), result_elements)
+    add_to_result(generate_init_function(thing), result_elements)
 
     return result_elements
 
 
-def get_result() -> str:
-    coap_jsons: List[dict] = [get_wot_json(affordance_file)
-                              for affordance_file in AFFORDANCES_FILES]
-    thing_jsons: List[dict] = [get_wot_json(thing_file, validation_function=validate_thing_json)
-                               for thing_file in THING_FILES]
+def turn_string_field_to_list(wot_json, field_name):
+    field = wot_json.get(field_name, [])
+    if isinstance(field, str):
+        wot_json[field_name] = [field]
+    else:
+        assert isinstance(field, list)
 
-    result_elements: List[str] = assemble_results(coap_jsons, thing_jsons)
 
-    return SEPERATOR.join(result_elements)
+def prepare_wot_json(wot_json):
+    turn_string_field_to_list(wot_json, "@context")
+    turn_string_field_to_list(wot_json, "@type")
+    turn_string_field_to_list(wot_json, "security")
+
+
+def copy_field(target, source, field_name):
+    if field_name in source:
+        target[field_name] = source[field_name]
+
+
+def parse_thing_model_json(app_dir_path, thing_model_json):
+    global security_definitions
+    empty_thing_model = {
+        "@context": [],
+        "@type": set(),
+        "id": None,
+        "title": None,
+        "titles": dict(),
+        "description": None,
+        "descriptions": dict(),
+        "version": None,
+        "created": None,
+        "modified": None,
+        "support": None,
+        "base": None,
+        "properties": dict(),
+        "actions": dict(),
+        "events": dict(),
+        "links": [],
+        "forms": [],
+        "security": set(),
+        "securityDefinitions": dict(),
+    }
+
+    if thing_model_json:
+        thing_model = get_wot_json(app_dir_path, thing_model_json)
+    else:
+        return empty_thing_model
+
+    for context in thing_model.get("@context", []):
+        if context == "http://www.w3.org/ns/td":
+            continue
+        elif context not in empty_thing_model["@context"]:
+            empty_thing_model["@context"].append(context)
+    for json_ld_type in thing_model.get("@type", []):
+        if json_ld_type != "ThingModel":
+            empty_thing_model["@type"].add(json_ld_type)
+    for security in thing_model.get("security", []):
+        empty_thing_model["security"].add(security)
+    if not thing_model.get("securityDefinitions", None):
+        print("WARNING: No security definitions found! Using \"no security\" as default.")
+        empty_thing_model["securityDefinitions"] = {
+            "nosec_sc": {"scheme": "none"}}
+        empty_thing_model["security"] = ["nosec_sc"]
+    else:
+        empty_thing_model["securityDefinitions"] = thing_model["securityDefinitions"]
+        assert "security" in thing_model
+        empty_thing_model["security"] = thing_model["security"]
+    security_definitions = empty_thing_model["securityDefinitions"]
+    # FIXME: Assert that links are unique
+    for link in thing_model.get("links", []):
+        empty_thing_model["links"].append(link)
+    # FIXME: Assert that forms are unique
+    for form in thing_model.get("forms", []):
+        empty_thing_model["forms"].append(form)
+    for affordance_type in AFFORDANCE_TYPES:
+        affordances = thing_model.get(affordance_type, dict())
+        for affordance_name, affordance_fields in affordances.items():
+            if affordance_name == "required":
+                required = affordances["required"]
+                assert isinstance(
+                    required, list), f'"required" needs to be an array, not {type(required).__name__}!'
+                required_affordances[affordance_type] = affordances["required"]
+            elif affordance_name not in empty_thing_model[affordance_type]:
+                empty_thing_model[affordance_type][affordance_name] = affordance_fields
+            else:
+                print(f"Affordance {affordance_name} already defined!")
+
+    return empty_thing_model
+
+
+def get_result(app_dir_path, thing_model_json, instance_information_json) -> str:
+    thing_model = parse_thing_model_json(app_dir_path, thing_model_json)
+    instance_information = get_wot_json(
+        app_dir_path, instance_information_json)
+
+    for key, value in instance_information.items():
+        if key == "security":
+            if isinstance(value, str):
+                value = [value]
+            if not thing_model["security"]:
+                thing_model["security"] = value
+            else:
+                defined_security = thing_model["security"]
+                if isinstance(defined_security, str):
+                    thing_model["security"] = defined_security = [
+                        defined_security]
+                for security in value["security"]:
+                    if security not in defined_security:
+                        thing_model["security"].add(security)
+        elif key == "@context":
+            thing_context = thing_model["@context"]
+            if isinstance(value, str):
+                value = [value]
+            for context in value:
+                thing_context.append(context)
+            thing_model["@context"] = thing_context
+        copy_field(thing_model, instance_information, "id")
+        copy_field(thing_model, instance_information, "title")
+        copy_field(thing_model, instance_information, "titles")
+        copy_field(thing_model, instance_information, "description")
+        copy_field(thing_model, instance_information, "descriptions")
+        copy_field(thing_model, instance_information, "version")
+        copy_field(thing_model, instance_information, "created")
+        copy_field(thing_model, instance_information, "modified")
+        copy_field(thing_model, instance_information, "support")
+    for affordance_type in AFFORDANCE_TYPES:
+        thing_model_affordances = thing_model.get(
+            affordance_type, dict())
+        instance_affordances = instance_information.get(
+            affordance_type, dict())
+        if instance_affordances and not thing_model_affordances:
+            thing_model[affordance_type] = dict()
+
+        for affordance_name, affordance_fields in instance_affordances.items():
+            model_affordance = thing_model[affordance_type][affordance_name]
+
+            if not thing_model_json:
+                model_affordance = affordance_fields
+            elif affordance_name in thing_model_affordances:
+                instance_affordance = instance_affordances[affordance_name]
+                copy_field(model_affordance, instance_affordance, "forms")
+                if "security" in instance_affordance:
+                    copy_field(model_affordance,
+                               instance_affordance, "security")
+
+    result_elements: List[str] = assemble_results(thing_model)
+
+    return SEPARATOR.join(result_elements)
 
 
 def main() -> None:
     args = parse_command_line_arguments()
     assert_command_line_arguments(args)
 
-    result: str = get_result()
-    write_to_c_file(result)
+    result: str = get_result(
+        args.appdir, args.thing_model, args.thing_instance_info)
+    write_to_c_file(result, args.output_path)
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ const coap_resource_t _coap_resources[] = {
 
 static gcoap_listener_t _coap_listener = {
         &_coap_resources[0],
-        sizeof(_coap_resources) / sizeof(_coap_resources[0]),
+        ARRAY_SIZE(_coap_resources),
         NULL,
         NULL
 };
@@ -69,4 +69,3 @@ int wot_td_coap_config_init(wot_td_thing_t *thing){
     wot_td_coap_prop_add(thing, &wot_coap_echo_affordance);
     return 0;
 }
-
