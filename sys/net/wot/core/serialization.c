@@ -210,7 +210,6 @@ void _serialize_lang(wot_td_serialize_receiver_t receiver, wot_td_multi_lang_t *
 }
 
 void _serialize_title_array(wot_td_serialize_receiver_t receiver, wot_td_multi_lang_t *titles, char *lang, wot_td_ser_slicer_t *slicer){
-    bool has_previous_prop = false;
     wot_td_multi_lang_t *tmp = titles;
     wot_td_multi_lang_t *default_title = NULL;
     _wot_td_fill_json_obj_key(receiver, wot_td_titles_obj_key, sizeof(wot_td_titles_obj_key)-1, slicer);
@@ -224,10 +223,9 @@ void _serialize_title_array(wot_td_serialize_receiver_t receiver, wot_td_multi_l
         }
 
         if(tmp->next != NULL){
-            _previous_prop_check(receiver, has_previous_prop, slicer);
+            _previous_prop_check(receiver, true, slicer);
         }
         tmp = tmp->next;
-        has_previous_prop = true;
     }
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
 
@@ -239,13 +237,11 @@ void _serialize_title_array(wot_td_serialize_receiver_t receiver, wot_td_multi_l
 }
 
 void _serialize_description_array(wot_td_serialize_receiver_t receiver, wot_td_multi_lang_t *desc, char *lang, wot_td_ser_slicer_t *slicer){
-    bool has_previous_prop = false;
     wot_td_multi_lang_t *tmp = desc;
     wot_td_multi_lang_t *default_description = NULL;
     _wot_td_fill_json_obj_key(receiver, wot_td_description_obj_key, sizeof(wot_td_description_obj_key)-1, slicer);
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
     while(tmp != NULL){
-
         _serialize_lang(receiver, tmp, slicer);
 
         if(lang != NULL && strcmp(tmp->tag, lang) == 0){
@@ -253,10 +249,9 @@ void _serialize_description_array(wot_td_serialize_receiver_t receiver, wot_td_m
         }
 
         if(tmp->next != NULL){
-            _previous_prop_check(receiver, has_previous_prop, slicer);
+            _previous_prop_check(receiver, true, slicer);
         }
         tmp = tmp->next;
-        has_previous_prop = true;
     }
     _wot_td_fill_json_receiver(receiver, "}", 1, slicer);
 
