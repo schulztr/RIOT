@@ -810,6 +810,7 @@ void _serialize_data_schema_object(wot_td_serialize_receiver_t receiver, wot_td_
 
 void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_array_schema_t *schema, char *lang, wot_td_ser_slicer_t *slicer){
     if(schema->items != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, wot_td_item_obj_key, sizeof(wot_td_item_obj_key)-1, slicer);
         wot_td_data_schemas_t *item = schema->items;
         _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
@@ -882,19 +883,15 @@ void _serialize_data_schema_int(wot_td_serialize_receiver_t receiver, wot_td_int
 void _serialize_data_schema_subclass(wot_td_serialize_receiver_t receiver, wot_td_data_schema_t *data_schema, char *lang, wot_td_ser_slicer_t *slicer){
     switch (data_schema->json_type) {
         case JSON_TYPE_OBJECT:
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             _serialize_data_schema_object(receiver, (wot_td_object_schema_t *) data_schema->schema, lang, slicer);
             break;
         case JSON_TYPE_ARRAY:
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             _serialize_data_schema_array(receiver, (wot_td_array_schema_t *) data_schema->schema, lang, slicer);
             break;
         case JSON_TYPE_NUMBER:
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             _serialize_data_schema_number(receiver, (wot_td_number_schema_t *) data_schema->schema, slicer);
             break;
         case JSON_TYPE_INTEGER:
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
             _serialize_data_schema_int(receiver, (wot_td_integer_schema_t *) data_schema->schema, slicer);
             break;
         default:
