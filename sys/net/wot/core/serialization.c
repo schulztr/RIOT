@@ -831,7 +831,7 @@ void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_a
         _wot_td_fill_json_obj_key(receiver, wot_td_min_items_obj_key, sizeof(wot_td_min_items_obj_key) - 1, slicer);
         char min_items_output[32];
         _itoa(*schema->min_items, min_items_output);
-        _wot_td_fill_json_string(receiver, min_items_output, strlen(min_items_output), slicer);
+        _wot_td_fill_json_receiver(receiver, min_items_output, strlen(min_items_output), slicer);
     }
 
     if(schema->max_items != NULL){
@@ -841,7 +841,7 @@ void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_a
         _wot_td_fill_json_obj_key(receiver, wot_td_max_items_obj_key, sizeof(wot_td_max_items_obj_key)-1, slicer);
         char max_items_output[32];
         _itoa(*schema->max_items, max_items_output);
-        _wot_td_fill_json_string(receiver, max_items_output, strlen(max_items_output), slicer);
+        _wot_td_fill_json_receiver(receiver, max_items_output, strlen(max_items_output), slicer);
     }
 }
 
@@ -870,13 +870,13 @@ void _serialize_data_schema_int(wot_td_serialize_receiver_t receiver, wot_td_int
         _wot_td_fill_json_obj_key(receiver, wot_td_min_obj_key, sizeof(wot_td_min_obj_key)-1, slicer);
         char min_output[23];
         _itoa(*schema->minimum, min_output);
-        _wot_td_fill_json_string(receiver, min_output, strlen(min_output), slicer);
+        _wot_td_fill_json_receiver(receiver, min_output, strlen(min_output), slicer);
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
 
         _wot_td_fill_json_obj_key(receiver, wot_td_max_obj_key, sizeof(wot_td_max_obj_key)-1, slicer);
         char max_output[23];
         _itoa(*schema->minimum, max_output);
-        _wot_td_fill_json_string(receiver, max_output, strlen(max_output), slicer);
+        _wot_td_fill_json_receiver(receiver, max_output, strlen(max_output), slicer);
     }
 }
 
