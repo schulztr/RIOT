@@ -994,6 +994,9 @@ void _serialize_data_schema(wot_td_serialize_receiver_t receiver, wot_td_data_sc
         _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
         while (tmp != NULL){
             _wot_td_fill_json_string(receiver, tmp->value, strlen(tmp->value), slicer);
+            if (tmp->next != NULL){
+                _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+            }
             tmp = tmp->next;
         }
         _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
