@@ -452,13 +452,10 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help="JSON file with bindings")
     parser.add_argument('--output_path',
                         help="The path to the output file")
-    parser.add_argument('--used_modules', nargs='*',
-                        help="List of modules that have been declared in the build process")
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
-    assert args.board, "ERROR: Argument board has to be defined"
     assert args.meta_data_path, "ERROR: No instance information defined!"
 
 
