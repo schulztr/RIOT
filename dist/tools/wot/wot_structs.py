@@ -317,6 +317,7 @@ class CFunction(CObject):
     def add_function_line(self, line: str) -> None:
         pass
 
+
 class ThingInitFunction(CFunction):
 
     def __init__(self, thing_description) -> None:
@@ -361,7 +362,6 @@ class ThingInitFunction(CFunction):
     def _last_line(self) -> str:
         return f"{SEPARATOR + INDENT}return 0;{NEW_LINE}}}"
 
-
     def _generate_field(self, field_name: str, field_value: str) -> str:
         return f"{self.struct_name}->{field_name} = {field_value};"
 
@@ -386,7 +386,7 @@ class HandlerFunction(CFunction):
 
     def generate_c_code(self) -> str:
         return super().generate_c_code()
-    
+
 
 class CStruct(CObject):
 
@@ -515,7 +515,7 @@ class VersionStruct(FieldStruct):
 
     def _generate_fields(self) -> None:
         version_info = self.data["version"]
-        self.add_string_field("instance", version_info["instance"])
+        self.add_string_field("instance", version_info.get("instance"))
 
 
 class LinkedListStruct(FieldStruct):
@@ -706,7 +706,8 @@ class FormStruct(LinkedListStruct):
 
         self.add_string_field("sub_protocol", self.data.get("subprotocol"))
 
-        contentCoding = CONTENT_ENCODINGS.get(self.data.get("contentCoding", "none"))
+        contentCoding = CONTENT_ENCODINGS.get(
+            self.data.get("contentCoding", "none"))
         self.add_plain_field("content_encoding", contentCoding)
 
         ContentTypeStruct.parse(self)
@@ -1047,7 +1048,8 @@ class DataSchemaStruct(FieldStruct):
         TypeStruct.parse(self)
         MultiLangStruct.parse(self, "titles")
         MultiLangStruct.parse(self, "descriptions")
-        self.add_plain_field("json_type", JSON_TYPES[self.data.get("type", "none")])
+        self.add_plain_field(
+            "json_type", JSON_TYPES[self.data.get("type", "none")])
 
         for field_name in ["const", "unit", "format"]:
             self.add_string_field(field_name, self.data.get(field_name))
