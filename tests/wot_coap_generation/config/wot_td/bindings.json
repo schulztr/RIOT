@@ -1,0 +1,30 @@
+{
+    "properties": {
+        "status": {
+            "forms": [
+                {
+                    "riot_os:handler_function": "_led_status_handler",
+                    "href": "/led/status"
+                }
+            ]
+        },
+        "rememberState": {
+            "forms": [
+                {
+                    "riot_os:handler_function": "_led_status_handler",
+                    "href": "{{BASE_TOPIC}}/{{FRIENDLY_NAME}}/set/remember_state"
+                }
+            ]
+        }
+    },
+    "actions": {
+        "toggle": {
+            "forms": [
+                {
+                    "riot_os:handler_function": "_led_toggle_handler",
+                    "href": "/led/toggle"
+                }
+            ]
+        }
+    }
+}
