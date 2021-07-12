@@ -235,7 +235,7 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--appdir', help='Define directory of app')
     parser.add_argument('--thing_models',
                         help="Thing Models (in JSON format) which serve as the basis of the Thing Description",
-                        nargs='+')
+                        nargs='*')
     parser.add_argument('--meta_data_path',
                         nargs='?',
                         help="JSON file with user defined meta data")
@@ -247,11 +247,12 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help="JSON file with bindings")
     parser.add_argument('--output_path',
                         help="The path to the output file")
+    parser.add_argument('--thing_description', help="A complete Thing Description that not depends on a Thing Model.", nargs='?')
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
-    assert args.meta_data_path, "ERROR: No instance information defined!"
+    assert args.meta_data_path and args.thing_models or args.thing_description, "ERROR: No instance information defined!"
 
 
 def generate_includes() -> str:
