@@ -578,7 +578,7 @@ class TypeStruct(LinkedListStruct):
 
     @classmethod
     def parse(cls, parent: CObject) -> None:
-        if "@type" in parent.data:
+        if parent.data.get("@type"):
             cls(parent, "type", "@type", ref_name="type")
 
     def _generate_fields(self) -> None:
