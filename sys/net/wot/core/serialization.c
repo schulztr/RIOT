@@ -1145,8 +1145,11 @@ int wot_td_serialize_thing(wot_td_serialize_receiver_t receiver, wot_td_thing_t 
 
     if(thing->context != NULL){
         _wot_td_fill_json_receiver(receiver, "[", 1, slicer);
-        _wot_td_fill_json_string(receiver, wot_td_ser_w3c_context_value, sizeof(wot_td_ser_w3c_context_value)-1, slicer);
-        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        if(strcmp(thing->context->value, wot_td_ser_w3c_context_value))
+        {
+            _wot_td_fill_json_string(receiver, wot_td_ser_w3c_context_value, sizeof(wot_td_ser_w3c_context_value)-1, slicer);
+            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        }
         _serialize_context_array(receiver, thing->context, slicer);
         _wot_td_fill_json_receiver(receiver, "]", 1, slicer);
     }else{
