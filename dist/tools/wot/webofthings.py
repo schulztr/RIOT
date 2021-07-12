@@ -18,35 +18,42 @@ from typing import (
 
 class ThingDescription(object):
 
-    def __init__(self, raw_thing_model, meta_data, bindings, placeholders):
-        thing_model = self.replace_placeholders(
-            dict(raw_thing_model), placeholders)
-        setattr(self, "@context", thing_model.get("@context", []))
-        setattr(self, "@type", thing_model.get("@type", []))
-        self.id = thing_model.get("id")
-        self.title = thing_model.get("title")
-        self.titles = thing_model.get("titles", dict())
-        self.description = thing_model.get("description")
-        self.descriptions = thing_model.get("descriptions", dict())
-        self.version = thing_model.get("version")
-        self.created = thing_model.get("created")
-        self.modified = thing_model.get("modified")
-        self.support = thing_model.get("support")
-        self.base = thing_model.get("base")
-        self.properties = thing_model.get("properties", dict())
-        self.actions = thing_model.get("actions", dict())
-        self.events = thing_model.get("events", dict())
-        self.links = thing_model.get("links", [])
-        self.forms = thing_model.get("forms", [])
-        self.security = thing_model.get("security", [])
-        self.securityDefinitions = thing_model.get(
+    def __init__(self, raw_thing_model, meta_data=None, bindings=None, placeholders=None):
+        thingModel : bool = meta_data or bindings or placeholders
+
+        if thingModel:
+            thing_description = self.replace_placeholders(
+                dict(raw_thing_model), placeholders)
+        else:
+            thing_description = raw_thing_model
+
+        setattr(self, "@context", thing_description.get("@context", []))
+        setattr(self, "@type", thing_description.get("@type", []))
+        self.id = thing_description.get("id")
+        self.title = thing_description.get("title")
+        self.titles = thing_description.get("titles", dict())
+        self.description = thing_description.get("description")
+        self.descriptions = thing_description.get("descriptions", dict())
+        self.version = thing_description.get("version")
+        self.created = thing_description.get("created")
+        self.modified = thing_description.get("modified")
+        self.support = thing_description.get("support")
+        self.base = thing_description.get("base")
+        self.properties = thing_description.get("properties", dict())
+        self.actions = thing_description.get("actions", dict())
+        self.events = thing_description.get("events", dict())
+        self.links = thing_description.get("links", [])
+        self.forms = thing_description.get("forms", [])
+        self.security = thing_description.get("security", [])
+        self.securityDefinitions = thing_description.get(
             "securityDefinitions", dict())
 
-        self.insert_meta_data(meta_data)
-        self.insert_bindings(bindings)
-        self._set_context()
-        self._set_type()
-        self.validate()
+        if thingModel:
+            self.insert_meta_data(meta_data)
+            self.insert_bindings(bindings)
+            self._set_context()
+            self._set_type()
+            self.validate()
 
     def validate(self):
         for affordance_type in ["properties", "actions", "events"]:

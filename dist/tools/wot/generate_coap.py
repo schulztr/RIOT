@@ -235,7 +235,7 @@ def parse_command_line_arguments() -> argparse.Namespace:
     parser.add_argument('--appdir', help='Define directory of app')
     parser.add_argument('--thing_models',
                         help="Thing Models (in JSON format) which serve as the basis of the Thing Description",
-                        nargs='+')
+                        nargs='*')
     parser.add_argument('--meta_data_path',
                         nargs='?',
                         help="JSON file with user defined meta data")
@@ -247,11 +247,12 @@ def parse_command_line_arguments() -> argparse.Namespace:
                         help="JSON file with bindings")
     parser.add_argument('--output_path',
                         help="The path to the output file")
+    parser.add_argument('--thing_description', help="A complete Thing Description that not depends on a Thing Model.", nargs='?')
     return parser.parse_args()
 
 
 def assert_command_line_arguments(args: argparse.Namespace) -> None:
-    assert args.meta_data_path, "ERROR: No instance information defined!"
+    assert args.meta_data_path and args.thing_models or args.thing_description, "ERROR: No instance information defined!"
 
 
 def generate_includes() -> str:
@@ -358,34 +359,38 @@ def get_thing_model(app_dir_path, thing_model_path):
     return thing_model
 
 
-def get_result(app_dir_path, thing_model_paths, meta_data_path, bindings_path, placeholder_path) -> str:
-    thing_models = [get_thing_model(app_dir_path, path)
-                    for path in thing_model_paths]
-    thing_model = thing_models[0]
-    for x in range(1, len(thing_models)):
-        thing_model.extend(thing_models[x])
+def get_result(app_dir_path, thing_model_paths, meta_data_path, bindings_path, placeholder_path, thing_description_path) -> str:
+    if thing_model_paths:
+        thing_models = [get_thing_model(app_dir_path, path)
+                        for path in thing_model_paths]
+        thing_model = thing_models[0]
+        for x in range(1, len(thing_models)):
+            thing_model.extend(thing_models[x])
 
-    placeholders = None
-    if placeholder_path:
-        placeholders = get_wot_json(app_dir_path, placeholder_path)
+        placeholders = None
+        if placeholder_path:
+            placeholders = get_wot_json(app_dir_path, placeholder_path)
 
-    meta_data = None
-    if meta_data_path:
-        meta_data = get_wot_json(app_dir_path, meta_data_path)
-        meta_data = ThingDescription.replace_placeholders(
-            meta_data, placeholders)
+        meta_data = None
+        if meta_data_path:
+            meta_data = get_wot_json(app_dir_path, meta_data_path)
+            meta_data = ThingDescription.replace_placeholders(
+                meta_data, placeholders)
 
-    bindings = None
-    if bindings_path:
-        bindings = get_wot_json(app_dir_path, bindings_path)
-        bindings = ThingDescription.replace_placeholders(
-            bindings, placeholders)
+        bindings = None
+        if bindings_path:
+            bindings = get_wot_json(app_dir_path, bindings_path)
+            bindings = ThingDescription.replace_placeholders(
+                bindings, placeholders)
 
-    thing_model = thing_model.generate_thing_description(
-        meta_data, bindings, placeholders)
-    thing_model = dict(thing_model)
+        thing_description = thing_model.generate_thing_description(
+            meta_data, bindings, placeholders)
+        thing_description = dict(thing_description)
+    else:
+        thing_description_json = get_wot_json(app_dir_path, thing_description_path)
+        thing_description = dict(ThingDescription(thing_description_json))
 
-    result_elements: List[str] = assemble_results(thing_model)
+    result_elements: List[str] = assemble_results(thing_description)
 
     return SEPARATOR.join(result_elements)
 
@@ -395,7 +400,7 @@ def main_func() -> None:
     assert_command_line_arguments(args)
 
     result: str = get_result(
-        args.appdir, args.thing_models, args.meta_data_path, args.bindings_path, args.placeholders_path)
+        args.appdir, args.thing_models, args.meta_data_path, args.bindings_path, args.placeholders_path, args.thing_description)
 
     with open(args.output_path, 'w') as writer:
         writer.write(result)
