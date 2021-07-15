@@ -846,36 +846,38 @@ void _serialize_data_schema_array(wot_td_serialize_receiver_t receiver, wot_td_a
 }
 
 void _serialize_data_schema_number(wot_td_serialize_receiver_t receiver, wot_td_number_schema_t *schema, wot_td_ser_slicer_t *slicer){
-    char buf[16];
-    bool has_minimum = false;
+    char buf[16];//maximum 8 characters
     if(schema->minimum != NULL){
-        has_minimum = true;
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, wot_td_min_obj_key, sizeof(wot_td_min_obj_key)-1, slicer);
         sprintf(buf, "%f", *schema->minimum);
+        _wot_td_fill_json_receiver(receiver, buf, strlen(buf), slicer);
     }
     if(schema->maximum != NULL){
-        if(has_minimum){
-            _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-        }
-
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, wot_td_max_obj_key, sizeof(wot_td_max_obj_key)-1, slicer);
         memset(buf, 0, 16);
         sprintf(buf, "%f", *schema->maximum);
+        _wot_td_fill_json_receiver(receiver, buf, strlen(buf), slicer);
     }
 }
 
 //Todo: Use const vars
 void _serialize_data_schema_int(wot_td_serialize_receiver_t receiver, wot_td_integer_schema_t *schema, wot_td_ser_slicer_t *slicer){
     if(schema->minimum != NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, wot_td_min_obj_key, sizeof(wot_td_min_obj_key)-1, slicer);
         char min_output[23];
         _itoa(*schema->minimum, min_output);
         _wot_td_fill_json_receiver(receiver, min_output, strlen(min_output), slicer);
+    }
+
+    if(schema -> maximum != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
 
         _wot_td_fill_json_obj_key(receiver, wot_td_max_obj_key, sizeof(wot_td_max_obj_key)-1, slicer);
         char max_output[23];
-        _itoa(*schema->minimum, max_output);
+        _itoa(*schema->maximum, max_output);
         _wot_td_fill_json_receiver(receiver, max_output, strlen(max_output), slicer);
     }
 }
@@ -932,24 +934,24 @@ void _serialize_data_schema(wot_td_serialize_receiver_t receiver, wot_td_data_sc
     bool has_previous_prop = false;
     if(as_obj){
         _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
-    }
 
-    if(data_schema->type != NULL){
-        has_previous_prop = true;
-        wot_td_type_t *type = data_schema->type;
-        _serialize_type_array(receiver, type, slicer);
-    }
+        if(data_schema->type != NULL){
+            has_previous_prop = true;
+            wot_td_type_t *type = data_schema->type;
+            _serialize_type_array(receiver, type, slicer);
+        }
 
-    if(data_schema->titles != NULL){
-        _previous_prop_check(receiver, has_previous_prop, slicer);
-        has_previous_prop = true;
-        _serialize_title_array(receiver, data_schema->titles, lang, slicer);
-    }
+        if(data_schema->titles != NULL){
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
+            _serialize_title_array(receiver, data_schema->titles, lang, slicer);
+        }
 
-    if(data_schema->descriptions != NULL){
-        _previous_prop_check(receiver, has_previous_prop, slicer);
-        has_previous_prop = true;
-        _serialize_description_array(receiver, data_schema->descriptions, lang, slicer);
+        if(data_schema->descriptions != NULL){
+            _previous_prop_check(receiver, has_previous_prop, slicer);
+            has_previous_prop = true;
+            _serialize_description_array(receiver, data_schema->descriptions, lang, slicer);
+        }
     }
 
     if(data_schema->json_type != JSON_TYPE_NONE){
