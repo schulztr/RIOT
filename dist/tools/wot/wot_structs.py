@@ -1121,28 +1121,27 @@ class DataSchemaArrayStruct(LinkedListStruct):
         value = self._iterable_data[self.index]
         DataSchemaStruct.parse(self, "items", data=value, ref_name="value")
 
-
-class NumericSchemaStruct(FieldStruct):
-
-    def _generate_fields(self) -> None:
-        for field_name in ["minimum", "maximum"]:
-            self.add_plain_field(field_name, self.data.get(field_name))
-
-
-class NumberSchemaStruct(NumericSchemaStruct):
+class NumberSchemaStruct(FieldStruct):
 
     @classmethod
     def parse(cls, parent: CObject) -> None:
         if parent.data.get("type") == "number":
             cls(parent, "number_schema", "schema")
 
+    def _generate_fields(self) -> None:
+        for field_name in ["minimum", "maximum"]:
+            self.add_plain_field(field_name, f'&(double){{{self.data.get(field_name)}}}')
 
-class IntegerSchemaStruct(NumericSchemaStruct):
+class IntegerSchemaStruct(FieldStruct):
 
     @classmethod
     def parse(cls, parent: CObject) -> None:
         if parent.data.get("type") == "integer":
             cls(parent, "integer_schema", "schema")
+
+    def _generate_fields(self) -> None:
+        for field_name in ["minimum", "maximum"]:
+            self.add_plain_field(field_name, f'&(int32_t){{{self.data.get(field_name)}}}')
 
 
 class ArraySchemaStruct(FieldStruct):
