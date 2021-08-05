@@ -1130,7 +1130,7 @@ class NumberSchemaStruct(FieldStruct):
 
     def _generate_fields(self) -> None:
         for field_name in ["minimum", "maximum"]:
-            self.add_plain_field(field_name, f'&(double){{{self.data.get(field_name)}}}')
+            self.add_plain_field(field_name, f'&(double){{{self.data.get(field_name)}}}') if self.data.get(field_name)!= None else self.add_plain_field(field_name, "NULL")
 
 class IntegerSchemaStruct(FieldStruct):
 
@@ -1141,7 +1141,8 @@ class IntegerSchemaStruct(FieldStruct):
 
     def _generate_fields(self) -> None:
         for field_name in ["minimum", "maximum"]:
-            self.add_plain_field(field_name, f'&(int32_t){{{self.data.get(field_name)}}}')
+            self.add_plain_field(field_name, f'&(int32_t){{{self.data.get(field_name)}}}')if self.data.get(field_name)!=None else self.add_plain_field(field_name, "NULL")
+
 
 
 class ArraySchemaStruct(FieldStruct):
