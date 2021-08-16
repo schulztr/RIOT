@@ -289,7 +289,10 @@ def generate_coap_handlers(coap_resources: List[dict]) -> str:
 
         handler_function = HandlerFunction.create(wot_handler, actual_handler)
 
-        handlers.append(handler_function.generate_c_code())
+        c_code : str = handler_function.generate_c_code()
+        # it is possible to create a property, action and event with the same handler
+        if c_code not in handlers:
+            handlers.append(c_code)
 
         # TODO: Add validation
 

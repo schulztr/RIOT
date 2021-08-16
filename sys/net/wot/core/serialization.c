@@ -454,8 +454,10 @@ void _serialize_security(wot_td_serialize_receiver_t receiver, wot_td_sec_scheme
 
     _wot_td_fill_json_obj_key(receiver, wot_td_schema_obj_key, sizeof(wot_td_schema_obj_key)-1, slicer);
     _security_scheme_string(receiver, scheme->scheme_type, slicer);
-    _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
-    _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
+    if(scheme->descriptions!=NULL){
+        _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
+        _serialize_description_array(receiver, scheme->descriptions, lang, slicer);
+    }
     if(scheme->proxy != NULL){
         _wot_td_fill_json_receiver(receiver, ",", 1, slicer);
         _wot_td_fill_json_obj_key(receiver, "proxy", sizeof("proxy")-1, slicer);
@@ -1064,11 +1066,12 @@ void _serialize_action_aff_array(wot_td_serialize_receiver_t receiver, wot_td_ac
 
 void _serialize_event_aff_array(wot_td_serialize_receiver_t receiver, wot_td_event_affordance_t *event_aff, char *lang, wot_td_ser_slicer_t *slicer){
     wot_td_event_affordance_t *tmp = event_aff;
-    bool has_previous_prop = false;
+    bool has_previous_prop;
 
     _wot_td_fill_json_obj_key(receiver, wot_td_events_obj_key, sizeof(wot_td_events_obj_key)-1, slicer);
     _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
     while (tmp != NULL){
+        has_previous_prop = false;
         _wot_td_fill_json_obj_key(receiver, tmp->key, strlen(tmp->key), slicer);
         _wot_td_fill_json_receiver(receiver, "{", 1, slicer);
         if(tmp->subscription != NULL){
