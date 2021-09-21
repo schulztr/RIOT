@@ -7,7 +7,6 @@
  * directory for more details.
  */
 
-
 /**
  * @defgroup    sys_timex Timex
  * @brief       Timestamp representation, computation, and conversion
@@ -57,6 +56,11 @@ extern "C" {
  * @brief The number of microseconds per centisecond
  */
 #define US_PER_CS  (10000U)
+
+/**
+ * @brief The number of milliseconds per centisecond
+ */
+#define MS_PER_CS  (10U)
 
 /**
  * @brief The number of nanoseconds per microsecond

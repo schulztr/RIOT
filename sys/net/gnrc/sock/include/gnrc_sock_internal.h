@@ -125,7 +125,7 @@ static inline void gnrc_ep_set(sock_ip_ep_t *out, const sock_ip_ep_t *in,
                                size_t in_size)
 {
     memcpy(out, in, in_size);
-    if (gnrc_netif_highlander()) {
+    if (gnrc_netif_highlander() && (out->netif == 0)) {
         /* set interface implicitly */
         gnrc_netif_t *netif = gnrc_netif_iter(NULL);
 
@@ -157,7 +157,6 @@ ssize_t gnrc_sock_send(gnrc_pktsnip_t *payload, sock_ip_ep_t *local,
 /**
  * @}
  */
-
 
 #ifdef __cplusplus
 }

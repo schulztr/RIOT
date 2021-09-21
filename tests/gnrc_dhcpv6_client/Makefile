@@ -8,6 +8,8 @@ RIOTBASE ?= $(CURDIR)/../..
 # boards don't support ethos
 BOARD_BLACKLIST += mips-malta pic32-wifire pic32-clicker ruuvitag thingy52
 
+USEMODULE += dhcpv6_client_ia_pd
+USEMODULE += dhcpv6_client_ia_na
 USEMODULE += gnrc_dhcpv6_client
 USEMODULE += gnrc_ipv6_default
 USEMODULE += xtimer
@@ -39,6 +41,12 @@ include $(RIOTBASE)/Makefile.include
 
 .PHONY: dhcpv6_server
 
+# export IFACE variable to environment of dhcpv6_server and
+# test-with-config/check-config rules
+# see: https://doc.riot-os.org/build-system-basics.html#variable-declaration-guidelines
+$(call target-export-variables,dhcpv6_server test-with-config/check-config,IFACE)
+
+dhcpv6_server:
 dhcpv6_server:
 	$(CURDIR)/dhcpv6_server.sh $(DHCPV6_SERVER_PORT) $(CURDIR)/kea-dhcp6.conf
 

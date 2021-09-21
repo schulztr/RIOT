@@ -21,7 +21,7 @@
  * data, as well as writing data to the UART port, which means transmitting
  * data. The UART device and the corresponding pins need to be mapped in
  * `RIOT/boards/ * /include/periph_conf.h`. Furthermore, you need to select the
- * baudrate for initialization which is typically {9600, 19200, 38400, 57600,
+ * symbol rate for initialization which is typically {9600, 19200, 38400, 57600,
  * 115200} baud. Additionally, you should register a callback function that is
  * executed in interrupt context when data is being received. The driver will
  * then read the received data byte, call the registered callback function and
@@ -58,9 +58,10 @@
 #ifndef PERIPH_UART_H
 #define PERIPH_UART_H
 
+#include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
 
 #include "periph_cpu.h"
 #include "periph_conf.h"
@@ -99,24 +100,37 @@ typedef unsigned int uart_t;
 typedef void(*uart_rx_cb_t)(void *arg, uint8_t data);
 
 /**
+ * @brief   Signature for receive start condition interrupt callback
+ *
+ * @param[in] arg           context to the callback (optional)
+ */
+typedef void(*uart_rxstart_cb_t)(void *arg);
+
+/**
  * @brief   Interrupt context for a UART device
  */
 #ifndef HAVE_UART_ISR_CTX_T
 typedef struct {
     uart_rx_cb_t rx_cb;     /**< data received interrupt callback */
-    void *arg;              /**< argument to both callback routines */
+    void *arg;              /**< argument to data received callback */
+#ifdef MODULE_PERIPH_UART_RXSTART_IRQ
+    uart_rxstart_cb_t rxs_cb;   /**< start condition received interrupt callback */
+    void *rxs_arg;          /**< argument to start condition received callback */
+#endif
 } uart_isr_ctx_t;
 #endif
 
 /**
- * @brief   Possible UART return values
+ * @brief       Possible UART return values
+ *
+ * @deprecated  Use the errno constants directly instead.
  */
 enum {
-    UART_OK         =  0,   /**< everything in order */
-    UART_NODEV      = -1,   /**< invalid UART device given */
-    UART_NOBAUD     = -2,   /**< given baudrate is not applicable */
-    UART_INTERR     = -3,   /**< all other internal errors */
-    UART_NOMODE     = -4    /**< given mode is not applicable */
+    UART_OK         =  0,           /**< everything in order */
+    UART_NODEV      = -ENODEV,      /**< invalid UART device given */
+    UART_NOBAUD     = -ENOTSUP,     /**< given symbol rate is not applicable */
+    UART_NOMODE     = -ENOTSUP,     /**< given mode is not applicable */
+    UART_INTERR     = -EIO,         /**< all other internal errors */
 };
 
 /**
@@ -161,24 +175,24 @@ typedef enum {
  * - 8 data bits
  * - no parity
  * - 1 stop bit
- * - baudrate as given
+ * - symbol rate as given
  *
  * If no callback parameter is given (rx_cb := NULL), the UART will be
  * initialized in TX only mode.
  *
  * @param[in] uart          UART device to initialize
- * @param[in] baudrate      desired baudrate in baud/s
+ * @param[in] baud          desired symbol rate in baud
  * @param[in] rx_cb         receive callback, executed in interrupt context once
  *                          for every byte that is received (RX buffer filled),
  *                          set to NULL for TX only mode
  * @param[in] arg           optional context passed to the callback functions
  *
- * @return                  UART_OK on success
- * @return                  UART_NODEV on invalid UART device
- * @return                  UART_NOBAUD on inapplicable baudrate
- * @return                  UART_INTERR on other errors
+ * @retval  0               Success
+ * @retval  -ENODEV         Invalid UART device
+ * @retval  -ENOTSUP        Unsupported symbol rate
+ * @retval  <0              On other errors
  */
-int uart_init(uart_t uart, uint32_t baudrate, uart_rx_cb_t rx_cb, void *arg);
+int uart_init(uart_t uart, uint32_t baud, uart_rx_cb_t rx_cb, void *arg);
 
 #if defined(MODULE_PERIPH_UART_RECONFIGURE) || DOXYGEN
 /**
@@ -243,6 +257,45 @@ gpio_t uart_pin_tx(uart_t uart);
 #endif /* DOXYGEN */
 #endif /* MODULE_PERIPH_UART_RECONFIGURE */
 
+#if defined(MODULE_PERIPH_UART_RXSTART_IRQ) || DOXYGEN
+
+/**
+ * @brief   Configure the function that will be called when a start condition
+ *          is detected.
+ *
+ *          This will not enable / disable the generation of the RX start
+ *          interrupt.
+ *
+ * @note    You have to add the module `periph_uart_rxstart_irq` to your project
+ *          to enable this function
+ *
+ * @param[in] uart      The device to configure
+ * @param[in] cb        The function called when a start condition is detected
+ * @param[in] arg       Optional function argument
+ */
+void uart_rxstart_irq_configure(uart_t uart, uart_rxstart_cb_t cb, void *arg);
+
+/**
+ * @brief   Enable the RX start interrupt.
+ *
+ * @note    You have to add the module `periph_uart_rxstart_irq` to your project
+ *          to enable this function
+ *
+ * @param[in] uart      The device to configure
+ */
+void uart_rxstart_irq_enable(uart_t uart);
+
+/**
+ * @brief   Disable the RX start interrupt.
+ *
+ * @note    You have to add the module `periph_uart_rxstart_irq` to your project
+ *          to enable this function
+ *
+ * @param[in] uart      The device to configure
+ */
+void uart_rxstart_irq_disable(uart_t uart);
+#endif /* MODULE_PERIPH_UART_RXSTART_IRQ */
+
 /**
  * @brief   Setup parity, data and stop bits for a given UART device
  *
@@ -251,8 +304,9 @@ gpio_t uart_pin_tx(uart_t uart);
  * @param[in] parity        parity mode
  * @param[in] stop_bits     number of stop bits in a UART frame
  *
- * @return                  UART_OK on success
- * @return                  UART_NOMODE on other errors
+ * @retval  0               Success
+ * @retval  -ENOTSUP        Given configuration not supported
+ * @retval  <0              Other error
  */
 int uart_mode(uart_t uart, uart_data_bits_t data_bits, uart_parity_t parity,
               uart_stop_bits_t stop_bits);

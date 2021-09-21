@@ -1,4 +1,5 @@
 [![Nightly CI status master][master-ci-badge]][master-ci-link]
+[![Nightly HiL CI overview][hil-ci-badge]][hil-ci-link]
 [![GitHub release][release-badge]][release-link]
 [![License][license-badge]][license-link]
 [![API docs][api-badge]][api-link]
@@ -8,6 +9,7 @@
 [![Twitter][twitter-badge]][twitter-link]
 [![Matrix][matrix-badge]][matrix-link]
 
+<p align="center"><img src="doc/doxygen/src/riot-logo.svg" width="66%"><!--
                           ZZZZZZ
                         ZZZZZZZZZZZZ
                       ZZZZZZZZZZZZZZZZ
@@ -32,7 +34,7 @@
       ZZZZZZ     ZZZZZZ          ZZZZZ      777     7777777777       777
        ZZZZZZZZZZZZZZZ            ZZZZ      777      77777777        777
          ZZZZZZZZZZZ               Z
-            ZZZZZ
+            ZZZZZ                                                           --></p>
 
 The friendly Operating System for IoT!
 
@@ -141,7 +143,7 @@ https://www.riot-os.org
 
 
 [api-badge]: https://img.shields.io/badge/docs-API-informational.svg
-[api-link]: https://riot-os.org/api/
+[api-link]: https://doc.riot-os.org/
 [license-badge]: https://img.shields.io/github/license/RIOT-OS/RIOT
 [license-link]: https://github.com/RIOT-OS/RIOT/blob/master/LICENSE
 [master-ci-badge]: https://ci.riot-os.org/RIOT-OS/RIOT/master/latest/badge.svg
@@ -158,3 +160,5 @@ https://www.riot-os.org
 [twitter-link]: https://twitter.com/RIOT_OS
 [wiki-badge]: https://img.shields.io/badge/docs-Wiki-informational.svg
 [wiki-link]: https://github.com/RIOT-OS/RIOT/wiki
+[hil-ci-link]: https://hil.riot-os.org/results/nightly/latest/overview
+[hil-ci-badge]: https://img.shields.io/badge/CI-HiL-blue

@@ -327,35 +327,35 @@ APPLICATION := $(strip $(APPLICATION))
 
 ifeq (,$(and $(DOWNLOAD_TO_STDOUT),$(DOWNLOAD_TO_FILE)))
   ifeq (,$(WGET))
-    ifeq (0,$(shell which wget 2>&1 > /dev/null ; echo $$?))
-      WGET := $(shell which wget)
+    ifeq (0,$(shell which wget > /dev/null 2>&1 ; echo $$?))
+      WGET = $(call memoized,WGET,$(shell which wget))
     endif
   endif
   ifeq (,$(CURL))
-    ifeq (0,$(shell which curl 2>&1 > /dev/null ; echo $$?))
-      CURL := $(shell which curl)
+    ifeq (0,$(shell which curl > /dev/null 2>&1 ; echo $$?))
+      CURL = $(call memoized,CURL,$(shell which curl))
     endif
   endif
   ifeq (,$(WGET)$(CURL))
-    $(error Neither wget nor curl is installed!)
+    $(warning Neither wget nor curl is installed!)
   endif
 
   ifeq (,$(DOWNLOAD_TO_STDOUT))
-    DOWNLOAD_TO_STDOUT := $(if $(CURL),$(CURL) -s,$(WGET) -q -O-)
+    DOWNLOAD_TO_STDOUT ?= $(if $(CURL),$(CURL) -s,$(WGET) -q -O-)
   endif
   ifeq (,$(DOWNLOAD_TO_FILE))
-    DOWNLOAD_TO_FILE := $(if $(WGET),$(WGET) -nv -c -O,$(CURL) -s -o)
+    DOWNLOAD_TO_FILE ?= $(if $(WGET),$(WGET) -nv -c -O,$(CURL) -s -o)
   endif
 endif
 
 ifeq (,$(UNZIP_HERE))
-  ifeq (0,$(shell which unzip 2>&1 > /dev/null ; echo $$?))
-    UNZIP_HERE := $(shell which unzip) -q
+  ifeq (0,$(shell which unzip > /dev/null 2>&1 ; echo $$?))
+    UNZIP_HERE = $(call memoized,UNZIP_HERE,$(shell which unzip) -q)
   else
-    ifeq (0,$(shell which 7z 2>&1 > /dev/null ; echo $$?))
-      UNZIP_HERE := $(shell which 7z) x -bd
+    ifeq (0,$(shell which 7z > /dev/null 2>&1 ; echo $$?))
+      UNZIP_HERE = $(call memoized,UNZIP_HERE,$(shell which 7z) x -bd)
     else
-      $(error Neither unzip nor 7z is installed.)
+      $(warning Neither unzip nor 7z is installed.)
     endif
   endif
 endif
@@ -714,7 +714,7 @@ endef
 # This is not the case on MacOSX, so it must be built on the fly
 ifeq ($(OS),Darwin)
   ifneq (,$(filter debug, $(MAKECMDGOALS)))
-    ifneq (0,$(shell command -v setsid 2>&1 > /dev/null ; echo $$?))
+    ifneq (0,$(shell command -v setsid > /dev/null 2>&1 ; echo $$?))
       SETSID = $(RIOTTOOLS)/setsid/setsid
       $(call target-export-variables,debug,$(SETSID))
       DEBUGDEPS += $(SETSID)
@@ -844,6 +844,8 @@ objdump:
 	$(call check_cmd,$(OBJDUMP),Objdump program)
 	$(OBJDUMP) $(OBJDUMPFLAGS) $(ELFFILE) | less
 
+# inlcude clang-tidy
+include $(RIOTMAKE)/clang_tidy.inc.mk
 # Support Eclipse IDE.
 include $(RIOTMAKE)/eclipse.inc.mk
 

@@ -28,14 +28,16 @@ ifneq (,$(filter gnrc_lorawan,$(USEMODULE)))
   USEMODULE += ztimer_msec
   USEMODULE += random
   USEMODULE += hashes
+  USEMODULE += iolist
   USEMODULE += crypto_aes_128
-  USEMODULE += netdev_layer
-  USEMODULE += gnrc_nettype_lorawan
 endif
 
 ifneq (,$(filter gnrc_netdev_default,$(USEMODULE)))
   # enable default network devices on the platform
   USEMODULE += netdev_default
+endif
+
+ifneq (,$(filter netdev_default,$(USEMODULE)))
   USEMODULE += netdev
   USEMODULE += gnrc_netif
 endif
@@ -57,6 +59,7 @@ endif
 
 ifneq (,$(filter gnrc_dhcpv6_client_simple_pd,$(USEMODULE)))
   USEMODULE += gnrc_dhcpv6_client
+  USEMODULE += dhcpv6_client_ia_pd
 endif
 
 ifneq (,$(filter gnrc_uhcpc,$(USEMODULE)))
@@ -66,7 +69,7 @@ ifneq (,$(filter gnrc_uhcpc,$(USEMODULE)))
   USEMODULE += fmt
 endif
 
-ifneq (,$(filter gnrc_%,$(filter-out gnrc_netapi gnrc_netreg gnrc_netif% gnrc_pkt%,$(USEMODULE))))
+ifneq (,$(filter gnrc_%,$(filter-out gnrc_lorawan gnrc_netapi gnrc_netreg gnrc_netif% gnrc_pkt%,$(USEMODULE))))
   USEMODULE += gnrc
 endif
 
@@ -84,6 +87,10 @@ endif
 ifneq (,$(filter gnrc_sock_udp,$(USEMODULE)))
   USEMODULE += gnrc_udp
   USEMODULE += random     # to generate random ports
+endif
+
+ifneq (,$(filter gnrc_sock_tcp,$(USEMODULE)))
+  USEMODULE += gnrc_tcp
 endif
 
 ifneq (,$(filter gnrc_sock,$(USEMODULE)))
@@ -109,6 +116,12 @@ ifneq (,$(filter gnrc_rpl,$(USEMODULE)))
   USEMODULE += evtimer
 endif
 
+ifneq (,$(filter gnrc_ipv6_auto_subnets,$(USEMODULE)))
+  USEMODULE += gnrc_ipv6_nib_rtr_adv_pio_cb
+  CFLAGS += -DCONFIG_GNRC_IPV6_NIB_ADV_ROUTER=0
+  CFLAGS += -DCONFIG_GNRC_IPV6_NIB_ADD_RIO_IN_LAST_RA=1
+endif
+
 ifneq (,$(filter gnrc_netif,$(USEMODULE)))
   USEMODULE += netif
   USEMODULE += l2util
@@ -124,6 +137,7 @@ ifneq (,$(filter gnrc_netif,$(USEMODULE)))
   endif
   ifneq (,$(filter gnrc_lorawan,$(USEMODULE)))
     USEMODULE += gnrc_netif_lorawan
+    USEMODULE += gnrc_nettype_lorawan
   endif
 endif
 
@@ -246,6 +260,7 @@ ifneq (,$(filter gnrc_ipv6_default,$(USEMODULE)))
 endif
 
 ifneq (,$(filter gnrc_ipv6_router_default,$(USEMODULE)))
+  USEMODULE += gnrc_ipv6_nib_rio
   USEMODULE += gnrc_ipv6_router
   USEMODULE += gnrc_icmpv6
 endif
@@ -395,6 +410,9 @@ ifneq (,$(filter gnrc,$(USEMODULE)))
   endif
   ifneq (,$(filter sock_udp, $(USEMODULE)))
     USEMODULE += gnrc_sock_udp
+  endif
+  ifneq (,$(filter sock_tcp, $(USEMODULE)))
+    USEMODULE += gnrc_sock_tcp
   endif
 endif
 

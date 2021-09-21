@@ -36,14 +36,7 @@
 #ifndef NRF802154_H
 #define NRF802154_H
 
-#if !IS_USED(MODULE_NRF802154_NETDEV_LEGACY)
 #include "net/ieee802154/radio.h"
-#if IS_USED(MODULE_NETDEV_IEEE802154_SUBMAC)
-#include "net/netdev/ieee802154_submac.h"
-#endif
-#else
-#include "net/netdev/ieee802154.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,17 +44,8 @@ extern "C" {
 
 /**
  * @brief   Device descriptor for NRF802154 transceiver
- *
- * @extends netdev_ieee802154_t if using legacy radio
- * @extends netdev_ieee802154_submac_t if using radio HAL
  */
-typedef struct {
-#if IS_USED(MODULE_NETDEV_IEEE802154_SUBMAC)
-    netdev_ieee802154_submac_t netdev;      /**< netdev SubMAC descriptor */
-#elif IS_USED(MODULE_NRF802154_NETDEV_LEGACY)
-    netdev_ieee802154_t netdev;             /**< ieee802154 device descriptor */
-#endif
-} nrf802154_t;
+typedef struct nrf802154 nrf802154_t;
 
 /**
  * @defgroup drivers_nrf52_802154_conf  nrf802154 driver compile configuration
@@ -91,6 +75,15 @@ typedef struct {
 #endif
 
 /**
+ * @brief   Setup NRF802154 in order to be used with the IEEE 802.15.4 Radio HAL
+ *
+ * @note    This functions MUST be called before @ref nrf802154_init.
+ *
+ * @param[in] hal  pointer to the HAL descriptor associated to the device.
+ */
+void nrf802154_hal_setup(ieee802154_dev_t *hal);
+
+/**
  * @brief Initialize the NRF52840 radio.
  *
  * @return 0 on success
@@ -99,11 +92,15 @@ typedef struct {
 int nrf802154_init(void);
 
 /**
- * @brief   Setup a NRF802154 radio device for use with netdev
+ * @brief   Setup a NRF802154 radio device
  *
  * @param[out] dev          Device descriptor
  */
 void nrf802154_setup(nrf802154_t *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* NRF802154_H */
 /** @} */

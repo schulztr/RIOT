@@ -60,6 +60,42 @@ static uint16_t crc16_update(uint16_t crc, uint8_t octet)
     return crc;
 }
 
+static void _init_sense(dose_t *ctx, const dose_params_t *params)
+{
+#ifdef MODULE_PERIPH_UART_RXSTART_IRQ
+    (void)params;
+    uart_rxstart_irq_configure(ctx->uart, _isr_gpio, ctx);
+#else
+    ctx->sense_pin = params->sense_pin;
+    if (gpio_is_valid(ctx->sense_pin)) {
+        gpio_init_int(ctx->sense_pin, GPIO_IN, GPIO_FALLING, _isr_gpio, ctx);
+        gpio_irq_disable(ctx->sense_pin);
+    }
+#endif
+}
+
+static inline void _enable_sense(dose_t *ctx)
+{
+#ifdef MODULE_PERIPH_UART_RXSTART_IRQ
+    uart_rxstart_irq_enable(ctx->uart);
+#else
+    if (gpio_is_valid(ctx->sense_pin)) {
+        gpio_irq_enable(ctx->sense_pin);
+    }
+#endif
+}
+
+static inline void _disable_sense(dose_t *ctx)
+{
+#ifdef MODULE_PERIPH_UART_RXSTART_IRQ
+    uart_rxstart_irq_disable(ctx->uart);
+#else
+    if (gpio_is_valid(ctx->sense_pin)) {
+        gpio_irq_disable(ctx->sense_pin);
+    }
+#endif
+}
+
 static dose_signal_t state_transit_blocked(dose_t *ctx, dose_signal_t signal)
 {
     uint32_t backoff;
@@ -70,13 +106,11 @@ static dose_signal_t state_transit_blocked(dose_t *ctx, dose_signal_t signal)
          * if this frame should be processed. By queuing NETDEV_EVENT_ISR,
          * the netif thread will call _isr at some time. */
         SETBIT(ctx->flags, DOSE_FLAG_RECV_BUF_DIRTY);
-        netdev_trigger_event_isr((netdev_t *) ctx);
+        netdev_trigger_event_isr(&ctx->netdev);
     }
 
-    if (gpio_is_valid(ctx->sense_pin)) {
-        /* Enable GPIO interrupt for start bit sensing */
-        gpio_irq_enable(ctx->sense_pin);
-    }
+    /* Enable interrupt for start bit sensing */
+    _enable_sense(ctx);
 
     /* The timeout will bring us back into IDLE state by a random time.
      * If we entered this state from RECV state, the random time lays
@@ -107,10 +141,10 @@ static dose_signal_t state_transit_recv(dose_t *ctx, dose_signal_t signal)
 {
     dose_signal_t rc = DOSE_SIGNAL_NONE;
 
-    if (ctx->state != DOSE_STATE_RECV && gpio_is_valid(ctx->sense_pin)) {
+    if (ctx->state != DOSE_STATE_RECV) {
         /* We freshly entered this state. Thus, no start bit sensing is required
-         * anymore. Disable GPIO IRQs during the transmission. */
-        gpio_irq_disable(ctx->sense_pin);
+         * anymore. Disable RX Start IRQs during the transmission. */
+        _disable_sense(ctx);
     }
 
     if (signal == DOSE_SIGNAL_UART) {
@@ -149,9 +183,9 @@ static dose_signal_t state_transit_send(dose_t *ctx, dose_signal_t signal)
 {
     (void) signal;
 
-    if (ctx->state != DOSE_STATE_SEND && gpio_is_valid(ctx->sense_pin)) {
-        /* Disable GPIO IRQs during the transmission. */
-        gpio_irq_disable(ctx->sense_pin);
+    if (ctx->state != DOSE_STATE_SEND) {
+        /* Disable RX Start IRQs during the transmission. */
+        _disable_sense(ctx);
     }
 
     /* Don't trace any END octets ... the timeout or the END signal
@@ -217,7 +251,7 @@ static void state(dose_t *ctx, dose_signal_t signal)
 
 static void _isr_uart(void *arg, uint8_t c)
 {
-    dose_t *dev = (dose_t *) arg;
+    dose_t *dev = arg;
 
     dev->uart_octet = c;
     state(dev, DOSE_SIGNAL_UART);
@@ -225,14 +259,14 @@ static void _isr_uart(void *arg, uint8_t c)
 
 static void _isr_gpio(void *arg)
 {
-    dose_t *dev = (dose_t *) arg;
+    dose_t *dev = arg;
 
     state(dev, DOSE_SIGNAL_GPIO);
 }
 
 static void _isr_xtimer(void *arg)
 {
-    dose_t *dev = (dose_t *) arg;
+    dose_t *dev = arg;
 
     state(dev, DOSE_SIGNAL_XTIMER);
 }
@@ -250,7 +284,7 @@ static void clear_recv_buf(dose_t *ctx)
 
 static void _isr(netdev_t *netdev)
 {
-    dose_t *ctx = (dose_t *) netdev;
+    dose_t *ctx = container_of(netdev, dose_t, netdev);
     unsigned irq_state;
     int dirty, end;
 
@@ -307,12 +341,12 @@ static void _isr(netdev_t *netdev)
 
     /* Finally schedule a _recv method call */
     DEBUG("dose _isr(): NETDEV_EVENT_RX_COMPLETE\n");
-    ctx->netdev.event_callback((netdev_t *) ctx, NETDEV_EVENT_RX_COMPLETE);
+    ctx->netdev.event_callback(&ctx->netdev, NETDEV_EVENT_RX_COMPLETE);
 }
 
 static int _recv(netdev_t *dev, void *buf, size_t len, void *info)
 {
-    dose_t *ctx = (dose_t *) dev;
+    dose_t *ctx = container_of(dev, dose_t, netdev);
 
     (void)info;
 
@@ -390,7 +424,7 @@ static int send_data_octet(dose_t *ctx, uint8_t c)
 
 static int _send(netdev_t *dev, const iolist_t *iolist)
 {
-    dose_t *ctx = (dose_t *) dev;
+    dose_t *ctx = container_of(dev, dose_t, netdev);
     int8_t retries = 3;
     size_t pktlen;
     uint16_t crc;
@@ -438,7 +472,7 @@ send:
     }
 
     /* We probably sent the whole packet?! */
-    ctx->netdev.event_callback((netdev_t *) ctx, NETDEV_EVENT_TX_COMPLETE);
+    dev->event_callback(dev, NETDEV_EVENT_TX_COMPLETE);
 
     /* Get out of the SEND state */
     state(ctx, DOSE_SIGNAL_END);
@@ -448,15 +482,15 @@ send:
 collision:
     DEBUG("dose _send(): collision!\n");
     if (--retries < 0) {
-        ctx->netdev.event_callback((netdev_t *) ctx, NETDEV_EVENT_TX_MEDIUM_BUSY);
-        return 0;
+        dev->event_callback(dev, NETDEV_EVENT_TX_MEDIUM_BUSY);
+        return -EBUSY;
     }
     goto send;
 }
 
 static int _get(netdev_t *dev, netopt_t opt, void *value, size_t max_len)
 {
-    dose_t *ctx = (dose_t *) dev;
+    dose_t *ctx = container_of(dev, dose_t, netdev);
 
     switch (opt) {
         case NETOPT_ADDRESS:
@@ -485,7 +519,7 @@ static int _get(netdev_t *dev, netopt_t opt, void *value, size_t max_len)
 
 static int _set(netdev_t *dev, netopt_t opt, const void *value, size_t len)
 {
-    dose_t *ctx = (dose_t *) dev;
+    dose_t *ctx = container_of(dev, dose_t, netdev);
 
     switch (opt) {
         case NETOPT_ADDRESS:
@@ -514,7 +548,7 @@ static int _set(netdev_t *dev, netopt_t opt, const void *value, size_t len)
 
 static int _init(netdev_t *dev)
 {
-    dose_t *ctx = (dose_t *) dev;
+    dose_t *ctx = container_of(dev, dose_t, netdev);
     unsigned irq_state;
 
     /* Set state machine to defaults */
@@ -550,11 +584,7 @@ void dose_setup(dose_t *ctx, const dose_params_t *params, uint8_t index)
     ctx->uart = params->uart;
     uart_init(ctx->uart, params->baudrate, _isr_uart, (void *) ctx);
 
-    ctx->sense_pin = params->sense_pin;
-    if (gpio_is_valid(ctx->sense_pin)) {
-        gpio_init_int(ctx->sense_pin, GPIO_IN, GPIO_FALLING, _isr_gpio, (void *) ctx);
-        gpio_irq_disable(ctx->sense_pin);
-    }
+    _init_sense(ctx, params);
 
     netdev_register(&ctx->netdev, NETDEV_DOSE, index);
 

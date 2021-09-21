@@ -1,6 +1,6 @@
 PKG_NAME    = nimble
 PKG_URL     = https://github.com/apache/mynewt-nimble.git
-PKG_VERSION = 940cc0b4a81295305ceead15928da24fe6e6f603
+PKG_VERSION = 7d3f3cc6afce62a628404856fe4f90e27e04350a
 PKG_LICENSE = Apache-2.0
 
 include $(RIOTBASE)/pkg/pkg.mk
@@ -30,12 +30,12 @@ SUBMODS := $(filter-out $(IGNORE),$(filter nimble_%,$(USEMODULE)))
 
 all: $(SUBMODS)
 
-# blue code and RIOT port modules
+# glue code and RIOT port modules
 nimble_riot_contrib:
 	$(QQ)"$(MAKE)" -C $(TDIR)/contrib/
 
 nimble_porting_nimble:
-	$(QQ)"$(MAKE)" -C $(PDIR)/porting/nimble/src/ -f $(RIOTBASE)/Makefile.base MODULE=$@
+	$(QQ)"$(MAKE)" -C $(PDIR)/porting/nimble/src/ -f $(RIOTPKG)/$(PKG_NAME)/nimble.porting.mk MODULE=$@
 
 nimble_npl_riot:
 	$(QQ)"$(MAKE)" -C $(PDIR)/porting/npl/riot/src/ -f $(RIOTBASE)/Makefile.base MODULE=$@
@@ -49,9 +49,6 @@ nimble_host_util:
 
 nimble_host_store_ram:
 	$(QQ)"$(MAKE)" -C $(PDIR)/nimble/host/store/ram/src/ -f $(RIOTBASE)/Makefile.base MODULE=$@
-
-nimble_tinycrypt:
-	$(QQ)"$(MAKE)" -C $(PDIR)/ext/tinycrypt/src/ -f $(RIOTBASE)/Makefile.base MODULE=$@
 
 # service implementations
 nimble_svc_gap:
@@ -85,6 +82,9 @@ nimble_autoconn:
 
 nimble_netif:
 	$(QQ)"$(MAKE)" -C $(TDIR)/netif/
+
+nimble_rpble:
+	$(QQ)"$(MAKE)" -C $(TDIR)/rpble/
 
 nimble_scanlist:
 	$(QQ)"$(MAKE)" -C $(TDIR)/scanlist

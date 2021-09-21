@@ -119,9 +119,9 @@
 #define ILI9341_PARAM_RST       LCD_RST
 #define ILi9341_PARAM_RGB       0
 #define ILI9341_PARAM_INVERTED  0
+#define ILI9341_PARAM_ROTATION  ILI9341_ROTATION_HORZ_FLIP
 #endif
 /** @} */
-
 
 /* include common board definitions as last step */
 #include "board_common.h"

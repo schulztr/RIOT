@@ -28,12 +28,7 @@
 
 void auto_init(void)
 {
-    if (IS_USED(MODULE_AUTO_INIT_RANDOM)) {
-        LOG_DEBUG("Auto init random.\n");
-        extern void auto_init_random(void);
-        auto_init_random();
-    }
-    if (IS_USED(MODULE_AUTO_INIT_ZTIMER)) {
+   if (IS_USED(MODULE_AUTO_INIT_ZTIMER)) {
         LOG_DEBUG("Auto init ztimer.\n");
         void ztimer_init(void);
         ztimer_init();
@@ -43,6 +38,11 @@ void auto_init(void)
         LOG_DEBUG("Auto init xtimer.\n");
         extern void xtimer_init(void);
         xtimer_init();
+    }
+   if (IS_USED(MODULE_AUTO_INIT_RANDOM)) {
+        LOG_DEBUG("Auto init random.\n");
+        extern void auto_init_random(void);
+        auto_init_random();
     }
     if (IS_USED(MODULE_SCHEDSTATISTICS)) {
         LOG_DEBUG("Auto init schedstatistics.\n");
@@ -123,6 +123,11 @@ void auto_init(void)
         extern void openwsn_bootstrap(void);
         openwsn_bootstrap();
     }
+    if (IS_USED(MODULE_AUTO_INIT_MYNEWT_CORE)) {
+        LOG_DEBUG("Bootstrapping mynewt-core.\n");
+        extern void mynewt_core_init(void);
+        mynewt_core_init();
+    }
     if (IS_USED(MODULE_AUTO_INIT_UWB_CORE)) {
         LOG_DEBUG("Bootstrapping uwb core.\n");
         extern void uwb_core_init(void);
@@ -173,6 +178,11 @@ void auto_init(void)
         LOG_DEBUG("Auto init loramac.\n");
         extern void auto_init_loramac(void);
         auto_init_loramac();
+    }
+    if (IS_USED(MODULE_DSM)) {
+        LOG_DEBUG("Auto init dsm.\n");
+        extern void dsm_init(void);
+        dsm_init();
     }
 
     /* initialize USB devices */
@@ -257,6 +267,12 @@ void auto_init(void)
         dhcpv6_client_auto_init();
     }
 
+    if (IS_USED(MODULE_AUTO_INIT_DHCPV6_RELAY)) {
+        LOG_DEBUG("Auto init DHCPv6 relay agent.\n");
+        extern void dhcpv6_relay_auto_init(void);
+        dhcpv6_relay_auto_init();
+    }
+
     if (IS_USED(MODULE_GNRC_DHCPV6_CLIENT_SIMPLE_PD)) {
         LOG_DEBUG("Auto init DHCPv6 client for simple prefix delegation\n");
         extern void gnrc_dhcpv6_client_simple_pd_init(void);
@@ -275,5 +291,11 @@ void auto_init(void)
         LOG_DEBUG("Auto init screen devices\n");
         extern void auto_init_screen(void);
         auto_init_screen();
+    }
+
+    if (IS_USED(MODULE_AUTO_INIT_BENCHMARK_UDP)) {
+        LOG_DEBUG("Auto init UDP benchmark\n");
+        extern void benchmark_udp_auto_init(void);
+        benchmark_udp_auto_init();
     }
 }

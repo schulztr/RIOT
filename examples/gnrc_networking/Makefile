@@ -9,7 +9,7 @@ RIOTBASE ?= $(CURDIR)/../..
 
 # Include packages that pull up and auto-init the link layer.
 # NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present
-USEMODULE += gnrc_netdev_default
+USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
 # Activate ICMPv6 error messages
 USEMODULE += gnrc_icmpv6_error
@@ -24,6 +24,7 @@ USEMODULE += auto_init_gnrc_rpl
 USEMODULE += gnrc_pktdump
 # Additional networking modules that can be dropped if not needed
 USEMODULE += gnrc_icmpv6_echo
+USEMODULE += netutils
 # Add also the shell, some shell commands
 USEMODULE += shell
 USEMODULE += shell_commands

@@ -78,7 +78,7 @@ static void _on_state_change(struct ble_npl_event *ev)
         nimble_scanner_stop();
         /* start advertising/accepting */
         int res = nimble_netif_accept(_ad.buf, _ad.pos, &_adv_params);
-        assert((res == NIMBLE_NETIF_OK) || (res == NIMBLE_NETIF_NOMEM));
+        assert((res == 0) || (res == -ENOMEM));
         (void)res;
 
         /* schedule next state change */
@@ -215,7 +215,7 @@ static void _on_netif_evt(int handle, nimble_netif_event_t event,
             break;
         case NIMBLE_NETIF_ABORT_SLAVE:
             _evt_dbg("ABORT slave", handle, addr);
-            _state = STATE_IDLE;
+            _deactivate();
             break;
         case NIMBLE_NETIF_CONN_UPDATED:
             _evt_dbg("UPDATED", handle, addr);

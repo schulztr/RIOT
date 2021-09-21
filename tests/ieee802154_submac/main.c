@@ -41,6 +41,20 @@
 #define RADIO_DEFAULT_ID (0U)
 
 netdev_ieee802154_submac_t netdev_submac;
+mutex_t lock;
+
+struct send_ctx {
+    event_t ev;
+    iolist_t pkt;
+};
+
+static void _send_handler(event_t *ev)
+{
+    struct send_ctx *ctx = (struct send_ctx*) ev;
+    netdev_t *dev = &netdev_submac.dev.netdev;
+
+    dev->driver->send(dev, &ctx->pkt);
+}
 
 void _ack_timeout(void *arg);
 
@@ -65,7 +79,7 @@ extern const netdev_driver_t netdev_submac_driver;
 static void _netdev_isr_handler(event_t *event)
 {
     (void)event;
-    netdev_t *netdev = (netdev_t *)&netdev_submac;
+    netdev_t *netdev = &netdev_submac.dev.netdev;
 
     netdev->driver->isr(netdev);
 }
@@ -201,17 +215,48 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
         default:
             assert(false);
         }
+        mutex_unlock(&lock);
     }
 }
+
+struct _reg_container {
+    int count;
+};
+
+static ieee802154_dev_t *_reg_callback(ieee802154_dev_type_t type, void *opaque)
+{
+    struct _reg_container *reg = opaque;
+    printf("Trying to register ");
+    switch(type) {
+        case IEEE802154_DEV_TYPE_CC2538_RF:
+            printf("cc2538_rf");
+            break;
+        case IEEE802154_DEV_TYPE_NRF802154:
+            printf("nrf52840");
+            break;
+    }
+
+    puts(".");
+    if (reg->count > 0) {
+        puts("For the moment this test only supports one radio");
+        return NULL;
+    }
+
+    puts("Success");
+    return &netdev_submac.submac.dev;
+}
+
 static int _init(void)
 {
-    ieee802154_hal_test_init_devs();
+    netdev_t *dev = &netdev_submac.dev.netdev;
 
-    netdev_t *dev = (netdev_t *)&netdev_submac;
-
+    mutex_init(&lock);
+    mutex_lock(&lock);
     dev->event_callback = _event_cb;
-    netdev_ieee802154_submac_init(&netdev_submac,
-                                  ieee802154_hal_test_get_dev(RADIO_DEFAULT_ID));
+    struct _reg_container reg = {0};
+    netdev_ieee802154_submac_init(&netdev_submac);
+    ieee802154_hal_test_init_devs(_reg_callback, &reg);
+
     dev->driver->init(dev);
     return 0;
 }
@@ -219,14 +264,13 @@ static int _init(void)
 uint8_t payload[] =
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam ornare lacinia mi elementum interdum ligula.";
 
-static iolist_t iol_hdr;
-
 static int send(uint8_t *dst, size_t dst_len,
                 size_t len)
 {
     uint8_t flags;
     uint8_t mhr[IEEE802154_MAX_HDR_LEN];
     int mhr_len;
+    struct send_ctx ctx = {0};
 
     le_uint16_t src_pan, dst_pan;
     iolist_t iol_data = {
@@ -250,13 +294,13 @@ static int send(uint8_t *dst, size_t dst_len,
         return 1;
     }
 
-    iol_hdr.iol_next = &iol_data;
-    iol_hdr.iol_base = mhr;
-    iol_hdr.iol_len = mhr_len;
+    ctx.ev.handler = _send_handler;
+    ctx.pkt.iol_next = &iol_data;
+    ctx.pkt.iol_base = mhr;
+    ctx.pkt.iol_len = mhr_len;
 
-    netdev_t *dev = (netdev_t *)&netdev_submac;
-
-    dev->driver->send(dev, &iol_hdr);
+    event_post(EVENT_PRIO_HIGHEST, &ctx.ev);
+    mutex_lock(&lock);
     return 0;
 }
 

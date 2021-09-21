@@ -42,6 +42,11 @@ endif
 # Default and user overwritten configurations
 KCONFIG_USER_CONFIG = $(APPDIR)/user.config
 
+# This file will contain configuration using the `RIOT_CONFIG_<CONFIG>`
+# environment variables. Used to enforce a rerun of GENCONFIG when environment
+# changes.
+KCONFIG_GENERATED_ENV_CONFIG = $(GENERATED_DIR)/env.config
+
 # This is the output of the generated configuration. It always mirrors the
 # content of KCONFIG_GENERATED_AUTOCONF_HEADER_C, and it is used to load
 # configuration symbols to the build system.
@@ -63,6 +68,7 @@ KCONFIG_OUT_DEP = $(KCONFIG_OUT_CONFIG).d
 MERGE_SOURCES += $(KCONFIG_ADD_CONFIG)
 MERGE_SOURCES += $(wildcard $(KCONFIG_APP_CONFIG))
 MERGE_SOURCES += $(wildcard $(KCONFIG_USER_CONFIG))
+MERGE_SOURCES += $(KCONFIG_GENERATED_ENV_CONFIG)
 
 # Create directory to place generated files
 $(GENERATED_DIR): $(if $(MAKE_RESTARTS),,$(CLEAN))
@@ -70,11 +76,14 @@ $(GENERATED_DIR): $(if $(MAKE_RESTARTS),,$(CLEAN))
 
 # During migration this checks if Kconfig should run. It will run if any of
 # the following is true:
-# - A file with '.config' extension is present in the application directory
-# - A 'Kconfig' file is present in the application directory
 # - A previous configuration file is present (e.g. from a previous call to
 #   menuconfig)
 # - menuconfig is being called
+# - SHOULD_RUN_KCONFIG or TEST_KCONFIG is set
+#
+# By default SHOULD_RUN_KCONFIG is set if any of the following is true:
+# - A file with '.config' extension is present in the application directory
+# - A 'Kconfig' file is present in the application directory
 #
 # NOTE: This assumes that Kconfig will not generate any default configurations
 # just from the Kconfig files outside the application folder (i.e. module
@@ -82,16 +91,30 @@ $(GENERATED_DIR): $(if $(MAKE_RESTARTS),,$(CLEAN))
 # check would not longer be valid, and Kconfig would have to run on every
 # build.
 SHOULD_RUN_KCONFIG ?= $(or $(wildcard $(APPDIR)/*.config), \
-                           $(wildcard $(APPDIR)/Kconfig), \
-                           $(if $(CLEAN),,$(wildcard $(KCONFIG_OUT_CONFIG))))
+                           $(wildcard $(APPDIR)/Kconfig))
 
 ifneq (,$(filter menuconfig, $(MAKECMDGOALS)))
+  SHOULD_RUN_KCONFIG := 1
+endif
+
+ifneq (,$(if $(CLEAN),,$(wildcard $(KCONFIG_OUT_CONFIG))))
+  ifeq (,$(SHOULD_RUN_KCONFIG))
+    WARNING_MSG := Warning! SHOULD_RUN_KCONFIG is not set but a previous \
+                   configuration file was detected (did you run \
+                  `make menuconfig`?). Kconfig will run regardless.
+    $(warning $(WARNING_MSG))
+  endif
   SHOULD_RUN_KCONFIG := 1
 endif
 
 # When testing Kconfig we should always run it
 ifeq (1,$(TEST_KCONFIG))
   SHOULD_RUN_KCONFIG := 1
+endif
+
+# Expose DEVELHELP to kconfig
+ifeq (1,$(DEVELHELP))
+  RIOT_CONFIG_DEVELHELP ?= y
 endif
 
 # export variable to make it visible in other Makefiles
@@ -141,6 +164,14 @@ $(KCONFIG_GENERATED_DEPENDENCIES): FORCE | $(GENERATED_DIR)
 	$(Q)printf "%s " $(USEMODULE_W_PREFIX) $(USEPKG_W_PREFIX) \
 	  | awk 'BEGIN {RS=" "}{ gsub("-", "_", $$0); \
 	      printf "config %s\n\tbool\n\tdefault y\n", toupper($$0)}' \
+	  | $(LAZYSPONGE) $(LAZYSPONGE_FLAGS) $@
+
+KCONFIG_ENV_CONFIG = $(patsubst RIOT_%,%,$(foreach v,$(filter RIOT_CONFIG_%,$(.VARIABLES)),$(v)=$($(v))))
+
+# Build an intermediate file based on the `RIOT_CONFIG_<CONFIG>` environment
+# variables
+$(KCONFIG_GENERATED_ENV_CONFIG): FORCE | $(GENERATED_DIR)
+	$(Q)printf "%s\n" $(KCONFIG_ENV_CONFIG) \
 	  | $(LAZYSPONGE) $(LAZYSPONGE_FLAGS) $@
 
 # All directories in EXTERNAL_MODULES_PATHS which have a Kconfig file

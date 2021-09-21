@@ -14,6 +14,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     atmega256rfr2-xpro \
     atmega328p \
     atmega328p-xplained-mini \
+    avsextrem \
     b-l072z-lrwan1 \
     blackpill \
     blackpill-128kib \
@@ -46,6 +47,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     im880b \
     limifrog-v1 \
     lobaro-lorabox \
+    lora-e5-dev \
     lsn50 \
     maple-mini \
     mcb2388 \
@@ -94,6 +96,7 @@ BOARD_INSUFFICIENT_MEMORY := \
     samr21-xpro \
     samr30-xpro \
     samr34-xpro \
+    seeedstudio-gd32 \
     sensebox_samd21 \
     slstk3400a \
     slstk3401a \

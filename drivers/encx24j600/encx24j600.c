@@ -92,13 +92,13 @@ void encx24j600_setup(encx24j600_t *dev, const encx24j600_params_t *params)
 
 static void encx24j600_isr(void *arg)
 {
-    encx24j600_t *dev = (encx24j600_t *) arg;
+    encx24j600_t *dev = arg;
 
     /* disable interrupt line */
     gpio_irq_disable(dev->int_pin);
 
     /* call netdev hook */
-    netdev_trigger_event_isr((netdev_t*) dev);
+    netdev_trigger_event_isr(&dev->netdev);
 }
 
 static void _isr(netdev_t *netdev)
@@ -350,7 +350,6 @@ static int _recv(netdev_t *netdev, void *buf, size_t len, void *info)
 
     /* hdr.frame_len given by device contains 4 bytes checksum */
     size_t payload_len = hdr.frame_len - 4;
-
 
     if (buf) {
         if (payload_len > len) {

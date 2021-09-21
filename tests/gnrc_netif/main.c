@@ -1308,6 +1308,18 @@ static void test_netif_get_by_name(void)
     TEST_ASSERT(netif == netif_get_by_name(name));
 }
 
+static void test_netif_get_by_name_buffer(void)
+{
+    char name[CONFIG_NETIF_NAMELENMAX] = "6nPRK28";
+    netif_t *netif = netif_iter(NULL);
+
+    TEST_ASSERT(netif_get_by_name_buffer(name, strlen(name)) == NULL);
+    /* there must be at least one interface */
+    TEST_ASSERT_NOT_NULL(netif);
+    TEST_ASSERT(netif_get_name(netif, name) > 0);
+    TEST_ASSERT(netif == netif_get_by_name_buffer(name, strlen(name)));
+}
+
 static void test_netif_get_opt(void)
 {
     /* just repeat one of the gnrc_netapi_get tests, just with netif_get_opt */
@@ -1758,6 +1770,7 @@ static Test *embunit_tests_gnrc_netif(void)
             new_TestFixture(test_netif_iter),
             new_TestFixture(test_netif_get_name),
             new_TestFixture(test_netif_get_by_name),
+            new_TestFixture(test_netif_get_by_name_buffer),
             new_TestFixture(test_netif_get_opt),
             new_TestFixture(test_netif_set_opt),
             /* only add tests not involving output here */
@@ -1770,27 +1783,37 @@ static Test *embunit_tests_gnrc_netif(void)
 int main(void)
 {
     _tests_init();
-    netdev_test_set_get_cb((netdev_test_t *)ethernet_dev, NETOPT_ADDRESS,
+    netdev_test_t *test_ethernet = container_of(
+            container_of(ethernet_dev, netdev_ieee802154_t, netdev),
+            netdev_test_t,
+            netdev
+            );
+    netdev_test_t *test_ieee802154 = container_of(
+            container_of(ieee802154_dev, netdev_ieee802154_t, netdev),
+            netdev_test_t,
+            netdev
+            );
+    netdev_test_set_get_cb(test_ethernet, NETOPT_ADDRESS,
             _get_netdev_address);
-    netdev_test_set_set_cb((netdev_test_t *)ethernet_dev, NETOPT_ADDRESS,
+    netdev_test_set_set_cb(test_ethernet, NETOPT_ADDRESS,
             _set_netdev_address);
-    netdev_test_set_get_cb((netdev_test_t *)ethernet_dev, NETOPT_L2_GROUP,
+    netdev_test_set_get_cb(test_ethernet, NETOPT_L2_GROUP,
             _get_netdev_l2_group);
-    netdev_test_set_set_cb((netdev_test_t *)ethernet_dev, NETOPT_L2_GROUP,
+    netdev_test_set_set_cb(test_ethernet, NETOPT_L2_GROUP,
             _set_netdev_l2_group);
-    netdev_test_set_set_cb((netdev_test_t *)ethernet_dev, NETOPT_L2_GROUP_LEAVE,
+    netdev_test_set_set_cb(test_ethernet, NETOPT_L2_GROUP_LEAVE,
             _set_netdev_l2_group_leave);
-    netdev_test_set_get_cb((netdev_test_t *)ieee802154_dev, NETOPT_ADDRESS,
+    netdev_test_set_get_cb(test_ieee802154, NETOPT_ADDRESS,
             _get_netdev_address);
-    netdev_test_set_set_cb((netdev_test_t *)ieee802154_dev, NETOPT_ADDRESS,
+    netdev_test_set_set_cb(test_ieee802154, NETOPT_ADDRESS,
             _set_netdev_address);
-    netdev_test_set_get_cb((netdev_test_t *)ieee802154_dev, NETOPT_ADDRESS_LONG,
+    netdev_test_set_get_cb(test_ieee802154, NETOPT_ADDRESS_LONG,
             _get_netdev_address_long);
-    netdev_test_set_set_cb((netdev_test_t *)ieee802154_dev, NETOPT_ADDRESS_LONG,
+    netdev_test_set_set_cb(test_ieee802154, NETOPT_ADDRESS_LONG,
             _set_netdev_address_long);
-    netdev_test_set_get_cb((netdev_test_t *)ieee802154_dev, NETOPT_SRC_LEN,
+    netdev_test_set_get_cb(test_ieee802154, NETOPT_SRC_LEN,
             _get_netdev_src_len);
-    netdev_test_set_set_cb((netdev_test_t *)ieee802154_dev, NETOPT_SRC_LEN,
+    netdev_test_set_set_cb(test_ieee802154, NETOPT_SRC_LEN,
             _set_netdev_src_len);
     TESTS_START();
     TESTS_RUN(embunit_tests_gnrc_netif());

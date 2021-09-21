@@ -2,6 +2,9 @@
 ifneq (,$(filter asymcute,$(USEMODULE)))
   DIRS += net/application_layer/asymcute
 endif
+ifneq (,$(filter benchmark_udp,$(USEMODULE)))
+  DIRS += test_utils/benchmark_udp
+endif
 ifneq (,$(filter bluetil_%,$(USEMODULE)))
   DIRS += net/ble/bluetil
 endif
@@ -37,6 +40,12 @@ ifneq (,$(filter devfs,$(USEMODULE)))
 endif
 ifneq (,$(filter dhcpv6,$(USEMODULE)))
   DIRS += net/application_layer/dhcpv6
+endif
+ifneq (,$(filter dns,$(USEMODULE)))
+  DIRS += net/application_layer/dns
+endif
+ifneq (,$(filter dsm,$(USEMODULE)))
+  DIRS += net/dsm
 endif
 ifneq (,$(filter dummy_thread,$(USEMODULE)))
   DIRS += test_utils/dummy_thread
@@ -110,6 +119,9 @@ endif
 ifneq (,$(filter netstats_neighbor,$(USEMODULE)))
   DIRS += net/netstats
 endif
+ifneq (,$(filter netutils,$(USEMODULE)))
+  DIRS += net/netutils
+endif
 ifneq (,$(filter sema,$(USEMODULE)))
   DIRS += sema
 endif
@@ -126,7 +138,7 @@ ifneq (,$(filter sock_async_event,$(USEMODULE)))
   DIRS += net/sock/async/event
 endif
 ifneq (,$(filter sock_dns,$(USEMODULE)))
-  DIRS += net/application_layer/dns
+  DIRS += net/application_layer/sock_dns
 endif
 ifneq (,$(filter sock_util,$(USEMODULE)))
   DIRS += net/sock

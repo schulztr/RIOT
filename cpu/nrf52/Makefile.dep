@@ -4,9 +4,7 @@ ifneq (,$(filter nrf802154,$(USEMODULE)))
   FEATURES_REQUIRED += periph_timer
   FEATURES_REQUIRED += radio_nrf802154
   USEMODULE += luid
-  ifneq (,$(filter nrf802154_netdev_legacy,$(USEMODULE)))
-    USEMODULE += netdev_ieee802154
-  else ifneq (,$(filter netdev,$(USEMODULE)))
+  ifneq (,$(filter netdev,$(USEMODULE)))
     USEMODULE += netdev_ieee802154_submac
   endif
 endif
@@ -20,6 +18,10 @@ endif
 
 ifneq (,$(filter periph_uart_nonblocking,$(USEMODULE)))
   USEMODULE += tsrb
+endif
+
+ifneq (,$(filter saul_nrf_vddh,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_adc
 endif
 
 include $(RIOTCPU)/nrf5x_common/Makefile.dep

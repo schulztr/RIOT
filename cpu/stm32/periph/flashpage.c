@@ -190,7 +190,8 @@ void flashpage_erase(unsigned page)
     assert(page < (int)FLASHPAGE_NUMOF);
 
     /* ensure there is no attempt to write to CPU2 protected area */
-#if defined(CPU_FAM_STM32WB) || defined(CPU_FAM_STM32WL)
+#if defined(CPU_FAM_STM32WB) || (defined(CPU_FAM_STM32WL) && \
+                                 !defined(CPU_LINE_STM32WLE5xx))
     assert(page < (int)(FLASH->SFR & FLASH_SFR_SFSA));
 #endif
 
@@ -328,7 +329,7 @@ size_t flashpage_size(unsigned page)
     }
 }
 
-unsigned flashpage_page(void *addr)
+unsigned flashpage_page(const void *addr)
 {
     /* Calculates the flashpage number based on the address for the
      * non-homogeneous flashpage stm32 series.
