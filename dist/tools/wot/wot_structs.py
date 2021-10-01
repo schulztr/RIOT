@@ -597,7 +597,7 @@ class MultiLangStruct(LinkedListStruct):
     @classmethod
     def parse(cls, parent: CObject, field_name: str) -> None:
         singular_key = cls.get_singular_key(field_name)
-        if singular_key in parent.data or field_name in parent.data:
+        if singular_key in parent.data and parent.data.get(singular_key) or field_name in parent.data and parent.data.get(field_name):
             cls(parent, "multi_lang", field_name)
 
     @property
