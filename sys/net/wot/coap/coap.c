@@ -8,9 +8,28 @@
 #include "net/wot/config.h"
 #include "net/wot/coap/config.h"
 #include "msg.h"
+//DTLS
+#include "net/credman.h"
+#include "net/dsm.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
+
+
+#if IS_USED(MODULE_GCOAP_DTLS)
+static const uint8_t psk_id_0[] = GCOAP_DTLS_ID;
+static const uint8_t psk_key_0[] = GCOAP_DTLS_PSK;
+static const credman_credential_t credential = {
+    .type = CREDMAN_TYPE_PSK,
+    .tag = GCOAP_DTLS_CREDENTIAL_TAG,
+    .params = {
+        .psk = {
+            .key = { .s = psk_key_0, .len = sizeof(psk_key_0) - 1, },
+            .id = { .s = psk_id_0, .len = sizeof(psk_id_0) - 1, },
+        }
+    },
+};
+#endif
 
 static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
                             size_t maxlen, coap_link_encoder_ctx_t *context);
@@ -248,5 +267,20 @@ void wot_td_coap_server_init(void)
     wot_td_coap_config_init(&wot_thing);
 
     gcoap_init();
+
+//from gcoap example
+#if IS_USED(MODULE_GCOAP_DTLS)
+    int res = credman_add(&credential);
+    if (res < 0 && res != CREDMAN_EXIST) {
+        /* ignore duplicate credentials */
+        printf("gcoap: cannot add credential to system: %d\n", res);
+        return;
+    }
+    sock_dtls_t *gcoap_sock_dtls = gcoap_get_sock_dtls();
+    res = sock_dtls_add_credential(gcoap_sock_dtls, GCOAP_DTLS_CREDENTIAL_TAG);
+    if (res < 0) {
+        printf("gcoap: cannot add credential to DTLS sock: %d\n", res);
+    }
+#endif
     gcoap_register_listener(&_wot_td_gcoap_listener);
 }
